@@ -4,6 +4,8 @@ This repository contains a modified version of the MackieControl script, adapted
 
 ---
 
+link of the Ableton forum page to disscuss and get updated about what's happening : https://forum.ableton.com/viewtopic.php?p=1831258#p1831258
+
 ## Features
 
 ### Colored Scribble Strips
