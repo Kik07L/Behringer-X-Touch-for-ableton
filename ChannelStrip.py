@@ -178,8 +178,11 @@ class ChannelStrip(MackieControlComponent):
         if not self.main_script().is_pro_version or self.__meters_enabled and self.__channel_strip_controller.assignment_mode() == CSM_VOLPAN:
             if self.__assigned_track and self.__assigned_track.has_audio_output:
                 if self.__assigned_track.can_be_armed and self.__assigned_track.arm:
-                    meter_value = max(self.__assigned_track.input_meter_left,
-                                      self.__assigned_track.input_meter_right)
+                    if self.__assigned_track.has_midi_input:
+                        meter_value = self.__assigned_track.input_meter_level
+                    else:
+                        meter_value = max(self.__assigned_track.input_meter_left,
+                                          self.__assigned_track.input_meter_right)
                 else:
                     meter_value = max(self.__assigned_track.output_meter_left,
                                       self.__assigned_track.output_meter_right)

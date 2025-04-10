@@ -72,7 +72,7 @@ class SoftwareController(MackieControlComponent):
         elif switch_id == SID_FUNC_CANCEL:
             if value == BUTTON_PRESSED:
                 self.__toggle_back_to_arranger()
-        elif switch_id == SID_FUNC_TRIM: #
+        elif switch_id == SID_FUNC_SAVE: #
             if value == BUTTON_PRESSED: #
                 self.__capture_midi() #
         elif switch_id == SID_FUNC_ENTER:
@@ -243,9 +243,9 @@ class SoftwareController(MackieControlComponent):
 
     def __update_capture_midi_button_led(self): #
         if self.song().can_capture_midi:
-            self.send_midi((NOTE_ON_STATUS, SID_FUNC_TRIM, BUTTON_STATE_ON))
+            self.send_midi((NOTE_ON_STATUS, SID_FUNC_SAVE, BUTTON_STATE_ON))
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_FUNC_TRIM, BUTTON_STATE_OFF))
+            self.send_midi((NOTE_ON_STATUS, SID_FUNC_SAVE, BUTTON_STATE_OFF))
 
     def __update_draw_mode_button_led(self):
         if self.song().view.draw_mode:

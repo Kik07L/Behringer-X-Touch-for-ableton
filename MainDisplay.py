@@ -11,6 +11,7 @@ class MainDisplay(MackieControlComponent):
         MackieControlComponent.__init__(self, main_script)
         self.__stack_offset = 0
         self.__last_send_messages = [[], []]
+        self.__last_send_colors = []
 
     def destroy(self):
         NUM_CHARS_PER_DISPLAY_LINE = 56
@@ -58,17 +59,19 @@ class MainDisplay(MackieControlComponent):
             self.send_midi(display_sysex)
 
     def send_colors(self, colors):
-        if self.main_script().is_extension():
-            device_type = SYSEX_DEVICE_TYPE_XT
-        else:
-            device_type = SYSEX_DEVICE_TYPE
-        colors_sysex = (240,
-         0,
-         0,
-         102,
-         device_type,
-         114) + colors + (247,)
-        self.send_midi(colors_sysex)
+        if self.__last_send_colors != colors:
+            self.__last_send_colors = colors
+            if self.main_script().is_extension():
+                device_type = SYSEX_DEVICE_TYPE_XT
+            else:
+                device_type = SYSEX_DEVICE_TYPE
+            colors_sysex = (240,
+             0,
+             0,
+             102,
+             device_type,
+             114) + colors + (247,)
+            self.send_midi(colors_sysex)
 
     def color_distance(self, color1, color2):
         return ((color1[0] - color2[0]) ** 2) + ((color1[1] - color2[1]) ** 2) + ((color1[2] - color2[2]) ** 2)
@@ -97,6 +100,7 @@ class MainDisplay(MackieControlComponent):
 
     def refresh_state(self):
         self.__last_send_messages = [[], []]
+        self.__last_send_colors = []
 
     def on_update_display_timer(self):
         pass
