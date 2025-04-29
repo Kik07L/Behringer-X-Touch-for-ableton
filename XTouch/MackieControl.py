@@ -241,7 +241,12 @@ class MackieControl(object):
                 self.__channel_strip_controller.toggle_meter_mode()
         elif switch_id == SID_DISPLAY_SMPTE_BEATS:
             if value == BUTTON_PRESSED:
-                self.__time_display.toggle_mode()
+                if self.shift_is_pressed():
+                    self.__time_display.toggle_show_current_time()
+                elif self.option_is_pressed():
+                    self.__time_display.toggle_show_seconds()
+                else:
+                    self.__time_display.toggle_mode()
 
 #
     def get_channel_strip_controller(self):

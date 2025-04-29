@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from builtins import str
 from builtins import range
 from .MackieControlComponent import *
+import time
 
 class TimeDisplay(MackieControlComponent):
     u"""Represents the Mackie Controls Time-Display, plus the two LED's that show the"""
@@ -11,6 +12,8 @@ class TimeDisplay(MackieControlComponent):
         MackieControlComponent.__init__(self, main_script)
         self.__main_script = main_script
         self.__show_beat_time = False
+        self.__show_current_time = False
+        self.__show_seconds = True
         self.__smpt_format = Live.Song.TimeFormat.smpte_25
         self.__last_send_time = []
         self.show_beats()
@@ -31,10 +34,30 @@ class TimeDisplay(MackieControlComponent):
         self.send_midi((NOTE_ON_STATUS, SELECT_SMPTE_NOTE, BUTTON_STATE_ON))
 
     def toggle_mode(self):
+        self.__show_current_time = False
         if self.__show_beat_time:
             self.show_smpte(self.__smpt_format)
         else:
             self.show_beats()
+
+    def toggle_show_current_time(self):
+        if self.__show_current_time:
+            self.__show_current_time = False
+            if self.__show_beat_time:
+                self.show_beats()
+            else:
+                self.show_smpte(self.__smpt_format)
+        else:
+            self.__show_current_time = True
+            self.send_midi((NOTE_ON_STATUS, SELECT_BEATS_NOTE, BUTTON_STATE_ON))
+            self.send_midi((NOTE_ON_STATUS, SELECT_SMPTE_NOTE, BUTTON_STATE_ON))
+
+    def toggle_show_seconds(self):
+        if self.__show_seconds:
+            self.__show_seconds = False
+        else:
+            self.__show_seconds = True
+
 
     def clear_display(self):
         time_string = [ u' ' for i in range(10) ]
@@ -48,7 +71,14 @@ class TimeDisplay(MackieControlComponent):
 
     def on_update_display_timer(self):
         u"""Called by a timer which gets called every 100 ms. We will simply check if the"""
-        if self.__show_beat_time:
+
+        if self.__show_current_time:
+            t = time.localtime()
+            if self.__show_seconds:
+                time_string = time.strftime("%H:%M:%S   ", t).rjust(12, " ")
+            else:
+                time_string = time.strftime("%H:%M      ", t).rjust(12, " ")
+        elif self.__show_beat_time:
             time_string = str(self.song().get_current_beats_song_time())
         else:
             time_string = str(self.song().get_current_smpte_song_time(self.__smpt_format))
