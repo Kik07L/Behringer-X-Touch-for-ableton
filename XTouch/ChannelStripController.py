@@ -786,10 +786,7 @@ class ChannelStripController(MackieControlComponent):
                     else:
                         targets.append(u'')
 
-                # Ensure text is lit up when the background is black
-                self.__main_display_controller.set_channel_strip_strings(
-                targets, lit_text_only=True
-                )
+                self.__main_display_controller.set_channel_strip_strings(targets)
             elif self.__assignment_mode == CSM_PLUGINS and self.__plugin_mode == PCM_DEVICES:
                 for plugin in self.__displayed_plugins:
                     if plugin != None:

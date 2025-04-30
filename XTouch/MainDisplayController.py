@@ -87,21 +87,10 @@ class MainDisplayController(MackieControlComponent):
     def channel_strip_strings(self):
         return self.__channel_strip_strings
 
-    def set_channel_strip_strings(self, channel_strip_strings, lit_text_only=False):
-        """
-        Update the channel strip strings.
-        If lit_text_only is True, ensure only the text is lit up while the background remains black.
-        """
+    def set_channel_strip_strings(self, channel_strip_strings):
         if channel_strip_strings:
             self.set_parameters(None)
         self.__channel_strip_strings = channel_strip_strings
-
-        # Apply "lit text only" logic if enabled
-        if lit_text_only:
-            for i, string in enumerate(channel_strip_strings):
-                if string:  # Ensure there's text to display
-                    #Send the string with a black background and lit text
-                    self.__displays[i].send_display_string(string, row=1, column=0, text_color="white", background_color="black")
 
     def set_show_return_track_names(self, show_returns):
         self.__show_return_tracks = show_returns
