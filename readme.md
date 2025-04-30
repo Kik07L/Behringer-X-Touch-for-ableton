@@ -10,7 +10,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 
 ### Colored Scribble Strips
 - **Track Color Matching:** Scribble strip colors follow the track colors set in Ableton Live.
-  - Limited to 8 basic colors: black, red, yellow, green, blue, magenta, cyan, and white.
+  - Hardware limited to 8 basic colors: black, red, yellow, green, blue, magenta, cyan, and white.
   - Automatically calculates the closest match.
 - **Black Color Handling:** Black scribble strips are only used if explicitly selected in Live to prevent unreadable text.
 - **Grayscale Handling:** All grayscale colors (except black) default to white scribble strips.
