@@ -26,7 +26,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 
 ### Button Remapping
 #### **Encoder Assign Section**
-- `TRACK`: Assign encoders to track properties (Input Type, Input Channel, Output Type, Output Channel, Track Color)
+- `TRACK`: Assign encoders to track properties (cycles through Input Type, Input Channel, Output Type, Output Channel, Track Color)
 - `PAN/SURROUND`: Assign encoders to track panning
 - `EQ`: Bank left in device control mode
 - `SEND`: Assign encoders to track send levels
