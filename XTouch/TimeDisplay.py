@@ -61,7 +61,7 @@ class TimeDisplay(MackieControlComponent):
 
     def clear_display(self):
         time_string = [ u' ' for i in range(10) ]
-        self.__send_time_string(time_string, show_points=False)
+        self.__send_time_string(time_string, points_positions=())
         self.send_midi((NOTE_ON_STATUS, SELECT_BEATS_NOTE, BUTTON_STATE_OFF))
         self.send_midi((NOTE_ON_STATUS, SELECT_SMPTE_NOTE, BUTTON_STATE_OFF))
 
@@ -77,21 +77,28 @@ class TimeDisplay(MackieControlComponent):
             if self.__show_seconds:
                 time_string = time.strftime("%H:%M:%S   ", t).rjust(12, " ")
             else:
-                time_string = time.strftime("%H:%M      ", t).rjust(12, " ")
+                time_string = time.strftime("%H:%M     ", t).rjust(11, " ")
         elif self.__show_beat_time:
             time_string = str(self.song().get_current_beats_song_time())
         else:
             time_string = str(self.song().get_current_smpte_song_time(self.__smpt_format))
+
+        reverse_time_string = time_string[::-1]
+        points = []
+        for i in range(len(time_string)):
+            if reverse_time_string[i] in (u'.', u':'):
+                points.append(i - len(points))
+
         time_string = [ c for c in time_string if c not in (u'.', u':') ]
         if self.__last_send_time != time_string:
             self.__last_send_time = time_string
-            self.__send_time_string(time_string, show_points=True)
+            self.__send_time_string(time_string, points_positions=tuple(points))
 
-    def __send_time_string(self, time_string, show_points):
+    def __send_time_string(self, time_string, points_positions):
         assert len(time_string) >= 10
         for c in range(0, 10):
             char = time_string[9 - c].upper()
             char_code = g7_seg_led_conv_table[char]
-            if show_points and c in (3, 5, 7):
+            if c in points_positions:
                 char_code += 64
             self.send_midi((176, 64 + c, char_code))
