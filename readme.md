@@ -22,10 +22,21 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 
 ### Level Meter Enhancements
 - **Clipping Indicators:** Channel strip level meters now show clipping when it occurs.
+- **Snappy Meters:** Channel strip level meters now react more quickly to changes in audio.
 
 ### Button Remapping
+#### **Encoder Assign Section**
+- `TRACK`: Assign encoders to track properties (Input Type, Input Channel, Output Type, Output Channel, Track Color)
+- `PAN/SURROUND`: Assign encoders to track panning
+- `EQ`: Bank left in device control mode
+- `SEND`: Assign encoders to track send levels
+- `PLUG-IN`: Assign encoders to track devices
+- `INST`: Bank right in device control mode
+
 #### **Display Section**
 - `DISPLAY`: Switch between Session and Arrangement views.
+- `SHIFT + SMPTE/BEATS`: Show current time instead of song time/beats.
+- `OPTION + SMPTE/BEATS`: In current time mode, toggle seconds on/off.
 
 #### **Channel Strip**
 - `SHIFT + ARM`: Toggle monitoring state (exclusive: **In/Auto**). ARM LED blinks when in **In** mode.
@@ -38,9 +49,13 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `MARKER`: Jump to the previous marker.
   - `CONTROL + MARKER`: Create or delete a marker at the current position.
 - `NUDGE`: Jump to the next marker.
+- `CYCLE`: Toggle loop.
+- `DROP`: Toggle punch in.
+- `REPLACE`: Toggle punch out.
 - `SOLO`: Toggle between clip and device views. LED is on in clip view.
 
 #### **Utility Section**
+- `SAVE`: Capture MIDI.
 - `UNDO`: Undo last action.
 - `ENTER`: Redo last action.
 - `CANCEL`: Return to Arrangement view. LED lights up when enabled.
@@ -64,6 +79,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `ZOOM BUTTON + Rotation`: Zoom in/out in Arrangement view.
 
 #### **Gray Section**
+- `GLOBAL VIEW`: Switches between audio/instrument and return tracks
 - `MIDI TRACKS`: Create a new MIDI track.
 - `INPUTS`: Open/close the browser.
 - `AUDIO TRACKS`: Create a new audio track.
