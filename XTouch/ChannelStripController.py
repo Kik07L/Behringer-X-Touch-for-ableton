@@ -782,7 +782,11 @@ class ChannelStripController(MackieControlComponent):
                 targets = []
                 for s in self.__channel_strips:
                     if self.__routing_target(s):
-                        targets.append(self.__routing_target(s))
+                    # Example: Prefix group names with "Grp:"
+                        if self.__is_group(s):
+                            targets.append(f"Grp: {self.__routing_target(s)}")
+                        else:
+                            targets.append(self.__routing_target(s))
                     else:
                         targets.append(u'')
 
