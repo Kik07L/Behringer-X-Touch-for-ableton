@@ -35,8 +35,8 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 
 #### **Display Section**
 - `DISPLAY`: Switch between Session and Arrangement views.
-- `SHIFT + SMPTE/BEATS`: Show current time instead of song time/beats.
-- `OPTION + SMPTE/BEATS`: In current time mode, toggle seconds on/off.
+- `SHIFT + SMPTE/BEATS`: Show clock instead of song time/beats.
+- `OPTION + SMPTE/BEATS`: In clock mode, toggle seconds on/off.
 
 #### **Channel Strip**
 - `SHIFT + ARM`: Toggle monitoring state (exclusive: **In/Auto**). ARM LED blinks when in **In** mode.
