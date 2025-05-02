@@ -2,7 +2,8 @@
 
 This repository contains a modified version of the MackieControl script, adapted specifically for Behringer X-Touch controllers. Originally developed by Arthur Montvidas and further enhanced by Robrecht & posted on github with the contribution of Kik07L, this version adds support for Ableton Live 12 with numerous improvements, including Extender functionality and colored scribble strips.
 
-# We highly recomend to download the Release version [here](https://github.com/Kik07L/Behringer-X-Touch-for-ableton/releases) the source code here may contain untested / beta features that may not be stables so if you want something stable use the latest Release :D  
+# We highly recommend downloading the Release version [here](https://github.com/Kik07L/Behringer-X-Touch-for-ableton/releases) The source code here may include untested or beta features that are potentially unstable.
+For a stable experience, please use the latest Release. 😄  
 
 ---
 
