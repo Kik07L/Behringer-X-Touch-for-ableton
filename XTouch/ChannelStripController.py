@@ -258,11 +258,13 @@ class ChannelStripController(MackieControlComponent):
                     sel_track.solo = True
 
     def restore_solos(self):
+        sel_track = self.song().view.selected_track
         for t in chain(self.song().tracks, self.song().return_tracks):
             if t in self.stored_soloed_track_ids:
                 t.solo = True
         self.can_restore_solos = False
         self.stored_soloed_track_ids = []
+        self.song().view.selected_track = sel_track
 
     def store_solos(self):
         self.stored_soloed_track_ids = []
