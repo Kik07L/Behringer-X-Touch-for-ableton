@@ -164,9 +164,9 @@ class Transport(MackieControlComponent):
         elif switch_id == SID_MARKER_HOME:
             if value == BUTTON_PRESSED:
                 self.__goto_home()
-        elif switch_id == SID_MARKER_END:
-            if value == BUTTON_PRESSED:
-                self.__goto_end()
+#        elif switch_id == SID_MARKER_END:
+#            if value == BUTTON_PRESSED:
+#                self.__goto_end()
 
     def handle_transport_switch_ids(self, switch_id, value):
         if switch_id == SID_TRANSPORT_REWIND:

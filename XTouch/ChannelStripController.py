@@ -109,6 +109,9 @@ class ChannelStripController(MackieControlComponent):
         self.__reassign_channel_strip_offsets()
         self.__reassign_channel_strip_parameters(for_display_only=False)
         self._last_assignment_mode = self.__assignment_mode
+        self.can_restore_solos = False
+        self.stored_soloed_track_ids = []
+        self.any_track_soloed = False
 
     def destroy(self):
         self.song().remove_visible_tracks_listener(self.__on_tracks_added_or_deleted)
@@ -241,6 +244,45 @@ class ChannelStripController(MackieControlComponent):
         elif switch_id == SID_FADERBANK_EDIT:
             if value == BUTTON_PRESSED:
                 self.__toggle_view_returns()
+        elif switch_id == SID_MARKER_END:
+            if value == BUTTON_PRESSED:
+                if self.shift_is_pressed():
+                    self.store_solos()
+                    self.reset_solos()
+                elif self.can_restore_solos:
+                    self.restore_solos()
+                elif self.any_track_soloed:
+                    self.store_solos()
+                else:
+                    sel_track = self.song().view.selected_track
+                    sel_track.solo = True
+
+    def restore_solos(self):
+        for t in chain(self.song().tracks, self.song().return_tracks):
+            if t in self.stored_soloed_track_ids:
+                t.solo = True
+        self.can_restore_solos = False
+        self.stored_soloed_track_ids = []
+
+    def store_solos(self):
+        self.stored_soloed_track_ids = []
+        for t in chain(self.song().tracks, self.song().return_tracks):
+            if t.solo:
+                self.stored_soloed_track_ids.append(t)
+                t.solo = False
+        self.can_restore_solos = True
+        self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_BLINKING))
+
+    def reset_solos(self):
+        self.stored_soloed_track_ids = []
+        self.can_restore_solos = False
+        self.__update_rude_solo_led()
+        
+    def check_if_stored_solo(self, track_to_check):
+        if hasattr(self, 'stored_soloed_track_ids'):
+            if self.can_restore_solos and track_to_check in self.stored_soloed_track_ids:
+                return True
+
 
     def handle_vpot_rotation(self, strip_index, stack_offset, cc_value):
         u""" forwarded to us by the channel_strips """
@@ -729,16 +771,22 @@ class ChannelStripController(MackieControlComponent):
         self.send_midi((CC_STATUS, 74, g7_seg_led_conv_table[ass_string[1]]))
 
     def __update_rude_solo_led(self):
-        any_track_soloed = False
+        self.any_track_soloed = False
         for t in chain(self.song().tracks, self.song().return_tracks):
             if t.solo:
-                any_track_soloed = True
+                self.any_track_soloed = True
                 break
 
-        if any_track_soloed:
+        if self.any_track_soloed:
+            self.can_restore_solos = False
             self.send_midi((NOTE_ON_STATUS, SELECT_RUDE_SOLO, BUTTON_STATE_ON))
+            self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_ON))
+        elif self.can_restore_solos:
+            self.send_midi((NOTE_ON_STATUS, SELECT_RUDE_SOLO, BUTTON_STATE_OFF))
+            self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_BLINKING))
         else:
             self.send_midi((NOTE_ON_STATUS, SELECT_RUDE_SOLO, BUTTON_STATE_OFF))
+            self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_OFF))
 
     def __update_page_switch_leds(self):
         u""" visualize if the "prev" an "next" buttons can be pressed """

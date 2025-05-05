@@ -54,7 +54,7 @@ class SoftwareController(MackieControlComponent):
         elif switch_id == SID_ARRAGEMENT_SESSION:    #elif switch_id == SID_AUTOMATION_ON:
             if value == BUTTON_PRESSED:
                 self.__toggle_session_arranger_is_visible()
-        elif switch_id == SID_MARKER_END:
+        elif switch_id == SID_SOFTWARE_F13:
             if value == BUTTON_PRESSED:
                 self.__toggle_detail_sub_view()
         elif switch_id == SID_SOFTWARE_F10:
@@ -207,9 +207,9 @@ class SoftwareController(MackieControlComponent):
 
     def __update_detail_sub_view_button_led(self):
         if self.application().view.is_view_visible(u'Detail/Clip'):
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_ON))
+            self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F13, BUTTON_STATE_ON))
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_OFF))
+            self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F13, BUTTON_STATE_OFF))
 
     def __update_browser_button_led(self):
         if self.application().view.is_view_visible(u'Browser'):
