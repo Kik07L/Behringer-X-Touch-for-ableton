@@ -128,7 +128,7 @@ class ChannelStrip(MackieControlComponent):
                         self.__toggle_arm_track(exclusive)
         elif sw_id in range(SID_SOLO_BASE, SID_SOLO_BASE + NUM_CHANNEL_STRIPS):
             if sw_id - SID_SOLO_BASE is self.__strip_index:
-                if value == BUTTON_PRESSED:
+                if value == BUTTON_PRESSED:                        
                     if self.__channel_strip_controller != None:
                         self.__channel_strip_controller.reset_solos()
 #                        self.__update_solo_led()
@@ -346,8 +346,8 @@ class ChannelStrip(MackieControlComponent):
     def __update_solo_led(self):
         if self.__assigned_track and self.__assigned_track.solo:
             self.send_midi((NOTE_ON_STATUS, SID_SOLO_BASE + self.__strip_index, BUTTON_STATE_ON))
-        # elif self.__channel_strip_controller != None and self.__channel_strip_controller.check_if_stored_solo(self.__assigned_track):
-            # self.send_midi((NOTE_ON_STATUS, SID_SOLO_BASE + self.__strip_index, BUTTON_STATE_BLINKING))
+        elif self.__channel_strip_controller != None and self.__channel_strip_controller.check_if_stored_solo(self.__assigned_track):
+            self.send_midi((NOTE_ON_STATUS, SID_SOLO_BASE + self.__strip_index, BUTTON_STATE_BLINKING))
         else:
             self.send_midi((NOTE_ON_STATUS, SID_SOLO_BASE + self.__strip_index, BUTTON_STATE_OFF))
 

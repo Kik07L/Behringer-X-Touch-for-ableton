@@ -247,7 +247,7 @@ class ChannelStripController(MackieControlComponent):
         elif switch_id == SID_MARKER_END:
             if value == BUTTON_PRESSED:
                 if self.shift_is_pressed():
-                    self.store_solos()
+                    self.remove_solos()
                     self.reset_solos()
                 elif self.can_restore_solos:
                     self.restore_solos()
@@ -275,7 +275,15 @@ class ChannelStripController(MackieControlComponent):
         self.can_restore_solos = True
         self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_BLINKING))
 
+    def remove_solos(self):
+        for t in chain(self.song().tracks, self.song().return_tracks):
+            t.solo = False
+
     def reset_solos(self):
+        for t in chain(self.song().tracks, self.song().return_tracks):
+            if t in self.stored_soloed_track_ids:
+                t.solo = True
+                t.solo = False
         self.stored_soloed_track_ids = []
         self.can_restore_solos = False
         self.__update_rude_solo_led()
@@ -774,16 +782,22 @@ class ChannelStripController(MackieControlComponent):
 
     def __update_rude_solo_led(self):
         self.any_track_soloed = False
+        self.existing_stored_soloed_track_ids = []
         for t in chain(self.song().tracks, self.song().return_tracks):
             if t.solo:
                 self.any_track_soloed = True
                 break
+            elif t in self.stored_soloed_track_ids:
+                self.existing_stored_soloed_track_ids.append(t)
+                #break
+
+        self.stored_soloed_track_ids = self.existing_stored_soloed_track_ids #update stored list to drop any track that has been deleted
 
         if self.any_track_soloed:
             self.can_restore_solos = False
             self.send_midi((NOTE_ON_STATUS, SELECT_RUDE_SOLO, BUTTON_STATE_ON))
             self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_ON))
-        elif self.can_restore_solos:
+        elif self.can_restore_solos and self.stored_soloed_track_ids:
             self.send_midi((NOTE_ON_STATUS, SELECT_RUDE_SOLO, BUTTON_STATE_OFF))
             self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_BLINKING))
         else:
