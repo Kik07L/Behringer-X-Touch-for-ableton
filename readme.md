@@ -2,7 +2,7 @@
 
 This repository contains a modified version of the MackieControl script, adapted specifically for Behringer X-Touch controllers. Originally developed by Arthur Montvidas and further enhanced by Robrecht & posted on github with the contribution of Kik07L, this version adds support for Ableton Live 12 with numerous improvements, including Extender functionality and colored scribble strips.
 
-# We highly recommend downloading the Release version [here](https://github.com/Kik07L/Behringer-X-Touch-for-ableton/releases) The source code here may include untested or beta features that are potentially unstable.
+# We highly recommend downloading the Release version [here](https://github.com/Kik07L/Behringer-X-Touch-for-ableton/releases). The source code here may include untested or beta features that are potentially unstable.
 For a stable experience, please use the latest Release. 😄  
 
 ---
@@ -55,7 +55,11 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `CYCLE`: Toggle loop.
 - `DROP`: Toggle punch in.
 - `REPLACE`: Toggle punch out.
-- `SOLO`: Toggle between clip and device views. LED is on in clip view.
+- `SOLO`: Lights up when one or more tracks are soloed. Press to toggle all solo states on and off at once. LED behavior:
+  - ON: Tracks soloed, press to unsolo all at once.
+  - Blinking: Previously soloed tracks stored, press to restore.
+  - OFF: No tracks soloed, press to solo current track.
+  - `SHIFT + SOLO`: Reset.
 
 #### **Utility Section**
 - `SAVE`: Capture MIDI.
@@ -76,8 +80,8 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 #### **Jog Wheel**
 - `SHIFT + Rotation`: Faster movement.
 - `ALT + Rotation`: Slower movement.
-- `OPTION + Rotation`: Move loop region (faster with SHIFT).
-- `OPTION + ALT + Rotation`: Move loop end bracket (faster with SHIFT).
+- `OPTION + Rotation`: Move loop region (faster with `SHIFT`).
+- `OPTION + ALT + Rotation`: Move loop end bracket (faster with `SHIFT`).
 - `CONTROL + Rotation`: Change tempo.
 - `ZOOM BUTTON + Rotation`: Zoom in/out in Arrangement view.
 
@@ -87,6 +91,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `INPUTS`: Open/close the browser.
 - `AUDIO TRACKS`: Create a new audio track.
 - `AUDIO INST`: Open/close the details view.
+- `AUX`: Toggle between clip and device views. LED is on in clip view.
 
 ---
 
