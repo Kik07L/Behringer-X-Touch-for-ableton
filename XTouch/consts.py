@@ -32,11 +32,10 @@ CSM_IO_MODE_INPUT_MAIN = 0
 CSM_IO_MODE_INPUT_SUB = 1
 CSM_IO_MODE_OUTPUT_MAIN = 2
 CSM_IO_MODE_OUTPUT_SUB = 3
-CSM_IO_MODE_TRACK_COLOR = 4 #colplan
+CSM_IO_MODE_TRACK_COLOR = 4
 CSM_IO_FIRST_MODE = CSM_IO_MODE_INPUT_MAIN
-#CSM_IO_LAST_MODE = CSM_IO_MODE_OUTPUT_SUB  #colplan
-CSM_IO_LAST_MODE = CSM_IO_MODE_TRACK_COLOR  #colplan
-COLORLIST = ["Salmon", "Frank Orange", "Dirty Gold", "Lemonade", "Lime", "Highlighter Green", "Bianchi", "Turquoise", "Sky Blue", "Sapphire 1", "Periwinkle 1", "Orchid", "Magenta", "White", "Fire Hydrant Red", "Tangerine", "Sand", "Sunshine Yellow", "Terminal Green", "Forest", "Tiffany Blue", "Cyan", "Cerulean", "United Nations Blue", "Amethyst", "Iris", "Flamingo", "Aluminum", "Terracotta", "Light Salmon", "Whiskey", "Canary", "Primrose", "Wild Willow", "Dark Sea Green", "Honeydew", "Pale Turquoise", "Periwinkle 2", "Fog", "Dull Lavender", "Whisper", "Silver Chalice", "Dusty Pink", "Barley Corn", "Pale Oyster", "Dark Khaki", "Pistachio", "Dollar Bill", "Neptune", "Nepal", "Polo Blue", "Vista Blue", "Amethyst Smoke", "Lilac", "Turkish Rose", "Steel", "Medium Carmine", "Red Ochre", "Coffee", "Durian Yellow", "Pomelo Green", "Apple", "Aquamarine", "Sea Blue", "Cosmic Cobalt", "Sapphire 2", "Plump Purple", "Purpureus", "Fuchsia Rose", "Eclipse"]  #colplan
+CSM_IO_LAST_MODE = CSM_IO_MODE_TRACK_COLOR 
+COLORLIST = ["Salmon", "Frank Orange", "Dirty Gold", "Lemonade", "Lime", "Highlighter Green", "Bianchi", "Turquoise", "Sky Blue", "Sapphire 1", "Periwinkle 1", "Orchid", "Magenta", "White", "Fire Hydrant Red", "Tangerine", "Sand", "Sunshine Yellow", "Terminal Green", "Forest", "Tiffany Blue", "Cyan", "Cerulean", "United Nations Blue", "Amethyst", "Iris", "Flamingo", "Aluminum", "Terracotta", "Light Salmon", "Whiskey", "Canary", "Primrose", "Wild Willow", "Dark Sea Green", "Honeydew", "Pale Turquoise", "Periwinkle 2", "Fog", "Dull Lavender", "Whisper", "Silver Chalice", "Dusty Pink", "Barley Corn", "Pale Oyster", "Dark Khaki", "Pistachio", "Dollar Bill", "Neptune", "Nepal", "Polo Blue", "Vista Blue", "Amethyst Smoke", "Lilac", "Turkish Rose", "Steel", "Medium Carmine", "Red Ochre", "Coffee", "Durian Yellow", "Pomelo Green", "Apple", "Aquamarine", "Sea Blue", "Cosmic Cobalt", "Sapphire 2", "Plump Purple", "Purpureus", "Fuchsia Rose", "Eclipse"] 
 PCM_DEVICES = 0
 PCM_PARAMETERS = 1
 PCM_NUMMODES = 2
@@ -211,22 +210,18 @@ SID_MOD_SHIFT = 70
 SID_MOD_OPTION = 71
 SID_MOD_CTRL = 72
 SID_MOD_ALT = 73
-#SID_AUTOMATION_ON = 74
 SID_AUTOMATION_ON = 74
 #add new button SID_ARRAGEMENT_SESSION
 SID_ARRAGEMENT_SESSION = 52
 SID_AUTOMATION_RECORD = 75
 SID_AUTOMATION_SNAPSHOT = 77
-#SID_AUTOMATION_TOUCH = 78
 SID_AUTOMATION_TOUCH = 78
-#SID_FUNC_UNDO = 76 => unused (TRIM)
 SID_FUNC_TRIM = 76
 SID_FUNC_UNDO = 81
-#SID_FUNC_CANCEL = 80 => unused (SAVE)
 SID_FUNC_SAVE = 80
-#SID_FUNC_ENTER = 81
-#SID_FUNC_ENTER = 83
-SID_FUNC_ENTER = 79  #it was REDO (Button names GROUP)
+#SID_FUNC_GROUP = 81
+#SID_FUNC_GROUP = 83
+SID_FUNC_GROUP = 79  #it was REDO (Button names GROUP)
 #SID_FUNC_REDO = 79
 SID_FUNC_REDO = 83
 #SID_FUNC_MARKER = 82
@@ -250,7 +245,7 @@ software_controls_switch_ids = (SID_MOD_SHIFT,
  SID_FUNC_TRIM,
  SID_FUNC_SAVE,
  SID_FUNC_CANCEL,
- SID_FUNC_ENTER,
+ SID_FUNC_GROUP,
 # SID_MARKER_END,
  SID_SOFTWARE_F9,
  SID_SOFTWARE_F10,

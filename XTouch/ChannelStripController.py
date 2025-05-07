@@ -7,7 +7,7 @@ from past.utils import old_div
 from .MackieControlComponent import *
 from _Generic.Devices import *
 from itertools import chain
-#flatten_target = lambda routing_target: routing_target.display_name #colplan
+#flatten_target = lambda routing_target: routing_target.display_name
 flatten_target = lambda routing_target: (
     routing_target.display_name if hasattr(routing_target, 'display_name') else routing_target["display_name"]
 )
@@ -276,10 +276,13 @@ class ChannelStripController(MackieControlComponent):
         self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_BLINKING))
 
     def remove_solos(self):
+        sel_track = self.song().view.selected_track
         for t in chain(self.song().tracks, self.song().return_tracks):
             t.solo = False
+        self.song().view.selected_track = sel_track
 
     def reset_solos(self):
+        sel_track = self.song().view.selected_track
         for t in chain(self.song().tracks, self.song().return_tracks):
             if t in self.stored_soloed_track_ids:
                 t.solo = True
@@ -287,6 +290,7 @@ class ChannelStripController(MackieControlComponent):
         self.stored_soloed_track_ids = []
         self.can_restore_solos = False
         self.__update_rude_solo_led()
+        self.song().view.selected_track = sel_track
         
     def check_if_stored_solo(self, track_to_check):
         if hasattr(self, 'stored_soloed_track_ids'):
@@ -315,7 +319,7 @@ class ChannelStripController(MackieControlComponent):
                 elif len(available_routings):
                     new_routing = available_routings[0]
                 self.__set_routing_target(channel_strip, new_routing)
-        elif self.__assignment_mode == CSM_IO and self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR: #colplan
+        elif self.__assignment_mode == CSM_IO and self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR:
             if cc_value >= 64:
                 direction = -1
             else:
@@ -457,7 +461,7 @@ class ChannelStripController(MackieControlComponent):
                 return self.__send_mode_offset + len(self.__channel_strips) < len(self.song().return_tracks)
             return False
 
-    def available_colors(self):  #colplan
+    def available_colors(self): 
         colorlist_dicts = []
         for i, color in enumerate(COLORLIST):
             colordict = {"display_name": color, "identifier": str(i)}
@@ -477,9 +481,9 @@ class ChannelStripController(MackieControlComponent):
                 return flatten_target_list(t.available_output_routing_types)
             if self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_SUB:
                 return flatten_target_list(t.available_output_routing_channels)
-            if self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR: #colplan
-                return COLORLIST #colplan
-#                return flatten_target_list(self.available_colors()) #colplan
+            if self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR:
+                return COLORLIST
+#                return flatten_target_list(self.available_colors())
             assert 0
         else:
             return None
@@ -496,10 +500,10 @@ class ChannelStripController(MackieControlComponent):
                 return flatten_target(t.output_routing_type)
             if self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_SUB:
                 return flatten_target(t.output_routing_channel)
-            if self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR: #colplan
-                current_color = COLORLIST[int(t.color_index)] #colplan
-                return current_color #colplan
-#                return int(t.color_index) #colplan
+            if self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR:
+                current_color = COLORLIST[int(t.color_index)]
+                return current_color
+#                return int(t.color_index)
             assert 0
         else:
             return None
@@ -516,8 +520,8 @@ class ChannelStripController(MackieControlComponent):
                 t.output_routing_type = target_by_name(t.available_output_routing_types, target_string)
             elif self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_SUB:
                 t.output_routing_channel = target_by_name(t.available_output_routing_channels, target_string)
-            if self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR: #colplan
-                t.color_index = target_string #colplan
+            if self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR:
+                t.color_index = target_string
             else:
                 assert 0
 
@@ -771,8 +775,8 @@ class ChannelStripController(MackieControlComponent):
                 ass_string = [u'0', u"'"]
             elif self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_SUB:
                 ass_string = [u'0', u',']
-            elif self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR: #colplan
-                ass_string = [u'C', u'O'] #colplan
+            elif self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR:
+                ass_string = [u'C', u'O']
             else:
                 assert 0
         else:
@@ -786,6 +790,8 @@ class ChannelStripController(MackieControlComponent):
         for t in chain(self.song().tracks, self.song().return_tracks):
             if t.solo:
                 self.any_track_soloed = True
+                self.stored_soloed_track_ids = []
+                self.can_restore_solos = False
                 break
             elif t in self.stored_soloed_track_ids:
                 self.existing_stored_soloed_track_ids.append(t)
@@ -794,7 +800,6 @@ class ChannelStripController(MackieControlComponent):
         self.stored_soloed_track_ids = self.existing_stored_soloed_track_ids #update stored list to drop any track that has been deleted
 
         if self.any_track_soloed:
-            self.can_restore_solos = False
             self.send_midi((NOTE_ON_STATUS, SELECT_RUDE_SOLO, BUTTON_STATE_ON))
             self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_ON))
         elif self.can_restore_solos and self.stored_soloed_track_ids:

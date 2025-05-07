@@ -9,6 +9,7 @@ class SoftwareController(MackieControlComponent):
         MackieControlComponent.__init__(self, main_script)
         self.__last_can_undo_state = False
         self.__last_can_redo_state = False
+        self.__selected_track_group_state = 0
         av = self.application().view
         av.add_is_view_visible_listener(u'Session', self.__update_session_arranger_button_led)
         av.add_is_view_visible_listener(u'Detail/Clip', self.__update_detail_sub_view_button_led)
@@ -75,9 +76,8 @@ class SoftwareController(MackieControlComponent):
         elif switch_id == SID_FUNC_SAVE: #
             if value == BUTTON_PRESSED: #
                 self.__capture_midi() #
-        elif switch_id == SID_FUNC_ENTER:
+        elif switch_id == SID_FUNC_GROUP:
             if value == BUTTON_PRESSED:
-                #self.__toggle_draw_mode()
                 self.__toggle_group_mode()
 #        elif switch_id == SID_FUNC_MARKER:
 #            if value == BUTTON_PRESSED:
@@ -116,9 +116,10 @@ class SoftwareController(MackieControlComponent):
         self.__update_draw_mode_button_led()
         self.__update_back_to_arranger_button_led()
         self.__update_capture_midi_button_led() #
-        #self.__update_group_mode_button_led()
+        self.__update_group_mode_button_led()
 
     def on_update_display_timer(self):
+        self.__update_group_mode_button_led()
         if self.__last_can_undo_state != self.song().can_undo:
             self.__last_can_undo_state = self.song().can_undo
             self.__update_undo_button_led()
@@ -181,14 +182,14 @@ class SoftwareController(MackieControlComponent):
             if self.song().view.selected_track.is_foldable:
                 if self.song().view.selected_track.fold_state:
                     self.song().view.selected_track.fold_state = 0
-                    self.send_midi((NOTE_ON_STATUS, SID_FUNC_ENTER, BUTTON_STATE_BLINKING))
+#                    self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_BLINKING))
                 else:
                     self.song().view.selected_track.fold_state = 1
-                    self.send_midi((NOTE_ON_STATUS, SID_FUNC_ENTER, BUTTON_STATE_ON))
+#                    self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_ON))
             elif self.song().view.selected_track.is_grouped:
                 self.song().view.selected_track.group_track.fold_state = 1
-            else:
-                self.send_midi((NOTE_ON_STATUS, SID_FUNC_ENTER, BUTTON_STATE_OFF))
+#            else:
+#                self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_OFF))
 
     def __toggle_follow_song(self):
         self.song().view.follow_song = not self.song().view.follow_song
@@ -240,6 +241,27 @@ class SoftwareController(MackieControlComponent):
             self.send_midi((NOTE_ON_STATUS, SID_FUNC_CANCEL, BUTTON_STATE_ON))
         else:
             self.send_midi((NOTE_ON_STATUS, SID_FUNC_CANCEL, BUTTON_STATE_OFF))
+
+    def __update_group_mode_button_led(self):
+        if self.song().view.selected_track.is_grouped or self.song().view.selected_track.is_foldable:
+            if self.song().view.selected_track.is_foldable:
+                if self.song().view.selected_track.fold_state == 1:
+                    self.new_selected_track_group_state = 2
+                else:
+                    self.new_selected_track_group_state = 1
+            else:
+                self.new_selected_track_group_state = 1
+        else:
+            self.new_selected_track_group_state = 0
+        
+        if self.__selected_track_group_state != self.new_selected_track_group_state:
+            self.__selected_track_group_state = self.new_selected_track_group_state
+            if self.__selected_track_group_state == 2:
+                self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_ON))
+            elif self.__selected_track_group_state == 1:
+                self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_BLINKING))
+            else:
+                self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_OFF))
 
     def __update_capture_midi_button_led(self): #
         if self.song().can_capture_midi:

@@ -128,7 +128,7 @@ class ChannelStrip(MackieControlComponent):
                         self.__toggle_arm_track(exclusive)
         elif sw_id in range(SID_SOLO_BASE, SID_SOLO_BASE + NUM_CHANNEL_STRIPS):
             if sw_id - SID_SOLO_BASE is self.__strip_index:
-                if value == BUTTON_PRESSED:                        
+                if value == BUTTON_PRESSED:
                     if self.__channel_strip_controller != None:
                         self.__channel_strip_controller.reset_solos()
 #                        self.__update_solo_led()
@@ -156,9 +156,9 @@ class ChannelStrip(MackieControlComponent):
                         touched = value == BUTTON_PRESSED
                         self.set_is_touched(touched)
                         self.__channel_strip_controller.handle_fader_touch(self.__strip_index, self.__stack_offset, touched)
-        elif sw_id == SID_FUNC_ENTER:
-            if value == BUTTON_PRESSED:
-                self.__toggle_group_mode()
+        # elif sw_id == SID_FUNC_GROUP:
+            # if value == BUTTON_PRESSED:
+                # self.__toggle_group_mode()
 
     def handle_vpot_rotation(self, strip_index, cc_value):
         if strip_index is self.__strip_index and self.__channel_strip_controller != None:
@@ -354,15 +354,15 @@ class ChannelStrip(MackieControlComponent):
     def __update_track_is_selected_led(self):
         if self.song().view.selected_track == self.__assigned_track:
             self.send_midi((NOTE_ON_STATUS, SID_SELECT_BASE + self.__strip_index, BUTTON_STATE_ON))
-            if self.__assigned_track.is_foldable:
-                if self.__assigned_track.fold_state:
-                    self.send_midi((NOTE_ON_STATUS, SID_FUNC_ENTER, BUTTON_STATE_ON))
-                else:
-                    self.send_midi((NOTE_ON_STATUS, SID_FUNC_ENTER, BUTTON_STATE_BLINKING))
-            elif self.__assigned_track.is_grouped:
-                self.send_midi((NOTE_ON_STATUS, SID_FUNC_ENTER, BUTTON_STATE_BLINKING))
-            else:
-                self.send_midi((NOTE_ON_STATUS, SID_FUNC_ENTER, BUTTON_STATE_OFF))
+            # if self.__assigned_track.is_foldable:
+                # if self.__assigned_track.fold_state:
+                    # self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_ON))
+                # else:
+                    # self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_BLINKING))
+            # elif self.__assigned_track.is_grouped:
+                # self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_BLINKING))
+            # else:
+                # self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_OFF))
         else:
             self.send_midi((NOTE_ON_STATUS, SID_SELECT_BASE + self.__strip_index, BUTTON_STATE_OFF))
 
