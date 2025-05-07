@@ -62,7 +62,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - `SHIFT + SOLO`: Reset.
 
 #### **Utility Section**
-- `SAVE`: Capture MIDI.
+- `SAVE`: Capture MIDI. LED lights up when active.
 - `UNDO`: Undo last action.
 - `ENTER`: Redo last action.
 - `CANCEL`: Return to Arrangement view. LED lights up when enabled.
@@ -72,7 +72,6 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `WRITE`: Arm for automation recording.
 - `TOUCH`: Toggle Draw mode.
 - `LATCH`: Toggle Follow mode.
-- `TRIM`: Capture MIDI. LED lights up when active.
 - `GROUP`: Expand/collapse selected track (if it is a group). LED behavior:
   - ON: Current track is a group.
   - Blinking: Current track is within a group.
