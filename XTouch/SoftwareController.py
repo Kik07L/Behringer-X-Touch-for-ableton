@@ -40,7 +40,6 @@ class SoftwareController(MackieControlComponent):
         MackieControlComponent.destroy(self)
 
     def handle_function_key_switch_ids(self, switch_id, value):
-#        self.send_midi((NOTE_ON_STATUS, switch_id, value))
         assert 0
 
     def handle_software_controls_switch_ids(self, switch_id, value):
@@ -245,10 +244,10 @@ class SoftwareController(MackieControlComponent):
     def __update_group_mode_button_led(self):
         if self.song().view.selected_track.is_grouped or self.song().view.selected_track.is_foldable:
             if self.song().view.selected_track.is_foldable:
-                if self.song().view.selected_track.fold_state == 1:
+                if self.song().view.selected_track.fold_state == 1: #currently not using this distinction (LED on in both cases)
                     self.new_selected_track_group_state = 2
                 else:
-                    self.new_selected_track_group_state = 1
+                    self.new_selected_track_group_state = 2
             else:
                 self.new_selected_track_group_state = 1
         else:

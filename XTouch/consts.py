@@ -48,8 +48,8 @@ scribble_red = (255, 0, 0)
 scribble_green = (0, 255, 0)
 scribble_yellow = (255, 255, 0)
 scribble_blue = (0, 0, 255)
-scribble_fuchsia = (255, 0, 255)
-scribble_teal = (0, 255, 255)
+scribble_magenta = (255, 0, 255)
+scribble_cyan = (0, 255, 255)
 scribble_white = (255, 255, 255)
 g7_seg_led_conv_table = {u' ': 0,
  u'A': 1,
@@ -251,7 +251,8 @@ software_controls_switch_ids = (SID_MOD_SHIFT,
  SID_SOFTWARE_F10,
  SID_SOFTWARE_F11,
  SID_SOFTWARE_F12,
- SID_SOFTWARE_F13)
+ SID_SOFTWARE_F13,
+ SID_SOFTWARE_F14)
 SID_CLICK = 89
 SID_TRANSPORT_REWIND = 91
 SID_TRANSPORT_FAST_FORWARD = 92

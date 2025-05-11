@@ -12,7 +12,7 @@ class TimeDisplay(MackieControlComponent):
         MackieControlComponent.__init__(self, main_script)
         self.__main_script = main_script
         self.__show_beat_time = False
-        self.__show_current_time = False
+        self.__show_current_time = 0
         self.__show_seconds = True
         self.__smpt_format = Live.Song.TimeFormat.smpte_25
         self.__last_send_time = []
@@ -34,30 +34,33 @@ class TimeDisplay(MackieControlComponent):
         self.send_midi((NOTE_ON_STATUS, SELECT_SMPTE_NOTE, BUTTON_STATE_ON))
 
     def toggle_mode(self):
-        self.__show_current_time = False
+        self.__show_current_time = 0
         if self.__show_beat_time:
             self.show_smpte(self.__smpt_format)
         else:
             self.show_beats()
 
     def toggle_show_current_time(self):
-        if self.__show_current_time:
-            self.__show_current_time = False
+        if self.__show_current_time == 0:
+            self.__show_current_time = 1 #show time with seconds
+            self.send_midi((NOTE_ON_STATUS, SELECT_BEATS_NOTE, BUTTON_STATE_ON))
+            self.send_midi((NOTE_ON_STATUS, SELECT_SMPTE_NOTE, BUTTON_STATE_ON))
+        elif self.__show_current_time == 1:
+            self.__show_current_time = 2 #show time without seconds
+            self.send_midi((NOTE_ON_STATUS, SELECT_BEATS_NOTE, BUTTON_STATE_ON))
+            self.send_midi((NOTE_ON_STATUS, SELECT_SMPTE_NOTE, BUTTON_STATE_ON))
+        elif self.__show_current_time == 2:
+            self.__show_current_time = 0
             if self.__show_beat_time:
                 self.show_beats()
             else:
                 self.show_smpte(self.__smpt_format)
-        else:
-            self.__show_current_time = True
-            self.send_midi((NOTE_ON_STATUS, SELECT_BEATS_NOTE, BUTTON_STATE_ON))
-            self.send_midi((NOTE_ON_STATUS, SELECT_SMPTE_NOTE, BUTTON_STATE_ON))
 
-    def toggle_show_seconds(self):
-        if self.__show_seconds:
-            self.__show_seconds = False
-        else:
-            self.__show_seconds = True
-
+    # def toggle_show_seconds(self):
+        # if self.__show_seconds:
+            # self.__show_seconds = False
+        # else:
+            # self.__show_seconds = True
 
     def clear_display(self):
         time_string = [ u' ' for i in range(10) ]
@@ -74,9 +77,9 @@ class TimeDisplay(MackieControlComponent):
 
         if self.__show_current_time:
             t = time.localtime()
-            if self.__show_seconds:
+            if self.__show_current_time == 1:
                 time_string = time.strftime("%H:%M:%S   ", t).rjust(12, " ")
-            else:
+            elif self.__show_current_time == 2:
                 time_string = time.strftime("%H:%M     ", t).rjust(11, " ")
         elif self.__show_beat_time:
             time_string = str(self.song().get_current_beats_song_time())

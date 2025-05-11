@@ -243,8 +243,6 @@ class MackieControl(object):
             if value == BUTTON_PRESSED:
                 if self.shift_is_pressed():
                     self.__time_display.toggle_show_current_time()
-                elif self.option_is_pressed():
-                    self.__time_display.toggle_show_seconds()
                 else:
                     self.__time_display.toggle_mode()
 
