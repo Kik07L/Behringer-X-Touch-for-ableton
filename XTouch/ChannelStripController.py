@@ -267,6 +267,7 @@ class ChannelStripController(MackieControlComponent):
         self.song().view.selected_track = sel_track
 
     def store_solos(self):
+        sel_track = self.song().view.selected_track
         self.stored_soloed_track_ids = []
         for t in chain(self.song().tracks, self.song().return_tracks):
             if t.solo:
@@ -274,6 +275,7 @@ class ChannelStripController(MackieControlComponent):
                 t.solo = False
         self.can_restore_solos = True
         self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_BLINKING))
+        self.song().view.selected_track = sel_track
 
     def remove_solos(self):
         sel_track = self.song().view.selected_track

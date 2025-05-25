@@ -292,7 +292,7 @@ class ChannelStrip(MackieControlComponent):
             self.__assigned_track.arm = not self.__assigned_track.arm
             if exclusive:
                 for t in self.song().tracks:
-                    if t != self.__assigned_track:
+                    if t != self.__assigned_track and t.can_be_armed:
                         t.arm = False
 
     def __toggle_mon_track(self, exclusive):
@@ -311,12 +311,14 @@ class ChannelStrip(MackieControlComponent):
             self.__assigned_track.mute = not self.__assigned_track.mute
 
     def __toggle_solo_track(self, exclusive):
+        sel_track = self.song().view.selected_track
         if self.__assigned_track:
             self.__assigned_track.solo = not self.__assigned_track.solo
             if exclusive:
                 for t in chain(self.song().tracks, self.song().return_tracks):
                     if t != self.__assigned_track:
                         t.solo = False
+        self.song().view.selected_track = sel_track
 
     def __select_track(self):
         if self.__assigned_track:
