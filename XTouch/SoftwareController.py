@@ -10,6 +10,7 @@ class SoftwareController(MackieControlComponent):
         self.__last_can_undo_state = False
         self.__last_can_redo_state = False
         self.__selected_track_group_state = 0
+        self.__master_track_selected_state = False
         av = self.application().view
         av.add_is_view_visible_listener(u'Session', self.__update_session_arranger_button_led)
         av.add_is_view_visible_listener(u'Detail/Clip', self.__update_detail_sub_view_button_led)
@@ -248,9 +249,16 @@ class SoftwareController(MackieControlComponent):
 
     def __update_outputs_button_led(self):
         if self.song().view.selected_track == self.song().master_track:
-            self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F15, BUTTON_STATE_ON))
+            self.new_master_track_selected_state = True
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F15, BUTTON_STATE_OFF))
+            self.new_master_track_selected_state = False
+
+        if self.__master_track_selected_state != self.new_master_track_selected_state:
+            self.__master_track_selected_state = self.new_master_track_selected_state
+            if self.__master_track_selected_state == True:
+                self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F15, BUTTON_STATE_ON))
+            else:
+                self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F15, BUTTON_STATE_OFF))
 
     def __update_back_to_arranger_button_led(self):
         if self.song().back_to_arranger:
