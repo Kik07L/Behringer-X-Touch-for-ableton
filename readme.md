@@ -43,9 +43,9 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 #### **Channel Strip**
 - `ARM`: Arm the current track for recording.
   - If "Exclusive" is enabled for arming in Live settings, all other tracks will be de-armed.
-- `CONTROL + ARM`: Inverts the exclusive/non-exclusive setting for arming.
+  - `CONTROL + ARM`: Inverts the exclusive/non-exclusive setting for arming.
 - `SHIFT + ARM`: Toggle monitoring state (exclusive: **In/Auto**). ARM LED blinks when in **In** mode.
-- `SHIFT + CONTROL + ARM`: Toggle monitoring state (non-exclusive).
+  - `SHIFT + CONTROL + ARM`: Toggle monitoring state (non-exclusive).
 
 #### **Transport Section**
 - `CLICK`: Toggle metronome. LED blinks when active.
