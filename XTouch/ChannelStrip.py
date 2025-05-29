@@ -296,15 +296,16 @@ class ChannelStrip(MackieControlComponent):
                         t.arm = False
 
     def __toggle_mon_track(self, exclusive):
-        if self.__assigned_track and self.__assigned_track.current_monitoring_state == 1:
+        if self.__assigned_track and self.__assigned_track.can_be_armed and self.__assigned_track.current_monitoring_state == 1:
             self.__assigned_track.current_monitoring_state = 0
             if exclusive:
                 for t in self.song().tracks:
-                    if t != self.__assigned_track:
+                    if t != self.__assigned_track and t.can_be_armed:
                         t.current_monitoring_state = 1
         else:
             for t in self.song().tracks:
-                t.current_monitoring_state = 1
+                if t.can_be_armed:
+                    t.current_monitoring_state = 1
 
     def __toggle_mute_track(self):
         if self.__assigned_track:

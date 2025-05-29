@@ -99,6 +99,9 @@ class SoftwareController(MackieControlComponent):
         elif switch_id == SID_SOFTWARE_F11:
             if value == BUTTON_PRESSED:
                 self.song().create_audio_track()
+        elif switch_id == SID_SOFTWARE_F15:
+            if value == BUTTON_PRESSED:
+                self.__show_master_channel()
 
 
     def refresh_state(self):
@@ -116,15 +119,23 @@ class SoftwareController(MackieControlComponent):
         self.__update_back_to_arranger_button_led()
         self.__update_capture_midi_button_led() #
         self.__update_group_mode_button_led()
+        self.__update_outputs_button_led()
 
     def on_update_display_timer(self):
-        self.__update_group_mode_button_led()
+        self.__update_group_mode_button_led() #have to include here since we can't add a listener for this
+        self.__update_outputs_button_led() #have to include here since we can't add a listener for this
         if self.__last_can_undo_state != self.song().can_undo:
             self.__last_can_undo_state = self.song().can_undo
             self.__update_undo_button_led()
         if self.__last_can_redo_state != self.song().can_redo:
             self.__last_can_redo_state = self.song().can_redo
             self.__update_redo_button_led()
+
+    def __show_master_channel(self):
+        if self.song().view.selected_track != self.song().master_track:
+            self.song().view.selected_track = self.song().master_track
+        else:
+            self.application().view.show_view(u'Detail/DeviceChain')
 
     def __toggle_session_arranger_is_visible(self):
         if self.application().view.is_view_visible(u'Session'):
@@ -234,6 +245,12 @@ class SoftwareController(MackieControlComponent):
             self.send_midi((NOTE_ON_STATUS, SID_FUNC_REDO, BUTTON_STATE_ON))
         else:
             self.send_midi((NOTE_ON_STATUS, SID_FUNC_REDO, BUTTON_STATE_OFF))
+
+    def __update_outputs_button_led(self):
+        if self.song().view.selected_track == self.song().master_track:
+            self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F15, BUTTON_STATE_ON))
+        else:
+            self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F15, BUTTON_STATE_OFF))
 
     def __update_back_to_arranger_button_led(self):
         if self.song().back_to_arranger:

@@ -41,6 +41,9 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `SHIFT + SMPTE/BEATS`: Show clock instead of song time/beats. Press again to show clock without seconds.
 
 #### **Channel Strip**
+- `ARM`: Arm the current track for recording.
+  - If "Exclusive" is enabled for arming in Live settings, all other tracks will be de-armed.
+- `CONTROL + ARM`: Inverts the exclusive/non-exclusive setting for arming.
 - `SHIFT + ARM`: Toggle monitoring state (exclusive: **In/Auto**). ARM LED blinks when in **In** mode.
 - `SHIFT + CONTROL + ARM`: Toggle monitoring state (non-exclusive).
 
@@ -90,6 +93,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `AUDIO TRACKS`: Create a new audio track.
 - `AUDIO INST`: Open/close the details view.
 - `AUX`: Toggle between clip and device views. LED is on in clip view.
+- `OUTPUTS`: Select the Master Track. Press again to show Master device chain.
 
 ---
 
