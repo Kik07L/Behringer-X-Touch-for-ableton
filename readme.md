@@ -29,23 +29,28 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 
 ### Button Remapping
 #### **Encoder Assign Section**
-- `TRACK`: Assign encoders to track properties (cycles through Input Type, Input Channel, Output Type, Output Channel, Track Color)
-- `PAN/SURROUND`: Assign encoders to track panning
-- `EQ`: Bank left in device control mode
-- `SEND`: Assign encoders to track send levels
-- `PLUG-IN`: Assign encoders to track devices
-- `INST`: Bank right in device control mode
+- `TRACK`: Assign encoders to track properties (cycles through Input Type, Input Channel, Output Type, Output Channel, Track Color).
+- `PAN/SURROUND`: Assign encoders to track panning.
+- `EQ`: Bank left in device control mode.
+- `SEND`: Assign encoders to track send levels.
+- `PLUG-IN`: Assign encoders to track devices.
+- `INST`: Bank right in device control mode.
 
 #### **Display Section**
-- `DISPLAY`: Switch between Session and Arrangement views.
+- `DISPLAY`: Switch between audio/instrument and return tracks.
 - `SHIFT + SMPTE/BEATS`: Show clock instead of song time/beats. Press again to show clock without seconds.
 
 #### **Channel Strip**
-- `ARM`: Arm the current track for recording.
+- `REC`: Arm track for recording.
   - If "Exclusive" is enabled for arming in Live settings, all other tracks will be de-armed.
-  - `CONTROL + ARM`: Inverts the exclusive/non-exclusive setting for arming.
-- `SHIFT + ARM`: Toggle monitoring state (exclusive: **In/Auto**). ARM LED blinks when in **In** mode.
-  - `SHIFT + CONTROL + ARM`: Toggle monitoring state (non-exclusive).
+  - `CONTROL + REC`: Inverts the exclusive/non-exclusive setting for arming.
+- `SHIFT + REC`: Toggle monitoring state (exclusive: **In/Auto**). REC LED blinks when in **In** mode.
+  - `SHIFT + CONTROL + REC`: Toggle monitoring state (non-exclusive).
+- `SOLO`: Solo track.
+  - If "Exclusive" is enabled for soloing in Live settings, all other tracks will be unsoloed.
+  - `CONTROL + SOLO`: Inverts the exclusive/non-exclusive setting for soloing.
+- `MUTE`: Mute track.
+- `SELECT`: Select track. Press again to fold/unfold.
 
 #### **Transport Section**
 - `CLICK`: Toggle metronome. LED blinks when active.
@@ -87,7 +92,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `ZOOM BUTTON + Rotation`: Zoom in/out in Arrangement view.
 
 #### **Gray Section**
-- `GLOBAL VIEW`: Switches between audio/instrument and return tracks
+- `GLOBAL VIEW`: Switch between Session and Arrangement views.
 - `MIDI TRACKS`: Create a new MIDI track.
 - `INPUTS`: Open/close the browser.
 - `AUDIO TRACKS`: Create a new audio track.
