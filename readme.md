@@ -104,7 +104,12 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 
 ## Installation
 1. Unzip the downloaded files.
-2. Copy the `XTouch` and `XTouchXT` folders to: "Documents\Ableton\User Library\Remote Scripts"
+2. Copy the `XTouch` and `XTouchXT` folders to the Remote Scripts folder in your User Library.
+
+- **Windows:** Documents\Ableton\User Library\Remote Scripts
+- **Mac:** Music/Ableton/User Library/Remote Scripts
+
+For more info, see the [Ableton Live help page](https://help.ableton.com/hc/en-us/articles/209072009-Installing-third-party-remote-scripts?pk_vid=00fb25b3f17d28b5174887569027d6e6).
 
 ---
 
