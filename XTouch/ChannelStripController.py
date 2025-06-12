@@ -173,6 +173,8 @@ class ChannelStripController(MackieControlComponent):
     def refresh_state(self):
         self.__update_assignment_mode_leds()
         self.__update_assignment_display()
+        self.__check_stored_soloed_tracks_after_track_added_or_deleted()
+        self.__cleanup_stored_soloed_tracks()
         self.__update_rude_solo_led()
         self.__reassign_channel_strip_offsets()
         self.__on_flip_changed()
@@ -185,6 +187,7 @@ class ChannelStripController(MackieControlComponent):
             ex.request_rebuild_midi_map()
 
     def on_update_display_timer(self):
+        self.__cleanup_stored_soloed_tracks()
         self.__update_channel_strip_strings()
 
     def toggle_meter_mode(self):
@@ -291,7 +294,7 @@ class ChannelStripController(MackieControlComponent):
                 t.solo = False
         self.stored_soloed_track_ids = []
         self.can_restore_solos = False
-        self.__update_rude_solo_led()
+#        self.__update_rude_solo_led()
         self.song().view.selected_track = sel_track
         
     def check_if_stored_solo(self, track_to_check):
@@ -786,20 +789,28 @@ class ChannelStripController(MackieControlComponent):
         self.send_midi((CC_STATUS, 75, g7_seg_led_conv_table[ass_string[0]]))
         self.send_midi((CC_STATUS, 74, g7_seg_led_conv_table[ass_string[1]]))
 
+    def __cleanup_stored_soloed_tracks(self):
+        if self.can_restore_solos:
+            for t in chain(self.song().tracks, self.song().return_tracks):
+                if t.solo:
+                    self.reset_solos()
+                    break        
+
+    def __check_stored_soloed_tracks_after_track_added_or_deleted(self):
+        self.existing_stored_soloed_track_ids = []
+        for t in chain(self.song().tracks, self.song().return_tracks):
+            if t in self.stored_soloed_track_ids:
+                self.existing_stored_soloed_track_ids.append(t)
+        self.stored_soloed_track_ids = self.existing_stored_soloed_track_ids #update stored list to drop any track that has been deleted
+        if self.stored_soloed_track_ids == []:
+            self.can_restore_solos = False
+
     def __update_rude_solo_led(self):
         self.any_track_soloed = False
-        self.existing_stored_soloed_track_ids = []
         for t in chain(self.song().tracks, self.song().return_tracks):
             if t.solo:
                 self.any_track_soloed = True
-                self.stored_soloed_track_ids = []
-                self.can_restore_solos = False
                 break
-            elif t in self.stored_soloed_track_ids:
-                self.existing_stored_soloed_track_ids.append(t)
-                #break
-
-        self.stored_soloed_track_ids = self.existing_stored_soloed_track_ids #update stored list to drop any track that has been deleted
 
         if self.any_track_soloed:
             self.send_midi((NOTE_ON_STATUS, SELECT_RUDE_SOLO, BUTTON_STATE_ON))
