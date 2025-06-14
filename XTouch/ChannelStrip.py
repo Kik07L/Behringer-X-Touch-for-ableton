@@ -129,14 +129,17 @@ class ChannelStrip(MackieControlComponent):
         elif sw_id in range(SID_SOLO_BASE, SID_SOLO_BASE + NUM_CHANNEL_STRIPS):
             if sw_id - SID_SOLO_BASE is self.__strip_index:
                 if value == BUTTON_PRESSED:
-                    if self.__channel_strip_controller != None:
-                        self.__channel_strip_controller.reset_solos()
+                    if self.shift_is_pressed():
+                        self.__channel_strip_controller.add_or_remove_stored_solo(self.__assigned_track)
+                    # if self.__channel_strip_controller != None:
+                        # self.__channel_strip_controller.reset_solos()
 #                        self.__update_solo_led()
-                    if self.song().exclusive_solo:
-                        exclusive = not self.control_is_pressed()
                     else:
-                        exclusive = self.control_is_pressed()
-                    self.__toggle_solo_track(exclusive)
+                        if self.song().exclusive_solo:
+                            exclusive = not self.control_is_pressed()
+                        else:
+                            exclusive = self.control_is_pressed()
+                        self.__toggle_solo_track(exclusive)
         elif sw_id in range(SID_MUTE_BASE, SID_MUTE_BASE + NUM_CHANNEL_STRIPS):
             if sw_id - SID_MUTE_BASE is self.__strip_index:
                 if value == BUTTON_PRESSED:

@@ -260,6 +260,25 @@ class ChannelStripController(MackieControlComponent):
                     sel_track = self.song().view.selected_track
                     sel_track.solo = True
 
+    def add_or_remove_stored_solo(self, track):
+        sel_track = self.song().view.selected_track
+        if self.any_track_soloed:
+            track.solo = not track.solo
+        else:
+            if self.can_restore_solos:
+                if track in self.stored_soloed_track_ids:
+                    self.stored_soloed_track_ids.remove(track)
+                else:
+                    self.stored_soloed_track_ids.append(track)
+                track.solo = True
+                track.solo = False
+            else:
+                self.stored_soloed_track_ids.append(track)
+                self.can_restore_solos = True
+                track.solo = True
+                track.solo = False
+        self.song().view.selected_track = sel_track
+
     def restore_solos(self):
         sel_track = self.song().view.selected_track
         for t in chain(self.song().tracks, self.song().return_tracks):
@@ -289,7 +308,7 @@ class ChannelStripController(MackieControlComponent):
     def reset_solos(self):
         sel_track = self.song().view.selected_track
         for t in chain(self.song().tracks, self.song().return_tracks):
-            if t in self.stored_soloed_track_ids:
+            if t in self.stored_soloed_track_ids and t.solo == False:
                 t.solo = True
                 t.solo = False
         self.stored_soloed_track_ids = []
@@ -811,7 +830,6 @@ class ChannelStripController(MackieControlComponent):
             if t.solo:
                 self.any_track_soloed = True
                 break
-
         if self.any_track_soloed:
             self.send_midi((NOTE_ON_STATUS, SELECT_RUDE_SOLO, BUTTON_STATE_ON))
             self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_ON))
