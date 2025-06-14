@@ -27,6 +27,9 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - **Clipping Indicators:** Channel strip level meters now show clipping when it occurs.
 - **Snappy Meters:** Channel strip level meters now react more quickly to changes in audio.
 
+### Global Solo
+- When one or more tracks are soloed, `SOLO` button in Transport Section toggles their solo state on and off simultaneously.
+
 ### Button Remapping
 #### **Encoder Assign Section**
 - `TRACK`: Assign encoders to track properties (cycles through Input Type, Input Channel, Output Type, Output Channel, Track Color).
@@ -49,6 +52,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `SOLO`: Solo track.
   - If "Exclusive" is enabled for soloing in Live settings, all other tracks will be unsoloed.
   - `CONTROL + SOLO`: Inverts the exclusive/non-exclusive setting for soloing.
+  - `SHIFT + SOLO`: Adds/removes track to/from previously soloed tracks (track `SOLO` LEDs blinking, see `SOLO` button in Transport Section).
 - `MUTE`: Mute track.
 - `SELECT`: Select track. Press again to fold/unfold.
 
@@ -62,7 +66,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `CYCLE`: Toggle loop.
 - `DROP`: Toggle punch in.
 - `REPLACE`: Toggle punch out.
-- `SOLO`: Lights up when one or more tracks are soloed. Press to toggle all solo states on and off at once. LED behavior:
+- `SOLO`: Lights up when one or more tracks are soloed. Press to toggle all solo states on and off at once (Global Solo function). LED behavior:
   - ON: Tracks soloed, press to unsolo all at once.
   - Blinking: Previously soloed tracks stored, press to restore.
   - OFF: No tracks soloed, press to solo current track.
