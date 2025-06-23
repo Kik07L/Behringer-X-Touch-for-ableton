@@ -81,6 +81,8 @@ class ChannelStripController(MackieControlComponent):
         self.__main_display_controller = main_display_controller
         self.__meters_enabled = False
         self.__assignment_mode = CSM_VOLPAN
+        self.__previous_assignment_mode = None
+        self.__macro_device_installed = False
         self.__sub_mode_in_io_mode = CSM_IO_FIRST_MODE
         self.__plugin_mode = PCM_DEVICES
         self.__plugin_mode_offsets = [ 0 for x in range(PCM_NUMMODES) ]
@@ -259,6 +261,37 @@ class ChannelStripController(MackieControlComponent):
                 else:
                     sel_track = self.song().view.selected_track
                     sel_track.solo = True
+        elif switch_id == SID_SOFTWARE_F16:
+            if value == BUTTON_PRESSED:
+                self.__show_macro_mapper()
+            elif value == BUTTON_RELEASED:
+                if self.__macro_device_installed == False or not self.shift_is_pressed():
+                    self.__hide_macro_mapper()
+
+    def __show_macro_mapper(self):
+        if len(self.song().master_track.devices) > 0 and self.song().master_track.devices[0].name == "X-Touch Macro Mapper":
+            self.__macro_device_installed = True
+            if self.__previous_assignment_mode == None:
+                self.__previous_assignment_mode = self.__assignment_mode
+            self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F16, BUTTON_STATE_ON))
+            self.__set_assignment_mode(CSM_PLUGINS)
+            if self.__chosen_plugin != None:
+                self.__chosen_plugin.remove_parameters_listener(self.__on_parameter_list_of_chosen_plugin_changed)
+            self.__chosen_plugin = self.song().master_track.devices[0]
+            if self.__chosen_plugin != None:
+                self.__chosen_plugin.add_parameters_listener(self.__on_parameter_list_of_chosen_plugin_changed)
+            self.__reorder_parameters()
+            self.__plugin_mode_offsets[PCM_PARAMETERS] = 0
+            self.__set_plugin_mode(PCM_PARAMETERS)
+        else:
+            self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F16, BUTTON_STATE_BLINKING))
+            self.__macro_device_installed = False
+
+    def __hide_macro_mapper(self):
+        self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F16, BUTTON_STATE_OFF))
+        if self.__previous_assignment_mode != None:
+            self.__set_assignment_mode(self.__previous_assignment_mode)
+            self.__previous_assignment_mode = None
 
     def add_or_remove_stored_solo(self, track):
         sel_track = self.song().view.selected_track
@@ -320,7 +353,6 @@ class ChannelStripController(MackieControlComponent):
         if hasattr(self, 'stored_soloed_track_ids'):
             if self.can_restore_solos and track_to_check in self.stored_soloed_track_ids:
                 return True
-
 
     def handle_vpot_rotation(self, strip_index, stack_offset, cc_value):
         u""" forwarded to us by the channel_strips """

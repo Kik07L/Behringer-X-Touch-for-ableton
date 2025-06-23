@@ -104,7 +104,6 @@ class SoftwareController(MackieControlComponent):
             if value == BUTTON_PRESSED:
                 self.__show_master_channel()
 
-
     def refresh_state(self):
         self.main_script().set_shift_is_pressed(False)
         self.main_script().set_option_is_pressed(False)
