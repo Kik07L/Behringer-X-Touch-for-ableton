@@ -83,6 +83,7 @@ class ChannelStripController(MackieControlComponent):
         self.__assignment_mode = CSM_VOLPAN
         self.__previous_assignment_mode = None
         self.__macro_device_installed = False
+        self.__lock_to_plugin = False
         self.__sub_mode_in_io_mode = CSM_IO_FIRST_MODE
         self.__plugin_mode = PCM_DEVICES
         self.__plugin_mode_offsets = [ 0 for x in range(PCM_NUMMODES) ]
@@ -200,16 +201,23 @@ class ChannelStripController(MackieControlComponent):
     def handle_assignment_switch_ids(self, switch_id, value):
         if switch_id == SID_ASSIGNMENT_IO:
             if value == BUTTON_PRESSED:
+                self.__hide_macro_mapper()
                 self.__set_assignment_mode(CSM_IO)
         elif switch_id == SID_ASSIGNMENT_SENDS:
             if value == BUTTON_PRESSED:
+                self.__hide_macro_mapper()
                 self.__set_assignment_mode(CSM_SENDS)
         elif switch_id == SID_ASSIGNMENT_PAN:
             if value == BUTTON_PRESSED:
+                self.__hide_macro_mapper()
                 self.__set_assignment_mode(CSM_VOLPAN)
         elif switch_id == SID_ASSIGNMENT_PLUG_INS:
             if value == BUTTON_PRESSED:
-                self.__set_assignment_mode(CSM_PLUGINS)
+                if self.shift_is_pressed() and self.__assignment_mode == CSM_PLUGINS and self.__plugin_mode == PCM_PARAMETERS:
+                    self.__toggle_lock_to_plugin()
+                else:
+                    self.__hide_macro_mapper()
+                    self.__set_assignment_mode(CSM_PLUGINS)
         elif switch_id == SID_ASSIGNMENT_EQ:
             if value == BUTTON_PRESSED:
                 self.__switch_to_prev_page()
@@ -271,6 +279,7 @@ class ChannelStripController(MackieControlComponent):
     def __show_macro_mapper(self):
         if len(self.song().master_track.devices) > 0 and self.song().master_track.devices[0].name == "X-Touch Macro Mapper":
             self.__macro_device_installed = True
+            self.__lock_to_plugin = True
             if self.__previous_assignment_mode == None:
                 self.__previous_assignment_mode = self.__assignment_mode
             self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F16, BUTTON_STATE_ON))
@@ -289,9 +298,18 @@ class ChannelStripController(MackieControlComponent):
 
     def __hide_macro_mapper(self):
         self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F16, BUTTON_STATE_OFF))
+        self.__lock_to_plugin = False
         if self.__previous_assignment_mode != None:
             self.__set_assignment_mode(self.__previous_assignment_mode)
             self.__previous_assignment_mode = None
+
+    def __toggle_lock_to_plugin(self):
+        if self.__lock_to_plugin == False:
+            self.__lock_to_plugin = True
+            self.send_midi((NOTE_ON_STATUS, SID_ASSIGNMENT_PLUG_INS, BUTTON_STATE_BLINKING))
+        else:
+            self.__lock_to_plugin = False
+            self.send_midi((NOTE_ON_STATUS, SID_ASSIGNMENT_PLUG_INS, BUTTON_STATE_ON))
 
     def add_or_remove_stored_solo(self, track):
         sel_track = self.song().view.selected_track
@@ -969,7 +987,7 @@ class ChannelStripController(MackieControlComponent):
         st = self.__last_attached_selected_track
         if st:
             st.add_devices_listener(self.__on_selected_device_chain_changed)
-        if self.__assignment_mode == CSM_PLUGINS:
+        if self.__assignment_mode == CSM_PLUGINS and not self.__lock_to_plugin:
             self.__plugin_mode_offsets = [ 0 for x in range(PCM_NUMMODES) ]
             if self.__chosen_plugin != None:
                 self.__chosen_plugin.remove_parameters_listener(self.__on_parameter_list_of_chosen_plugin_changed)
