@@ -108,7 +108,7 @@ class MainDisplayController(MackieControlComponent):
                 upper_string = u''
                 lower_string = u''
                 color_list = []
-                assignment_mode_colors = (7, 6, 7, 3)
+                assignment_mode_colors = (7, 6, 7, 3, 4)
                 track_index_range = range(self.__bank_channel_offset + display.stack_offset(), self.__bank_channel_offset + display.stack_offset() + NUM_CHANNEL_STRIPS)
                 if self.__show_return_tracks:
                     tracks = self.song().return_tracks
