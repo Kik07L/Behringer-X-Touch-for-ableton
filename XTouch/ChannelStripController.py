@@ -642,6 +642,7 @@ class ChannelStripController(MackieControlComponent):
             self.__assignment_mode = mode
         elif mode == CSM_SENDS_SINGLE:
             self.__main_display_controller.set_show_parameter_names(True)
+            self.__main_display_controller.set_chosen_send_color(self.song().return_tracks[self.__chosen_send].color)
             self.__assignment_mode = mode
         else:
             if mode == CSM_IO:
@@ -699,6 +700,7 @@ class ChannelStripController(MackieControlComponent):
                 self.__send_mode_offset -= len(self.__channel_strips)
             elif self.__assignment_mode == CSM_SENDS_SINGLE:
                 self.__chosen_send -= 1
+                self.__main_display_controller.set_chosen_send_color(self.song().return_tracks[self.__chosen_send].color)
                 self.__update_assignment_display()
             self.__reassign_channel_strip_parameters(for_display_only=False)
             self.__update_channel_strip_strings()
@@ -718,6 +720,7 @@ class ChannelStripController(MackieControlComponent):
                 self.__send_mode_offset += len(self.__channel_strips)
             elif self.__assignment_mode == CSM_SENDS_SINGLE:
                 self.__chosen_send += 1
+                self.__main_display_controller.set_chosen_send_color(self.song().return_tracks[self.__chosen_send].color)
                 self.__update_assignment_display()
             else:
                 assert 0

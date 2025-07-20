@@ -27,6 +27,7 @@ class MainDisplayController(MackieControlComponent):
         self.__channel_strip_strings = [ u'' for x in range(NUM_CHANNEL_STRIPS) ]
         self.__channel_strip_mode = True
         self.__show_parameter_names = False
+        self.__chosen_send_color = None
         self.__bank_channel_offset = 0
         self.__meters_enabled = False
         self.__show_return_tracks = False
@@ -71,6 +72,10 @@ class MainDisplayController(MackieControlComponent):
 
     def set_show_parameter_names(self, enable):
         self.__show_parameter_names = enable
+        self.__chosen_send_color = None
+
+    def set_chosen_send_color(self, chosen_send_color):
+        self.__chosen_send_color = chosen_send_color
 
     def set_channel_offset(self, channel_offset):
         self.__bank_channel_offset = channel_offset
@@ -118,7 +123,10 @@ class MainDisplayController(MackieControlComponent):
                     if self.__parameters and self.__show_parameter_names:
                         if self.__parameters[strip_index][1]:
                             upper_string += self.__generate_6_char_string(self.__parameters[strip_index][1])
-                            curr_color = assignment_mode_colors[assignment_mode]
+                            if self.__chosen_send_color:
+                                curr_color = display.match_color(self.__chosen_send_color) #if in Single Send mode, show the color of the currently edited return track
+                            else:
+                                curr_color = assignment_mode_colors[assignment_mode]
                         else:
                             upper_string += self.__generate_6_char_string(u'')
                             curr_color = 0
