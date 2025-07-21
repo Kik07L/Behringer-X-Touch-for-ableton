@@ -88,7 +88,7 @@ class ChannelStripController(MackieControlComponent):
         self.__plugin_mode = PCM_DEVICES
         self.__plugin_mode_offsets = [ 0 for x in range(PCM_NUMMODES) ]
         self.__chosen_plugin = None
-        self.__chosen_send = None
+        self.__chosen_send = 0
         self.__ordered_plugin_parameters = []
         self.__displayed_plugins = []
         self.__last_attached_selected_track = None
@@ -207,7 +207,12 @@ class ChannelStripController(MackieControlComponent):
         elif switch_id == SID_ASSIGNMENT_SENDS:
             if value == BUTTON_PRESSED:
                 self.__hide_macro_mapper()
-                self.__set_assignment_mode(CSM_SENDS)
+                if self.__assignment_mode == CSM_SENDS:
+                    if self.__chosen_send >= len(self.song().view.selected_track.mixer_device.sends):
+                        self.__chosen_send = len(self.song().view.selected_track.mixer_device.sends) - 1
+                    self.__set_assignment_mode(CSM_SENDS_SINGLE)
+                else:
+                    self.__set_assignment_mode(CSM_SENDS)
         elif switch_id == SID_ASSIGNMENT_PAN:
             if value == BUTTON_PRESSED:
                 self.__hide_macro_mapper()
