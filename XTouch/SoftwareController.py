@@ -12,6 +12,7 @@ class SoftwareController(MackieControlComponent):
         self.__selected_track_group_state = 0
         self.__master_track_selected_state = False
         av = self.application().view
+        self.__night_mode_on = False
         av.add_is_view_visible_listener(u'Session', self.__update_session_arranger_button_led)
         av.add_is_view_visible_listener(u'Detail/Clip', self.__update_detail_sub_view_button_led)
         av.add_is_view_visible_listener(u'Browser', self.__update_browser_button_led)
@@ -46,12 +47,16 @@ class SoftwareController(MackieControlComponent):
     def handle_software_controls_switch_ids(self, switch_id, value):
         if switch_id == SID_MOD_SHIFT:
             self.main_script().set_shift_is_pressed(value == BUTTON_PRESSED)
+            self.__toggle_night_mode()
         elif switch_id == SID_MOD_OPTION:
             self.main_script().set_option_is_pressed(value == BUTTON_PRESSED)
+            self.__toggle_night_mode()
         elif switch_id == SID_MOD_CTRL:
             self.main_script().set_control_is_pressed(value == BUTTON_PRESSED)
+            self.__toggle_night_mode()
         elif switch_id == SID_MOD_ALT:
             self.main_script().set_alt_is_pressed(value == BUTTON_PRESSED)
+            self.__toggle_night_mode()
         elif switch_id == SID_ARRAGEMENT_SESSION:    #elif switch_id == SID_AUTOMATION_ON:
             if value == BUTTON_PRESSED:
                 self.__toggle_session_arranger_is_visible()
@@ -104,6 +109,18 @@ class SoftwareController(MackieControlComponent):
             if value == BUTTON_PRESSED:
                 self.__show_master_channel()
 
+    def __toggle_night_mode(self):
+        if self.shift_is_pressed() and self.option_is_pressed() and self.control_is_pressed() and self.alt_is_pressed():
+            self.__night_mode_on = not self.__night_mode_on
+            self.__update_night_mode_leds()
+
+    def __update_night_mode_leds(self):
+        led_state = BUTTON_STATE_OFF
+        if self.__night_mode_on == True:
+            led_state = BUTTON_STATE_ON
+        for note in range(SID_MOD_SHIFT, SID_MOD_ALT + 1):
+            self.send_midi((NOTE_ON_STATUS, note, led_state))
+
     def refresh_state(self):
         self.main_script().set_shift_is_pressed(False)
         self.main_script().set_option_is_pressed(False)
@@ -120,6 +137,7 @@ class SoftwareController(MackieControlComponent):
         self.__update_capture_midi_button_led() #
         self.__update_group_mode_button_led()
         self.__update_outputs_button_led()
+        self.__update_night_mode_leds()
 
     def on_update_display_timer(self):
         self.__update_group_mode_button_led() #have to include here since we can't add a listener for this

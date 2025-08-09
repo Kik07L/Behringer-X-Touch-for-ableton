@@ -45,7 +45,7 @@ class MackieControl(object):
         self.__components.append(self.__channel_strip_controller)
         self.__shift_is_pressed = False
         self.__option_is_pressed = False
-        self.__ctrl_is_pressed = False
+        self.__control_is_pressed = False
         self.__alt_is_pressed = False
         self.is_pro_version = False
         self._received_firmware_version = False

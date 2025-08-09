@@ -207,7 +207,7 @@ class ChannelStripController(MackieControlComponent):
         elif switch_id == SID_ASSIGNMENT_SENDS:
             if value == BUTTON_PRESSED:
                 self.__hide_macro_mapper()
-                if self.__assignment_mode == CSM_SENDS:
+                if self.__assignment_mode == CSM_SENDS and len(self.song().view.selected_track.mixer_device.sends) > 0:
                     if self.__chosen_send >= len(self.song().view.selected_track.mixer_device.sends):
                         self.__chosen_send = len(self.song().view.selected_track.mixer_device.sends) - 1
                     self.__set_assignment_mode(CSM_SENDS_SINGLE)
