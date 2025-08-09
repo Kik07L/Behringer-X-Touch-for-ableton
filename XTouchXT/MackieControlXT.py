@@ -123,6 +123,10 @@ class MackieControlXT(object):
     def send_midi(self, midi_event_bytes):
         self.__c_instance.send_midi(midi_event_bytes)
 
+    def send_button_led(self, buttonID, buttonState):
+        self.send_midi((NOTE_ON_STATUS, buttonID, buttonState))
+        BUTTON_STATES[buttonID] = buttonState
+
     def receive_midi(self, midi_bytes):
         if midi_bytes[0] & 240 == NOTE_ON_STATUS or midi_bytes[0] & 240 == NOTE_OFF_STATUS:
             note = midi_bytes[1]

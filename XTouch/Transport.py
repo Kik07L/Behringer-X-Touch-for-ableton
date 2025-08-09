@@ -47,13 +47,13 @@ class Transport(MackieControlComponent):
         self.song().remove_can_jump_to_next_cue_listener(self.__update_next_cue_button_led)
         self.application().view.remove_is_view_visible_listener(u'Session', self.__on_session_is_visible_changed)
         for note in transport_control_switch_ids:
-            self.send_midi((NOTE_ON_STATUS, note, BUTTON_STATE_OFF))
+            self.send_button_led(note, BUTTON_STATE_OFF)
 
         for note in jog_wheel_switch_ids:
-            self.send_midi((NOTE_ON_STATUS, note, BUTTON_STATE_OFF))
+            self.send_button_led(note, BUTTON_STATE_OFF)
 
         for note in marker_control_switch_ids:
-            self.send_midi((NOTE_ON_STATUS, note, BUTTON_STATE_OFF))
+            self.send_button_led(note, BUTTON_STATE_OFF)
 
         MackieControlComponent.destroy(self)
 
@@ -476,99 +476,99 @@ class Transport(MackieControlComponent):
             if state != self.__last_focussed_clip_play_state:
                 self.__last_focussed_clip_play_state = state
                 if state == CLIP_PLAYING:
-                    self.send_midi((NOTE_ON_STATUS, SID_JOG_ZOOM, BUTTON_STATE_ON))
+                    self.send_button_led(SID_JOG_ZOOM, BUTTON_STATE_ON)
                 elif state == CLIP_TRIGGERED:
-                    self.send_midi((NOTE_ON_STATUS, SID_JOG_ZOOM, BUTTON_STATE_BLINKING))
+                    self.send_button_led(SID_JOG_ZOOM, BUTTON_STATE_BLINKING)
                 else:
-                    self.send_midi((NOTE_ON_STATUS, SID_JOG_ZOOM, BUTTON_STATE_OFF))
+                    self.send_button_led(SID_JOG_ZOOM, BUTTON_STATE_OFF)
 
     def __update_forward_rewind_leds(self):
         if self.__forward_button_down:
-            self.send_midi((NOTE_ON_STATUS, SID_TRANSPORT_FAST_FORWARD, BUTTON_STATE_ON))
+            self.send_button_led(SID_TRANSPORT_FAST_FORWARD, BUTTON_STATE_ON)
             self.__transport_repeat_delay = 0
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_TRANSPORT_FAST_FORWARD, BUTTON_STATE_OFF))
+            self.send_button_led(SID_TRANSPORT_FAST_FORWARD, BUTTON_STATE_OFF)
         if self.____rewind_button_down:
-            self.send_midi((NOTE_ON_STATUS, SID_TRANSPORT_REWIND, BUTTON_STATE_ON))
+            self.send_button_led(SID_TRANSPORT_REWIND, BUTTON_STATE_ON)
             self.__transport_repeat_delay = 0
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_TRANSPORT_REWIND, BUTTON_STATE_OFF))
+            self.send_button_led(SID_TRANSPORT_REWIND, BUTTON_STATE_OFF)
 
     def __update_zoom_button_led(self):
         if self.__zoom_button_down:
-            self.send_midi((NOTE_ON_STATUS, SID_JOG_ZOOM, BUTTON_STATE_ON))
+            self.send_button_led(SID_JOG_ZOOM, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_JOG_ZOOM, BUTTON_STATE_OFF))
+            self.send_button_led(SID_JOG_ZOOM, BUTTON_STATE_OFF)
 
     def __update_scrub_button_led(self):
 #        if self.session_is_visible():
 #            if self.__scrub_button_down:
-#                self.send_midi((NOTE_ON_STATUS, SID_JOG_SCRUB, BUTTON_STATE_ON))
+#                self.send_button_led(SID_JOG_SCRUB, BUTTON_STATE_ON)
 #            else:
-#                self.send_midi((NOTE_ON_STATUS, SID_JOG_SCRUB, BUTTON_STATE_OFF))
+#                self.send_button_led(SID_JOG_SCRUB, BUTTON_STATE_OFF)
 #        else:
 #            if self.song().back_to_arranger:
-#                self.send_midi((NOTE_ON_STATUS, SID_JOG_SCRUB, BUTTON_STATE_ON))
+#                self.send_button_led(SID_JOG_SCRUB, BUTTON_STATE_ON)
 #            else:
-#                self.send_midi((NOTE_ON_STATUS, SID_JOG_SCRUB, BUTTON_STATE_OFF))
+#                self.send_button_led(SID_JOG_SCRUB, BUTTON_STATE_OFF)
         if self.__scrub_button_down:
-            self.send_midi((NOTE_ON_STATUS, SID_JOG_SCRUB, BUTTON_STATE_ON))
+            self.send_button_led(SID_JOG_SCRUB, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_JOG_SCRUB, BUTTON_STATE_OFF))
+            self.send_button_led(SID_JOG_SCRUB, BUTTON_STATE_OFF)
 
 
     def __update_play_button_led(self):
         if self.song().is_playing:
-            self.send_midi((NOTE_ON_STATUS, SID_TRANSPORT_PLAY, BUTTON_STATE_ON))
-            self.send_midi((NOTE_ON_STATUS, SID_TRANSPORT_STOP, BUTTON_STATE_OFF))
+            self.send_button_led(SID_TRANSPORT_PLAY, BUTTON_STATE_ON)
+            self.send_button_led(SID_TRANSPORT_STOP, BUTTON_STATE_OFF)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_TRANSPORT_PLAY, BUTTON_STATE_OFF))
-            self.send_midi((NOTE_ON_STATUS, SID_TRANSPORT_STOP, BUTTON_STATE_ON))
+            self.send_button_led(SID_TRANSPORT_PLAY, BUTTON_STATE_OFF)
+            self.send_button_led(SID_TRANSPORT_STOP, BUTTON_STATE_ON)
 
     def __update_record_button_led(self):
         if self.song().record_mode:
-            self.send_midi((NOTE_ON_STATUS, SID_TRANSPORT_RECORD, BUTTON_STATE_ON))
+            self.send_button_led(SID_TRANSPORT_RECORD, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_TRANSPORT_RECORD, BUTTON_STATE_OFF))
+            self.send_button_led(SID_TRANSPORT_RECORD, BUTTON_STATE_OFF)
 
     def __update_follow_song_button_led(self):
         if self.song().view.follow_song:
-            self.send_midi((NOTE_ON_STATUS, SID_AUTOMATION_TOUCH, BUTTON_STATE_ON))
+            self.send_button_led(SID_AUTOMATION_TOUCH, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_AUTOMATION_TOUCH, BUTTON_STATE_OFF))
+            self.send_button_led(SID_AUTOMATION_TOUCH, BUTTON_STATE_OFF)
 
     def __update_prev_cue_button_led(self):
         if self.song().can_jump_to_prev_cue:
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_FROM_PREV, BUTTON_STATE_ON))
+            self.send_button_led(SID_MARKER_FROM_PREV, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_FROM_PREV, BUTTON_STATE_OFF))
+            self.send_button_led(SID_MARKER_FROM_PREV, BUTTON_STATE_OFF)
 
     def __update_next_cue_button_led(self):
         if self.song().can_jump_to_next_cue:
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_FROM_NEXT, BUTTON_STATE_ON))
+            self.send_button_led(SID_MARKER_FROM_NEXT, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_FROM_NEXT, BUTTON_STATE_OFF))
+            self.send_button_led(SID_MARKER_FROM_NEXT, BUTTON_STATE_OFF)
 
     def __update_loop_button_led(self):
         if self.song().loop:
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_LOOP, BUTTON_STATE_ON))
+            self.send_button_led(SID_MARKER_LOOP, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_LOOP, BUTTON_STATE_OFF))
+            self.send_button_led(SID_MARKER_LOOP, BUTTON_STATE_OFF)
 
     def __update_punch_in_button_led(self):
         if self.song().punch_in:
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_PI, BUTTON_STATE_ON))
+            self.send_button_led(SID_MARKER_PI, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_PI, BUTTON_STATE_OFF))
+            self.send_button_led(SID_MARKER_PI, BUTTON_STATE_OFF)
 
     def __update_punch_out_button_led(self):
         if self.song().punch_out:
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_PO, BUTTON_STATE_ON))
+            self.send_button_led(SID_MARKER_PO, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_PO, BUTTON_STATE_OFF))
+            self.send_button_led(SID_MARKER_PO, BUTTON_STATE_OFF)
 
     def __update_metronome_button_led(self):
         if self.song().metronome:
-            self.send_midi((NOTE_ON_STATUS, SID_CLICK, BUTTON_STATE_BLINKING))
+            self.send_button_led(SID_CLICK, BUTTON_STATE_BLINKING)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_CLICK, BUTTON_STATE_OFF))
+            self.send_button_led(SID_CLICK, BUTTON_STATE_OFF)

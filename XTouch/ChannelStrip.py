@@ -337,40 +337,40 @@ class ChannelStrip(MackieControlComponent):
     def __update_arm_led(self):
         track = self.__assigned_track
         if track and track.can_be_armed and track.arm:
-            self.send_midi((NOTE_ON_STATUS, SID_RECORD_ARM_BASE + self.__strip_index, BUTTON_STATE_ON))
+            self.send_button_led(SID_RECORD_ARM_BASE + self.__strip_index, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_RECORD_ARM_BASE + self.__strip_index, BUTTON_STATE_OFF))
+            self.send_button_led(SID_RECORD_ARM_BASE + self.__strip_index, BUTTON_STATE_OFF)
         if track and track.can_be_armed and track.current_monitoring_state == 0:
-            self.send_midi((NOTE_ON_STATUS, SID_RECORD_ARM_BASE + self.__strip_index, BUTTON_STATE_BLINKING))
+            self.send_button_led(SID_RECORD_ARM_BASE + self.__strip_index, BUTTON_STATE_BLINKING)
 
     def __update_mute_led(self):
         if self.__assigned_track and self.__assigned_track.mute:
-            self.send_midi((NOTE_ON_STATUS, SID_MUTE_BASE + self.__strip_index, BUTTON_STATE_ON))
+            self.send_button_led(SID_MUTE_BASE + self.__strip_index, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_MUTE_BASE + self.__strip_index, BUTTON_STATE_OFF))
+            self.send_button_led(SID_MUTE_BASE + self.__strip_index, BUTTON_STATE_OFF)
 
     def __update_solo_led(self):
         if self.__assigned_track and self.__assigned_track.solo:
-            self.send_midi((NOTE_ON_STATUS, SID_SOLO_BASE + self.__strip_index, BUTTON_STATE_ON))
+            self.send_button_led(SID_SOLO_BASE + self.__strip_index, BUTTON_STATE_ON)
         elif self.__channel_strip_controller != None and self.__channel_strip_controller.check_if_stored_solo(self.__assigned_track):
-            self.send_midi((NOTE_ON_STATUS, SID_SOLO_BASE + self.__strip_index, BUTTON_STATE_BLINKING))
+            self.send_button_led(SID_SOLO_BASE + self.__strip_index, BUTTON_STATE_BLINKING)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_SOLO_BASE + self.__strip_index, BUTTON_STATE_OFF))
+            self.send_button_led(SID_SOLO_BASE + self.__strip_index, BUTTON_STATE_OFF)
 
     def __update_track_is_selected_led(self):
         if self.song().view.selected_track == self.__assigned_track:
-            self.send_midi((NOTE_ON_STATUS, SID_SELECT_BASE + self.__strip_index, BUTTON_STATE_ON))
+            self.send_button_led(SID_SELECT_BASE + self.__strip_index, BUTTON_STATE_ON)
             # if self.__assigned_track.is_foldable:
                 # if self.__assigned_track.fold_state:
-                    # self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_ON))
+                    # self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_ON)
                 # else:
-                    # self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_BLINKING))
+                    # self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_BLINKING)
             # elif self.__assigned_track.is_grouped:
-                # self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_BLINKING))
+                # self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_BLINKING)
             # else:
-                # self.send_midi((NOTE_ON_STATUS, SID_FUNC_GROUP, BUTTON_STATE_OFF))
+                # self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_OFF)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_SELECT_BASE + self.__strip_index, BUTTON_STATE_OFF))
+            self.send_button_led(SID_SELECT_BASE + self.__strip_index, BUTTON_STATE_OFF)
 
 
 

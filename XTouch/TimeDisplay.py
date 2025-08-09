@@ -24,14 +24,14 @@ class TimeDisplay(MackieControlComponent):
 
     def show_beats(self):
         self.__show_beat_time = True
-        self.send_midi((NOTE_ON_STATUS, SELECT_BEATS_NOTE, BUTTON_STATE_ON))
-        self.send_midi((NOTE_ON_STATUS, SELECT_SMPTE_NOTE, BUTTON_STATE_OFF))
+        self.send_button_led(SELECT_BEATS_NOTE, BUTTON_STATE_ON)
+        self.send_button_led(SELECT_SMPTE_NOTE, BUTTON_STATE_OFF)
 
     def show_smpte(self, smpte_mode):
         self.__show_beat_time = False
         self.__smpt_format = smpte_mode
-        self.send_midi((NOTE_ON_STATUS, SELECT_BEATS_NOTE, BUTTON_STATE_OFF))
-        self.send_midi((NOTE_ON_STATUS, SELECT_SMPTE_NOTE, BUTTON_STATE_ON))
+        self.send_button_led(SELECT_BEATS_NOTE, BUTTON_STATE_OFF)
+        self.send_button_led(SELECT_SMPTE_NOTE, BUTTON_STATE_ON)
 
     def toggle_mode(self):
         self.__show_current_time = 0
@@ -43,12 +43,12 @@ class TimeDisplay(MackieControlComponent):
     def toggle_show_current_time(self):
         if self.__show_current_time == 0:
             self.__show_current_time = 1 #show time with seconds
-            self.send_midi((NOTE_ON_STATUS, SELECT_BEATS_NOTE, BUTTON_STATE_ON))
-            self.send_midi((NOTE_ON_STATUS, SELECT_SMPTE_NOTE, BUTTON_STATE_ON))
+            self.send_button_led(SELECT_BEATS_NOTE, BUTTON_STATE_ON)
+            self.send_button_led(SELECT_SMPTE_NOTE, BUTTON_STATE_ON)
         elif self.__show_current_time == 1:
             self.__show_current_time = 2 #show time without seconds
-            self.send_midi((NOTE_ON_STATUS, SELECT_BEATS_NOTE, BUTTON_STATE_ON))
-            self.send_midi((NOTE_ON_STATUS, SELECT_SMPTE_NOTE, BUTTON_STATE_ON))
+            self.send_button_led(SELECT_BEATS_NOTE, BUTTON_STATE_ON)
+            self.send_button_led(SELECT_SMPTE_NOTE, BUTTON_STATE_ON)
         elif self.__show_current_time == 2:
             self.__show_current_time = 0
             if self.__show_beat_time:
@@ -65,8 +65,8 @@ class TimeDisplay(MackieControlComponent):
     def clear_display(self):
         time_string = [ u' ' for i in range(10) ]
         self.__send_time_string(time_string, points_positions=())
-        self.send_midi((NOTE_ON_STATUS, SELECT_BEATS_NOTE, BUTTON_STATE_OFF))
-        self.send_midi((NOTE_ON_STATUS, SELECT_SMPTE_NOTE, BUTTON_STATE_OFF))
+        self.send_button_led(SELECT_BEATS_NOTE, BUTTON_STATE_OFF)
+        self.send_button_led(SELECT_SMPTE_NOTE, BUTTON_STATE_OFF)
 
     def refresh_state(self):
         self.show_beats()

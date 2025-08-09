@@ -130,12 +130,12 @@ class ChannelStripController(MackieControlComponent):
         if st and st.devices_has_listener(self.__on_selected_device_chain_changed):
             st.remove_devices_listener(self.__on_selected_device_chain_changed)
         for note in channel_strip_assignment_switch_ids:
-            self.send_midi((NOTE_ON_STATUS, note, BUTTON_STATE_OFF))
+            self.send_button_led(note, BUTTON_STATE_OFF)
 
         for note in channel_strip_control_switch_ids:
-            self.send_midi((NOTE_ON_STATUS, note, BUTTON_STATE_OFF))
+            self.send_button_led(note, BUTTON_STATE_OFF)
 
-        self.send_midi((NOTE_ON_STATUS, SELECT_RUDE_SOLO, BUTTON_STATE_OFF))
+        self.send_button_led(SELECT_RUDE_SOLO, BUTTON_STATE_OFF)
         self.send_midi((CC_STATUS, 75, g7_seg_led_conv_table[u' ']))
         self.send_midi((CC_STATUS, 74, g7_seg_led_conv_table[u' ']))
         MackieControlComponent.destroy(self)
@@ -207,9 +207,9 @@ class ChannelStripController(MackieControlComponent):
         elif switch_id == SID_ASSIGNMENT_SENDS:
             if value == BUTTON_PRESSED:
                 self.__hide_macro_mapper()
-                if self.__assignment_mode == CSM_SENDS and len(self.song().view.selected_track.mixer_device.sends) > 0:
-                    if self.__chosen_send >= len(self.song().view.selected_track.mixer_device.sends):
-                        self.__chosen_send = len(self.song().view.selected_track.mixer_device.sends) - 1
+                if (self.__assignment_mode == CSM_SENDS or self.__last_attached_selected_track == self.song().master_track) and len(self.song().return_tracks) > 0:
+                    if self.__chosen_send >= len(self.song().return_tracks):
+                        self.__chosen_send = len(self.song().return_tracks) - 1
                     self.__set_assignment_mode(CSM_SENDS_SINGLE)
                 else:
                     self.__set_assignment_mode(CSM_SENDS)
@@ -288,7 +288,7 @@ class ChannelStripController(MackieControlComponent):
             self.__lock_to_plugin = True
             if self.__previous_assignment_mode == None:
                 self.__previous_assignment_mode = self.__assignment_mode
-            self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F16, BUTTON_STATE_ON))
+            self.send_button_led(SID_SOFTWARE_F16, BUTTON_STATE_ON)
             self.__set_assignment_mode(CSM_PLUGINS)
             if self.__chosen_plugin != None:
                 self.__chosen_plugin.remove_parameters_listener(self.__on_parameter_list_of_chosen_plugin_changed)
@@ -299,11 +299,11 @@ class ChannelStripController(MackieControlComponent):
             self.__plugin_mode_offsets[PCM_PARAMETERS] = 0
             self.__set_plugin_mode(PCM_PARAMETERS)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F16, BUTTON_STATE_BLINKING))
+            self.send_button_led(SID_SOFTWARE_F16, BUTTON_STATE_BLINKING)
             self.__macro_device_installed = False
 
     def __hide_macro_mapper(self):
-        self.send_midi((NOTE_ON_STATUS, SID_SOFTWARE_F16, BUTTON_STATE_OFF))
+        self.send_button_led(SID_SOFTWARE_F16, BUTTON_STATE_OFF)
         self.__lock_to_plugin = False
         if self.__previous_assignment_mode != None:
             self.__set_assignment_mode(self.__previous_assignment_mode)
@@ -312,10 +312,10 @@ class ChannelStripController(MackieControlComponent):
     def __toggle_lock_to_plugin(self):
         if self.__lock_to_plugin == False:
             self.__lock_to_plugin = True
-            self.send_midi((NOTE_ON_STATUS, SID_ASSIGNMENT_PLUG_INS, BUTTON_STATE_BLINKING))
+            self.send_button_led(SID_ASSIGNMENT_PLUG_INS, BUTTON_STATE_BLINKING)
         else:
             self.__lock_to_plugin = False
-            self.send_midi((NOTE_ON_STATUS, SID_ASSIGNMENT_PLUG_INS, BUTTON_STATE_ON))
+            self.send_button_led(SID_ASSIGNMENT_PLUG_INS, BUTTON_STATE_ON)
 
     def add_or_remove_stored_solo(self, track):
         sel_track = self.song().view.selected_track
@@ -353,7 +353,7 @@ class ChannelStripController(MackieControlComponent):
                 self.stored_soloed_track_ids.append(t)
                 t.solo = False
         self.can_restore_solos = True
-        self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_BLINKING))
+        self.send_button_led(SID_MARKER_END, BUTTON_STATE_BLINKING)
         self.song().view.selected_track = sel_track
 
     def remove_solos(self):
@@ -434,7 +434,7 @@ class ChannelStripController(MackieControlComponent):
         u""" forwarded to us by the channel_strips """
         if self.shift_is_pressed() and self.__assignment_mode == CSM_SENDS:
             send_index = strip_index + stack_offset + self.__send_mode_offset
-            if send_index >= 0 and send_index < len(self.song().view.selected_track.mixer_device.sends):
+            if send_index >= 0 and send_index < len(self.song().return_tracks):
                 self.__chosen_send = send_index
                 self.__set_assignment_mode(CSM_SENDS_SINGLE)
         elif self.__assignment_mode == CSM_VOLPAN or self.__assignment_mode == CSM_SENDS or self.__assignment_mode == CSM_SENDS_SINGLE or self.__assignment_mode == CSM_PLUGINS and self.__plugin_mode == PCM_PARAMETERS:
@@ -485,8 +485,8 @@ class ChannelStripController(MackieControlComponent):
         """
         assert self.__assignment_mode == CSM_SENDS
         send_index = strip_index + stack_index + self.__send_mode_offset
-        if send_index < len(self.song().view.selected_track.mixer_device.sends):
-            p = self.song().view.selected_track.mixer_device.sends[send_index]
+        if send_index < len(self.song().return_tracks):
+            p = self.song().return_tracks[send_index]
             return (p, p.name)
         return (None, None)
 
@@ -547,7 +547,7 @@ class ChannelStripController(MackieControlComponent):
             if self.__assignment_mode == CSM_SENDS:
                 return self.__send_mode_offset + len(self.__channel_strips) < len(self.song().return_tracks)
             elif self.__assignment_mode == CSM_SENDS_SINGLE:
-                return self.__chosen_send < len(self.song().view.selected_track.mixer_device.sends) - 1
+                return self.__chosen_send < len(self.song().return_tracks) - 1
             return False
 
     def available_colors(self): 
@@ -852,9 +852,9 @@ class ChannelStripController(MackieControlComponent):
          SID_ASSIGNMENT_PAN,
          SID_ASSIGNMENT_PLUG_INS):
             if s == sid_on_switch:
-                self.send_midi((NOTE_ON_STATUS, s, activestate))
+                self.send_button_led(s, activestate)
             else:
-                self.send_midi((NOTE_ON_STATUS, s, BUTTON_STATE_OFF))
+                self.send_button_led(s, BUTTON_STATE_OFF)
 
     def __update_assignment_display(self):
         u""" Cryptically label the current assignment mode in the 2char display above
@@ -920,31 +920,31 @@ class ChannelStripController(MackieControlComponent):
                 self.any_track_soloed = True
                 break
         if self.any_track_soloed:
-            self.send_midi((NOTE_ON_STATUS, SELECT_RUDE_SOLO, BUTTON_STATE_ON))
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_ON))
+            self.send_button_led(SELECT_RUDE_SOLO, BUTTON_STATE_ON)
+            self.send_button_led(SID_MARKER_END, BUTTON_STATE_ON)
         elif self.can_restore_solos and self.stored_soloed_track_ids:
-            self.send_midi((NOTE_ON_STATUS, SELECT_RUDE_SOLO, BUTTON_STATE_OFF))
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_BLINKING))
+            self.send_button_led(SELECT_RUDE_SOLO, BUTTON_STATE_OFF)
+            self.send_button_led(SID_MARKER_END, BUTTON_STATE_BLINKING)
         else:
-            self.send_midi((NOTE_ON_STATUS, SELECT_RUDE_SOLO, BUTTON_STATE_OFF))
-            self.send_midi((NOTE_ON_STATUS, SID_MARKER_END, BUTTON_STATE_OFF))
+            self.send_button_led(SELECT_RUDE_SOLO, BUTTON_STATE_OFF)
+            self.send_button_led(SID_MARKER_END, BUTTON_STATE_OFF)
 
     def __update_page_switch_leds(self):
         u""" visualize if the "prev" an "next" buttons can be pressed """
         if self.__can_switch_to_prev_page():
-            self.send_midi((NOTE_ON_STATUS, SID_ASSIGNMENT_EQ, BUTTON_STATE_ON))
+            self.send_button_led(SID_ASSIGNMENT_EQ, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_ASSIGNMENT_EQ, BUTTON_STATE_OFF))
+            self.send_button_led(SID_ASSIGNMENT_EQ, BUTTON_STATE_OFF)
         if self.__can_switch_to_next_page():
-            self.send_midi((NOTE_ON_STATUS, SID_ASSIGNMENT_DYNAMIC, BUTTON_STATE_ON))
+            self.send_button_led(SID_ASSIGNMENT_DYNAMIC, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_ASSIGNMENT_DYNAMIC, BUTTON_STATE_OFF))
+            self.send_button_led(SID_ASSIGNMENT_DYNAMIC, BUTTON_STATE_OFF)
 
     def __update_flip_led(self):
         if self.__flip and self.__can_flip():
-            self.send_midi((NOTE_ON_STATUS, SID_FADERBANK_FLIP, BUTTON_STATE_ON))
+            self.send_button_led(SID_FADERBANK_FLIP, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_FADERBANK_FLIP, BUTTON_STATE_OFF))
+            self.send_button_led(SID_FADERBANK_FLIP, BUTTON_STATE_OFF)
 
     def __update_vpot_leds_in_plugins_device_choose_mode(self):
         u""" To be called in assignment mode CSM_PLUGINS, submode PCM_DEVICES only:
@@ -1008,9 +1008,9 @@ class ChannelStripController(MackieControlComponent):
         u""" Update the control return tracks LED
         """
         if self.__view_returns:
-            self.send_midi((NOTE_ON_STATUS, SID_FADERBANK_EDIT, BUTTON_STATE_ON))
+            self.send_button_led(SID_FADERBANK_EDIT, BUTTON_STATE_ON)
         else:
-            self.send_midi((NOTE_ON_STATUS, SID_FADERBANK_EDIT, BUTTON_STATE_OFF))
+            self.send_button_led(SID_FADERBANK_EDIT, BUTTON_STATE_OFF)
         self.__main_display_controller.set_show_return_track_names(self.__view_returns)
         self.__reassign_channel_strip_offsets()
         self.__reassign_channel_strip_parameters(for_display_only=False)

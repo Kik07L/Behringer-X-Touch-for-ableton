@@ -40,5 +40,8 @@ class MackieControlComponent:
     def send_midi(self, bytes):
         self.__main_script.send_midi(bytes)
 
+    def send_button_led(self, buttonID, buttonState):
+        self.__main_script.send_button_led(buttonID, buttonState)
+
     def request_rebuild_midi_map(self):
         self.__main_script.request_rebuild_midi_map()

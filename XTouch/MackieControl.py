@@ -158,6 +158,10 @@ class MackieControl(object):
         that this script is assigned to."""
         self.__c_instance.send_midi(midi_event_bytes)
 
+    def send_button_led(self, buttonID, buttonState):
+        self.send_midi((NOTE_ON_STATUS, buttonID, buttonState))
+        BUTTON_STATES[buttonID] = buttonState
+
     def receive_midi(self, midi_bytes):
         if midi_bytes[0] & 240 == NOTE_ON_STATUS or midi_bytes[0] & 240 == NOTE_OFF_STATUS:
             note = midi_bytes[1]
@@ -171,6 +175,10 @@ class MackieControl(object):
 
                 if note in channel_strip_control_switch_ids:
                     self.__channel_strip_controller.handle_assignment_switch_ids(note, value)
+                if note in modify_key_control_switch_ids:
+                    self.__software_controller.handle_modify_key_switch_ids(note, value)
+                # if note == SID_FADER_TOUCH_SENSE_MASTER:
+                    # self.__software_controller.handle_touch_master_fader(note, value)
                 if note in function_key_control_switch_ids:
                     self.__software_controller.handle_function_key_switch_ids(note, value)
                 if note in software_controls_switch_ids:
