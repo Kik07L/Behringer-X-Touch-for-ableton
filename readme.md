@@ -30,20 +30,46 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 ### Global Solo
 - When one or more tracks are soloed, `SOLO` button in Transport Section toggles their solo state on and off simultaneously.
 
-### Button Remapping
-#### **Encoder Assign Section**
+### Macro Mapper (beta)
+- Quick access to 16 multi-mappable macros via the rotary encoders.
+- Place the supplied "X-Touch Macro Mapper" device on the Master track as the first (leftmost) device in the chain.
+- Map the Max4Live devices in the rack to any function in the project and rename the 16 macro knobs to suit.
+- Press and hold `USER` to bring up mappings on rotary encoders temporarily, or `SHIFT + USER` to lock.
+  - Quick access through the `USER` button will work with any device that is first in the chain on the Master channel and has "X-Touch" in its name.
+
+### Single Send Mode (beta)
+- Default Sends mode (`SEND`) shows send levels for all return tracks on the current track.
+- New Single Send mode shows send levels for a single return track accross all tracks.
+- In default Sends mode, either press `SEND` again or `SHIFT + Press rotary encoder` to select the corresponding return track for Single Send mode.
+- Press `EQ` or `INST` to move control to the previous/next return track send levels.
+
+### Device Control Lock (beta)
+- With the rotary encoders assigned to device parameters (`PLUG-IN` > `Press rotary encoder` to select device), press `SHIFT + PLUG-IN` to lock current assignment.
+- Device assignment will no longer be canceled by selecting, soloing, muting or arming other tracks.
+
+### Night Mode (beta)
+- Press all four `MODIFY` buttons (`SHIFT`, `OPTION`, `CONTROL` and `ALT`) simultaneously to toggle Night Mode.
+- `MODIFY` section LEDs are permanently lit for enhanced visibility.
+- Press any `MODIFY` button to temporarily light up all buttons.
+
+## Button Mappings
+### **Encoder Assign Section**
 - `TRACK`: Assign encoders to track properties (cycles through Input Type, Input Channel, Output Type, Output Channel, Track Color).
 - `PAN/SURROUND`: Assign encoders to track panning.
-- `EQ`: Bank left in device control mode.
+- `EQ`: Bank left in device control or Single Send mode.
 - `SEND`: Assign encoders to track send levels.
+  - `SEND`: press again for Single Send mode.
+  - Alternatively, `SHIFT + Press rotary encoder`: Single Send mode for selected return track.
 - `PLUG-IN`: Assign encoders to track devices.
-- `INST`: Bank right in device control mode.
+  - `Press rotary encoder` to select device.
+  - `SHIFT + PLUG-IN`: lock current device assigment.
+- `INST`: Bank right in device control or Single Send mode.
 
-#### **Display Section**
+### **Display Section**
 - `DISPLAY`: Switch between audio/instrument and return tracks.
 - `SHIFT + SMPTE/BEATS`: Show clock instead of song time/beats. Press again to show clock without seconds.
 
-#### **Channel Strip**
+### **Channel Strip**
 - `REC`: Arm track for recording.
   - If "Exclusive" is enabled for arming in Live settings, all other tracks will be de-armed.
   - `CONTROL + REC`: Inverts the exclusive/non-exclusive setting for arming.
@@ -56,7 +82,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `MUTE`: Mute track.
 - `SELECT`: Select track. Press again to fold/unfold.
 
-#### **Transport Section**
+### **Transport Section**
 - `CLICK`: Toggle metronome. LED blinks when active.
   - `CONTROL + CLICK`: Tap tempo.
 - `SCRUB`: Play selected clip in Session view.
@@ -72,22 +98,23 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - OFF: No tracks soloed, press to solo current track.
   - `SHIFT + SOLO`: Reset.
 
-#### **Utility Section**
+### **Utility Section**
 - `SAVE`: Capture MIDI. LED lights up when active.
 - `UNDO`: Undo last action.
 - `ENTER`: Redo last action.
 - `CANCEL`: Return to Arrangement view. LED lights up when enabled.
 
-#### **Automation Section**
+### **Automation Section**
 - `READ/OFF`: Re-enable automation.
 - `WRITE`: Arm for automation recording.
 - `TOUCH`: Toggle Draw mode.
 - `LATCH`: Toggle Follow mode.
+- `TRIM`: Currently unused.
 - `GROUP`: Expand/collapse selected track (if it is a group). LED behavior:
   - ON: Current track is a group.
   - Blinking: Current track is within a group.
 
-#### **Jog Wheel**
+### **Jog Wheel**
 - `SHIFT + Rotation`: Faster movement.
 - `ALT + Rotation`: Slower movement.
 - `OPTION + Rotation`: Move loop region (faster with `SHIFT`).
@@ -95,15 +122,17 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `CONTROL + Rotation`: Change tempo.
 - `ZOOM BUTTON + Rotation`: Zoom in/out in Arrangement view.
 
-#### **Gray Section**
+### **Gray Section**
 - `GLOBAL VIEW`: Switch between Session and Arrangement views.
 - `MIDI TRACKS`: Create a new MIDI track.
 - `INPUTS`: Open/close the browser.
 - `AUDIO TRACKS`: Create a new audio track.
 - `AUDIO INST`: Open/close the details view.
 - `AUX`: Toggle between clip and device views. LED is on in clip view.
+- `BUSES`: Currently unused.
 - `OUTPUTS`: Select the Master Track. Press again to show Master device chain.
-
+- `USER`: Press and hold to show Macro Mapper.
+  - `SHIFT + USER`: Lock Macro Mapper.
 ---
 
 ## Installation

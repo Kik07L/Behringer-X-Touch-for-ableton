@@ -1,7 +1,6 @@
 #Embedded file name: /Users/versonator/Jenkins/live/output/Live/mac_64_static/Release/python-bundle/MIDI Remote Scripts/MackieControl/SoftwareController.py
 from __future__ import absolute_import, print_function, unicode_literals
 from .MackieControlComponent import *
-import time
 
 class SoftwareController(MackieControlComponent):
     u"""Representing the buttons above the transport, including the basic: """
@@ -89,12 +88,10 @@ class SoftwareController(MackieControlComponent):
             for b in leds_to_flash:
                 if BUTTON_STATES[b] == BUTTON_STATE_OFF:
                     self.send_midi((NOTE_ON_STATUS, b, BUTTON_STATE_BLINKING))
-                    time.sleep(0.001)
             self.__leds_flashing = True
         elif onOff == 0 and self.__leds_flashing == True:
             for b in leds_to_flash:
                 self.send_midi((NOTE_ON_STATUS, b, BUTTON_STATES[b]))
-                time.sleep(0.001)
             self.__leds_flashing = False
 
     def handle_software_controls_switch_ids(self, switch_id, value):
