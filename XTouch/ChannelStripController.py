@@ -100,11 +100,15 @@ class ChannelStripController(MackieControlComponent):
         self.__within_track_added_or_deleted = False
         self.song().add_visible_tracks_listener(self.__on_tracks_added_or_deleted)
         self.song().view.add_selected_track_listener(self.__on_selected_track_changed)
-        for t in chain(self.song().visible_tracks, self.song().return_tracks):
+        self.song().view.add_selected_chain_listener(self.__on_selected_track_changed)
+        for t in chain(self.tracks_including_chains(), self.song().return_tracks):
             if not t.solo_has_listener(self.__update_rude_solo_led):
                 t.add_solo_listener(self.__update_rude_solo_led)
+        for t in chain(self.song().visible_tracks):
             if not t.has_audio_output_has_listener(self.__on_any_tracks_output_type_changed):
                 t.add_has_audio_output_listener(self.__on_any_tracks_output_type_changed)
+            if t.can_show_chains and not t.is_showing_chains_has_listener(self.refresh_state):
+                t.add_is_showing_chains_listener(self.refresh_state)
 
         self.__on_selected_track_changed()
         for s in self.__own_channel_strips:
@@ -120,11 +124,15 @@ class ChannelStripController(MackieControlComponent):
     def destroy(self):
         self.song().remove_visible_tracks_listener(self.__on_tracks_added_or_deleted)
         self.song().view.remove_selected_track_listener(self.__on_selected_track_changed)
-        for t in chain(self.song().visible_tracks, self.song().return_tracks):
+        self.song().view.remove_selected_chain_listener(self.__on_selected_track_changed)
+        for t in chain(self.tracks_including_chains(), self.song().return_tracks):
             if t.solo_has_listener(self.__update_rude_solo_led):
                 t.remove_solo_listener(self.__update_rude_solo_led)
+        for t in chain(self.song().visible_tracks):
             if t.has_audio_output_has_listener(self.__on_any_tracks_output_type_changed):
                 t.remove_has_audio_output_listener(self.__on_any_tracks_output_type_changed)
+            if t.can_show_chains and t.is_showing_chains_has_listener(self.refresh_state):
+                t.remove_is_showing_chains_listener(self.refresh_state)
 
         st = self.__last_attached_selected_track
         if st and st.devices_has_listener(self.__on_selected_device_chain_changed):
@@ -338,7 +346,7 @@ class ChannelStripController(MackieControlComponent):
 
     def restore_solos(self):
         sel_track = self.song().view.selected_track
-        for t in chain(self.song().tracks, self.song().return_tracks):
+        for t in chain(self.tracks_including_chains(), self.song().return_tracks):
             if t in self.stored_soloed_track_ids:
                 t.solo = True
         self.can_restore_solos = False
@@ -348,7 +356,7 @@ class ChannelStripController(MackieControlComponent):
     def store_solos(self):
         sel_track = self.song().view.selected_track
         self.stored_soloed_track_ids = []
-        for t in chain(self.song().tracks, self.song().return_tracks):
+        for t in chain(self.tracks_including_chains(), self.song().return_tracks):
             if t.solo:
                 self.stored_soloed_track_ids.append(t)
                 t.solo = False
@@ -358,13 +366,13 @@ class ChannelStripController(MackieControlComponent):
 
     def remove_solos(self):
         sel_track = self.song().view.selected_track
-        for t in chain(self.song().tracks, self.song().return_tracks):
+        for t in chain(self.tracks_including_chains(), self.song().return_tracks):
             t.solo = False
         self.song().view.selected_track = sel_track
 
     def reset_solos(self):
         sel_track = self.song().view.selected_track
-        for t in chain(self.song().tracks, self.song().return_tracks):
+        for t in chain(self.tracks_including_chains(), self.song().return_tracks):
             if t in self.stored_soloed_track_ids and t.solo == False:
                 t.solo = True
                 t.solo = False
@@ -478,15 +486,18 @@ class ChannelStripController(MackieControlComponent):
         if self.__view_returns:
             return len(self.song().return_tracks)
         else:
-            return len(self.song().visible_tracks)
+            return len(self.visible_tracks_including_chains())
 
     def __send_parameter(self, strip_index, stack_index):
         u""" Return the send parameter that is assigned to the given channel strip
         """
         assert self.__assignment_mode == CSM_SENDS
         send_index = strip_index + stack_index + self.__send_mode_offset
-        if send_index < len(self.song().return_tracks):
-            p = self.song().return_tracks[send_index]
+        if self.song().view.selected_chain and send_index < len(self.song().view.selected_chain.mixer_device.sends):
+            p = self.song().view.selected_chain.mixer_device.sends[send_index]
+            return (p, p.name)
+        elif send_index < len(self.song().return_tracks):
+            p = self.song().view.selected_track.mixer_device.sends[send_index]
             return (p, p.name)
         return (None, None)
 
@@ -562,18 +573,18 @@ class ChannelStripController(MackieControlComponent):
         assert self.__assignment_mode == CSM_IO
         t = channel_strip.assigned_track()
         if t:
-            if self.__sub_mode_in_io_mode == CSM_IO_MODE_INPUT_MAIN:
+            if isinstance(t, Live.Track.Track) and self.__sub_mode_in_io_mode == CSM_IO_MODE_INPUT_MAIN:
                 return flatten_target_list(t.available_input_routing_types)
-            if self.__sub_mode_in_io_mode == CSM_IO_MODE_INPUT_SUB:
+            if isinstance(t, Live.Track.Track) and self.__sub_mode_in_io_mode == CSM_IO_MODE_INPUT_SUB:
                 return flatten_target_list(t.available_input_routing_channels)
-            if self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_MAIN:
+            if isinstance(t, Live.Track.Track) and self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_MAIN:
                 return flatten_target_list(t.available_output_routing_types)
-            if self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_SUB:
+            if isinstance(t, Live.Track.Track) and self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_SUB:
                 return flatten_target_list(t.available_output_routing_channels)
             if self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR:
                 return COLORLIST
 #                return flatten_target_list(self.available_colors())
-            assert 0
+#            assert 0
         else:
             return None
 
@@ -581,19 +592,19 @@ class ChannelStripController(MackieControlComponent):
         assert self.__assignment_mode == CSM_IO
         t = channel_strip.assigned_track()
         if t:
-            if self.__sub_mode_in_io_mode == CSM_IO_MODE_INPUT_MAIN:
+            if isinstance(t, Live.Track.Track) and self.__sub_mode_in_io_mode == CSM_IO_MODE_INPUT_MAIN:
                 return flatten_target(t.input_routing_type)
-            if self.__sub_mode_in_io_mode == CSM_IO_MODE_INPUT_SUB:
+            if isinstance(t, Live.Track.Track) and self.__sub_mode_in_io_mode == CSM_IO_MODE_INPUT_SUB:
                 return flatten_target(t.input_routing_channel)
-            if self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_MAIN:
+            if isinstance(t, Live.Track.Track) and self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_MAIN:
                 return flatten_target(t.output_routing_type)
-            if self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_SUB:
+            if isinstance(t, Live.Track.Track) and self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_SUB:
                 return flatten_target(t.output_routing_channel)
             if self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR:
                 current_color = COLORLIST[int(t.color_index)]
                 return current_color
 #                return int(t.color_index)
-            assert 0
+#            assert 0
         else:
             return None
 
@@ -601,18 +612,19 @@ class ChannelStripController(MackieControlComponent):
         assert self.__assignment_mode == CSM_IO
         t = channel_strip.assigned_track()
         if t:
-            if self.__sub_mode_in_io_mode == CSM_IO_MODE_INPUT_MAIN:
+            if isinstance(t, Live.Track.Track) and self.__sub_mode_in_io_mode == CSM_IO_MODE_INPUT_MAIN:
                 t.input_routing_type = target_by_name(t.available_input_routing_types, target_string)
-            elif self.__sub_mode_in_io_mode == CSM_IO_MODE_INPUT_SUB:
+            elif isinstance(t, Live.Track.Track) and self.__sub_mode_in_io_mode == CSM_IO_MODE_INPUT_SUB:
                 t.input_routing_channel = target_by_name(t.available_input_routing_channels, target_string)
-            elif self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_MAIN:
+            elif isinstance(t, Live.Track.Track) and self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_MAIN:
                 t.output_routing_type = target_by_name(t.available_output_routing_types, target_string)
-            elif self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_SUB:
+            elif isinstance(t, Live.Track.Track) and self.__sub_mode_in_io_mode == CSM_IO_MODE_OUTPUT_SUB:
                 t.output_routing_channel = target_by_name(t.available_output_routing_channels, target_string)
             if self.__sub_mode_in_io_mode == CSM_IO_MODE_TRACK_COLOR:
                 t.color_index = target_string
             else:
-                assert 0
+                return None
+#                assert 0
 
     def __set_channel_offset(self, new_offset):
         u""" Set and validate a new channel_strip offset, which shifts all available channel
@@ -776,8 +788,9 @@ class ChannelStripController(MackieControlComponent):
                     slider_display_mode = VPOT_DISPLAY_WRAP
             elif self.__assignment_mode == CSM_SENDS_SINGLE:
                 if s.assigned_track() and s.assigned_track().has_audio_output:
-                    vpot_param = (s.assigned_track().mixer_device.sends[self.__chosen_send], s.assigned_track().mixer_device.sends[self.__chosen_send].name)
-                    vpot_display_mode = VPOT_DISPLAY_WRAP
+                    if isinstance(s.assigned_track(), Live.Track.Track):
+                        vpot_param = (s.assigned_track().mixer_device.sends[self.__chosen_send], s.assigned_track().mixer_device.sends[self.__chosen_send].name)
+                        vpot_display_mode = VPOT_DISPLAY_WRAP
                     slider_param = (s.assigned_track().mixer_device.volume, u'Volume')
                     slider_display_mode = VPOT_DISPLAY_WRAP
             elif self.__assignment_mode == CSM_IO:
@@ -873,9 +886,9 @@ class ChannelStripController(MackieControlComponent):
                     ass_string = [u'R', chr(ord(u'A') + list(self.song().return_tracks).index(t))]
                     break
 
-            for t in self.song().visible_tracks:
+            for t in self.visible_tracks_including_chains():
                 if t == self.__last_attached_selected_track:
-                    ass_string = list(u'%.2d' % min(99, list(self.song().visible_tracks).index(t) + 1))
+                    ass_string = list(u'%.2d' % min(99, list(self.visible_tracks_including_chains()).index(t) + 1))
                     break
 
             assert ass_string
@@ -899,14 +912,14 @@ class ChannelStripController(MackieControlComponent):
 
     def __cleanup_stored_soloed_tracks(self):
         if self.can_restore_solos:
-            for t in chain(self.song().tracks, self.song().return_tracks):
+            for t in chain(self.tracks_including_chains(), self.song().return_tracks):
                 if t.solo:
                     self.reset_solos()
                     break        
 
     def __check_stored_soloed_tracks_after_track_added_or_deleted(self):
         self.existing_stored_soloed_track_ids = []
-        for t in chain(self.song().tracks, self.song().return_tracks):
+        for t in chain(self.tracks_including_chains(), self.song().return_tracks):
             if t in self.stored_soloed_track_ids:
                 self.existing_stored_soloed_track_ids.append(t)
         self.stored_soloed_track_ids = self.existing_stored_soloed_track_ids #update stored list to drop any track that has been deleted
@@ -915,7 +928,7 @@ class ChannelStripController(MackieControlComponent):
 
     def __update_rude_solo_led(self):
         self.any_track_soloed = False
-        for t in chain(self.song().tracks, self.song().return_tracks):
+        for t in chain(self.tracks_including_chains(), self.song().return_tracks):
             if t.solo:
                 self.any_track_soloed = True
                 break
@@ -1069,11 +1082,14 @@ class ChannelStripController(MackieControlComponent):
         u""" Notifier, called as soon as tracks where added, removed or moved
         """
         self.__within_track_added_or_deleted = True
-        for t in chain(self.song().visible_tracks, self.song().return_tracks):
+        for t in chain(self.tracks_including_chains(), self.song().return_tracks):
             if not t.solo_has_listener(self.__update_rude_solo_led):
                 t.add_solo_listener(self.__update_rude_solo_led)
+        for t in chain(self.song().visible_tracks):
             if not t.has_audio_output_has_listener(self.__on_any_tracks_output_type_changed):
                 t.add_has_audio_output_listener(self.__on_any_tracks_output_type_changed)
+            if t.can_show_chains and not t.is_showing_chains_has_listener(self.refresh_state):
+                t.add_is_showing_chains_listener(self.refresh_state)
 
         if self.__send_mode_offset >= len(self.song().return_tracks):
             self.__send_mode_offset = 0
@@ -1096,6 +1112,12 @@ class ChannelStripController(MackieControlComponent):
         """
         self.__reassign_channel_strip_parameters(for_display_only=False)
         self.request_rebuild_midi_map()
+        for t in chain(self.tracks_including_chains(), self.song().return_tracks):
+            if not t.solo_has_listener(self.__update_rude_solo_led):
+                t.add_solo_listener(self.__update_rude_solo_led)
+        for t in chain(self.song().visible_tracks):
+            if t.can_show_chains and not t.is_showing_chains_has_listener(self.refresh_state):
+                t.add_is_showing_chains_listener(self.refresh_state)
 
     def __on_parameter_list_of_chosen_plugin_changed(self):
         assert self.__chosen_plugin != None

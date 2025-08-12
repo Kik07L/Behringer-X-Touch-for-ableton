@@ -45,3 +45,9 @@ class MackieControlComponent:
 
     def request_rebuild_midi_map(self):
         self.__main_script.request_rebuild_midi_map()
+        
+    def visible_tracks_including_chains(self):
+        return self.__main_script.visible_tracks_including_chains()
+        
+    def tracks_including_chains(self):
+        return self.__main_script.tracks_including_chains()

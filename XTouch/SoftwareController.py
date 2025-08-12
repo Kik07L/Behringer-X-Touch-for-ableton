@@ -244,6 +244,10 @@ class SoftwareController(MackieControlComponent):
                 self.song().view.selected_track.group_track.fold_state = 1
 #            else:
 #                self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_OFF)
+            elif isinstance(self.song().view.selected_track, Live.Chain.Chain):
+                self.song().view.selected_track.canonical_parent.is_showing_chains = False
+            elif self.song().view.selected_track.can_show_chains:
+                self.song().view.selected_track.is_showing_chains = not self.song().view.selected_track.is_showing_chains
 
     def __toggle_follow_song(self):
         self.song().view.follow_song = not self.song().view.follow_song
@@ -312,7 +316,11 @@ class SoftwareController(MackieControlComponent):
             self.send_button_led(SID_FUNC_CANCEL, BUTTON_STATE_OFF)
 
     def __update_group_mode_button_led(self):
-        if self.song().view.selected_track.is_grouped or self.song().view.selected_track.is_foldable:
+        if isinstance(self.song().view.selected_chain, Live.Chain.Chain):
+            self.new_selected_track_group_state = 1
+        elif self.song().view.selected_track.can_show_chains:
+            self.new_selected_track_group_state = 2
+        elif self.song().view.selected_track.is_grouped or self.song().view.selected_track.is_foldable:
             if self.song().view.selected_track.is_foldable:
                 if self.song().view.selected_track.fold_state == 1: #currently not using this distinction (LED on in both cases)
                     self.new_selected_track_group_state = 2

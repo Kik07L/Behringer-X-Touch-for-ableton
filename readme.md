@@ -32,7 +32,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 
 ### Macro Mapper (beta)
 - Quick access to 16 multi-mappable macros via the rotary encoders.
-- Place the supplied "X-Touch Macro Mapper" device on the Master track as the first (leftmost) device in the chain.
+- Place the supplied "XTouch/Macro Mapper/X-Touch Macro Mapper" device on the Master track as the first (leftmost) device in the chain.
 - Map the Max4Live devices in the rack to any function in the project and rename the 16 macro knobs to suit.
 - Press and hold `USER` to bring up mappings on rotary encoders temporarily, or `SHIFT + USER` to lock.
   - Quick access through the `USER` button will work with any device that is first in the chain on the Master channel and has "X-Touch" in its name.
@@ -42,6 +42,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - New Single Send mode shows send levels for a single return track accross all tracks.
 - In default Sends mode, either press `SEND` again or `SHIFT + Press rotary encoder` to select the corresponding return track for Single Send mode.
 - Press `EQ` or `INST` to move control to the previous/next return track send levels.
+- Single Send Mode will skip chains visible in the mixer (scribble strip turns black), since global sends do not apply to them.
 
 ### Device Control Lock (beta)
 - With the rotary encoders assigned to device parameters (`PLUG-IN` > `Press rotary encoder` to select device), press `SHIFT + PLUG-IN` to lock current assignment.
@@ -51,6 +52,12 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - Press all four `MODIFY` buttons (`SHIFT`, `OPTION`, `CONTROL` and `ALT`) simultaneously to toggle Night Mode.
 - `MODIFY` section LEDs are permanently lit for enhanced visibility.
 - Press any `MODIFY` button to temporarily light up all buttons.
+
+### Chains behave as groups (beta)
+- Press `SELECT` twice on a track that contains a Rack to expand its chains in the Mixer (same behaviour as with track groups).
+- Rack chains react just like normal tracks to faders, `MUTE` and `SOLO` buttons and encoders (in Pan and Sends mode).
+- Chain colors appear in scribble strips and can be modified just like track colors (press `TRACK` x5 for color mode)
+- Limitations: chains audio metering and audio routing are currently unavailable in Live's API.
 
 ## Button Mappings
 ### **Encoder Assign Section**
@@ -81,6 +88,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - `SHIFT + SOLO`: Adds/removes track to/from previously soloed tracks (track `SOLO` LEDs blinking, see `SOLO` button in Transport Section).
 - `MUTE`: Mute track.
 - `SELECT`: Select track. Press again to fold/unfold.
+  - Parent track of a selected grouped track or chain will blink to indicate where group/chain starts.
 
 ### **Transport Section**
 - `CLICK`: Toggle metronome. LED blinks when active.
@@ -110,9 +118,9 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `TOUCH`: Toggle Draw mode.
 - `LATCH`: Toggle Follow mode.
 - `TRIM`: Currently unused.
-- `GROUP`: Expand/collapse selected track (if it is a group). LED behavior:
-  - ON: Current track is a group.
-  - Blinking: Current track is within a group.
+- `GROUP`: Expand/collapse selected track (if it is a group or contains chains). LED behavior:
+  - ON: Current track is a group or contains chains.
+  - Blinking: Current track is within a group or is a chain within a track.
 
 ### **Jog Wheel**
 - `SHIFT + Rotation`: Faster movement.

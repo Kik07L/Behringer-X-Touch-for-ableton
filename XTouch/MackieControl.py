@@ -257,3 +257,64 @@ class MackieControl(object):
 #
     def get_channel_strip_controller(self):
         return self.__channel_strip_controller
+        
+    def visible_tracks_including_chains(self):
+        """
+        Returns a flattened list of all visible tracks, including any chains
+        that are currently unfolded for a given track.
+        """
+        
+        # If Arrangement view is main view: simply return visible tracks (we won't bother with chains)
+        # if self.application().view.focused_document_view == "Arranger":
+            # return self.song().visible_tracks
+
+        # This list will hold the final, flattened result.
+        tracks_and_chains_list = []        
+
+        # Iterate through the top-level visible tracks.
+        for track in self.song().visible_tracks:
+            # First, add the main track itself.
+            tracks_and_chains_list.append(track)
+
+            # Check if the track can and is currently showing its chains.
+            if track.can_show_chains and track.is_showing_chains:
+                # If so, extend our list with the track's chains.
+                for device in track.devices:
+                    if device.can_show_chains:
+                        # This is the correct device (e.g., a Drum Rack).
+                        # Extend our list with its chains.
+                        tracks_and_chains_list.extend(list(device.chains))
+                        tracks_and_chains_list.extend(list(device.return_chains))
+                        # Once found, we can break the inner loop
+                        # as only one device's chains can be shown at a time.
+                        break
+        
+        return tracks_and_chains_list
+        
+    def tracks_including_chains(self):
+        """
+        Returns a flattened list of all tracks, including any chains
+        that are currently unfolded for a given track.
+        """
+        # This list will hold the final, flattened result.
+        tracks_and_chains_list = []
+
+        # Iterate through the top-level tracks.
+        for track in self.song().tracks:
+            # First, add the main track itself.
+            tracks_and_chains_list.append(track)
+
+            # Check if the track can and is currently showing its chains.
+            if track.can_show_chains:
+                # If so, extend our list with the track's chains.
+                for device in track.devices:
+                    if device.can_show_chains:
+                        # This is the correct device (e.g., a Drum Rack).
+                        # Extend our list with its chains.
+                        tracks_and_chains_list.extend(list(device.chains))
+                        tracks_and_chains_list.extend(list(device.return_chains))
+                        # Once found, we can break the inner loop
+                        # as only one device's chains can be shown at a time.
+                        break
+        
+        return tracks_and_chains_list

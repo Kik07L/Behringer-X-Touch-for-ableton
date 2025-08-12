@@ -118,7 +118,7 @@ class MainDisplayController(MackieControlComponent):
                 if self.__show_return_tracks:
                     tracks = self.song().return_tracks
                 else:
-                    tracks = self.song().visible_tracks
+                    tracks = self.visible_tracks_including_chains()
                 for t in track_index_range:
                     if self.__parameters and self.__show_parameter_names:
                         if self.__parameters[strip_index][1]:
