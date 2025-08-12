@@ -486,7 +486,7 @@ class ChannelStripController(MackieControlComponent):
         assert self.__assignment_mode == CSM_SENDS
         send_index = strip_index + stack_index + self.__send_mode_offset
         if send_index < len(self.song().return_tracks):
-            p = self.song().return_tracks[send_index]
+            p = self.song().view.selected_track.mixer_device.sends[send_index]
             return (p, p.name)
         return (None, None)
 
