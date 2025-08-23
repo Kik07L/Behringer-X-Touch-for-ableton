@@ -83,6 +83,15 @@ class MackieControlXT(object):
             is_pressed = self.__mackie_control_main.alt_is_pressed()
         return is_pressed
 
+    def advanced_color_distance_mode(self):
+        mode = False
+        if self.__mackie_control_main != None:
+            mode = self.__mackie_control_main.advanced_color_distance_mode()
+        return mode
+
+    # def toggle_advanced_color_distance_mode(self):
+        # self.__advanced_color_distance_mode = not self.__advanced_color_distance_mode
+
     def application(self):
         return Live.Application.get_application()
 
@@ -200,7 +209,7 @@ class MackieControlXT(object):
     def tracks_including_chains(self):
         """
         Returns a flattened list of all tracks, including any chains
-        that are currently unfolded for a given track.
+        that can be unfolded for a given track.
         """
         # This list will hold the final, flattened result.
         tracks_and_chains_list = []
@@ -210,7 +219,7 @@ class MackieControlXT(object):
             # First, add the main track itself.
             tracks_and_chains_list.append(track)
 
-            # Check if the track can and is currently showing its chains.
+            # Check if the track can show its chains.
             if track.can_show_chains:
                 # If so, extend our list with the track's chains.
                 for device in track.devices:

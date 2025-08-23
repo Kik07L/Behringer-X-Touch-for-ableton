@@ -123,10 +123,22 @@ class MainDisplayController(MackieControlComponent):
                     if self.__parameters and self.__show_parameter_names:
                         if self.__parameters[strip_index][1]:
                             upper_string += self.__generate_6_char_string(self.__parameters[strip_index][1])
-                            if self.__chosen_send_color:
-                                curr_color = display.match_color(self.__chosen_send_color) #if in Single Send mode, show the color of the currently edited return track
+                            if assignment_mode == CSM_SENDS_SINGLE:
+                                if isinstance(tracks[t], Live.Track.Track):
+                                    curr_color = display.match_color(self.song().return_tracks[channel_strip_controller.chosen_send].color)
+                                elif isinstance(tracks[t], Live.Chain.Chain):
+                                    curr_color = display.match_color(tracks[t].canonical_parent.return_chains[channel_strip_controller.chosen_send].color)
+                            elif assignment_mode == CSM_SENDS:
+                                if self.song().view.selected_chain:
+                                    curr_color = display.match_color(self.song().view.selected_chain.canonical_parent.return_chains[t].color)
+                                else:
+                                    curr_color = display.match_color(self.song().return_tracks[t].color)
                             else:
                                 curr_color = assignment_mode_colors[assignment_mode]
+                            # if self.__chosen_send_color:
+                                # curr_color = display.match_color(self.__chosen_send_color) #if in Single Send mode, show the color of the currently edited return track
+                            # else:
+                                # curr_color = assignment_mode_colors[assignment_mode]
                         else:
                             upper_string += self.__generate_6_char_string(u'')
                             curr_color = 0

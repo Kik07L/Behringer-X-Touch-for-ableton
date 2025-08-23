@@ -47,6 +47,7 @@ class MackieControl(object):
         self.__option_is_pressed = False
         self.__control_is_pressed = False
         self.__alt_is_pressed = False
+        self.__advanced_color_distance_mode = False
         self.is_pro_version = False
         self._received_firmware_version = False
         self._refresh_state_next_time = 0
@@ -243,6 +244,12 @@ class MackieControl(object):
     def set_alt_is_pressed(self, pressed):
         self.__alt_is_pressed = pressed
 
+    def advanced_color_distance_mode(self):
+        return self.__advanced_color_distance_mode
+
+    def toggle_advanced_color_distance_mode(self):
+        self.__advanced_color_distance_mode = not self.__advanced_color_distance_mode
+
     def __handle_display_switch_ids(self, switch_id, value):
         if switch_id == SID_DISPLAY_NAME_VALUE:
             if value == BUTTON_PRESSED:
@@ -294,7 +301,7 @@ class MackieControl(object):
     def tracks_including_chains(self):
         """
         Returns a flattened list of all tracks, including any chains
-        that are currently unfolded for a given track.
+        that can be unfolded for a given track.
         """
         # This list will hold the final, flattened result.
         tracks_and_chains_list = []
@@ -304,7 +311,7 @@ class MackieControl(object):
             # First, add the main track itself.
             tracks_and_chains_list.append(track)
 
-            # Check if the track can and is currently showing its chains.
+            # Check if the track can show its chains.
             if track.can_show_chains:
                 # If so, extend our list with the track's chains.
                 for device in track.devices:

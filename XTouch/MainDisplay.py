@@ -2,6 +2,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 from builtins import range
 from .MackieControlComponent import *
+import math
 
 class MainDisplay(MackieControlComponent):
     u""" Representing one main 2 row display of a Mackie Control or Extension
@@ -74,7 +75,14 @@ class MainDisplay(MackieControlComponent):
             self.send_midi(colors_sysex)
 
     def color_distance(self, color1, color2):
-        return ((color1[0] - color2[0]) ** 2) + ((color1[1] - color2[1]) ** 2) + ((color1[2] - color2[2]) ** 2)
+        if self.main_script().advanced_color_distance_mode(): #activated by SHIFT + DISPLAY/NAME/VALUE; however, only two colors (Vista Blue and Pomelo Green) yield a different result, so not worth the extra compute
+            r_mean = (color1[0] + color2[0]) / 2
+            r_diff = (color1[0] - color2[0])
+            g_diff = (color1[1] - color2[1])
+            b_diff = (color1[2] - color2[2])
+            return math.sqrt(((2 + (r_mean / 256)) * (r_diff ** 2)) + (4 * (g_diff ** 2)) + ((2 + ((255 - r_mean) / 256)) * (b_diff ** 2)))
+        else:
+            return ((color1[0] - color2[0]) ** 2) + ((color1[1] - color2[1]) ** 2) + ((color1[2] - color2[2]) ** 2)
 
     def match_color(self, trackRGBint):
         track_R = (trackRGBint >> 16) & 255
