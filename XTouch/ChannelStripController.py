@@ -215,9 +215,9 @@ class ChannelStripController(MackieControlComponent):
         elif switch_id == SID_ASSIGNMENT_SENDS:
             if value == BUTTON_PRESSED:
                 self.__hide_macro_mapper()
-                if (self.__assignment_mode == CSM_SENDS or self.__last_attached_selected_track == self.song().master_track) and len(self.song().return_tracks) > 0:
-                    if self.chosen_send >= len(self.song().return_tracks):
-                        self.chosen_send = len(self.song().return_tracks) - 1
+                if (self.__assignment_mode == CSM_SENDS or self.__last_attached_selected_track == self.song().master_track) and self.__number_of_sends_to_show() > 0:
+                    if self.chosen_send >= self.__number_of_sends_to_show():
+                        self.chosen_send = self.__number_of_sends_to_show() - 1
                     self.__set_assignment_mode(CSM_SENDS_SINGLE)
                 else:
                     self.__set_assignment_mode(CSM_SENDS)
@@ -445,9 +445,10 @@ class ChannelStripController(MackieControlComponent):
         u""" forwarded to us by the channel_strips """
         if self.shift_is_pressed() and self.__assignment_mode == CSM_SENDS:
             send_index = strip_index + stack_offset + self.__send_mode_offset
-            if send_index >= 0 and send_index < len(self.song().return_tracks):
-                self.chosen_send = send_index
-                self.__set_assignment_mode(CSM_SENDS_SINGLE)
+            if send_index >= 0:
+                if (isinstance(self.song().view.selected_track, Live.Track.Track) and send_index < len(self.song().return_tracks)) or (self.song().view.selected_chain and send_index < len(self.song().view.selected_chain.canonical_parent.return_chains)):
+                    self.chosen_send = send_index
+                    self.__set_assignment_mode(CSM_SENDS_SINGLE)
         elif self.__assignment_mode == CSM_VOLPAN or self.__assignment_mode == CSM_SENDS or self.__assignment_mode == CSM_SENDS_SINGLE or self.__assignment_mode == CSM_PLUGINS and self.__plugin_mode == PCM_PARAMETERS:
             if stack_offset + strip_index in range(0, len(self.__channel_strips)):
                 param = self.__channel_strips[stack_offset + strip_index].v_pot_parameter()
@@ -496,13 +497,19 @@ class ChannelStripController(MackieControlComponent):
         """
         assert self.__assignment_mode == CSM_SENDS
         send_index = strip_index + stack_index + self.__send_mode_offset
-        if self.song().view.selected_chain and send_index < len(self.song().view.selected_chain.mixer_device.sends):
-            p = self.song().view.selected_chain.mixer_device.sends[send_index]
-            return (p, p.name)
+        if self.song().view.selected_chain:
+            if send_index < len(self.song().view.selected_chain.canonical_parent.return_chains):
+                p_name = self.song().view.selected_chain.canonical_parent.return_chains[send_index].name
+                p = self.song().view.selected_chain.mixer_device.sends[send_index]
+                return (p, self.__format_return_chain_name(p_name))
+                # return (p, p.name)
         elif send_index < len(self.song().return_tracks):
             p = self.song().view.selected_track.mixer_device.sends[send_index]
             return (p, p.name)
         return (None, None)
+
+    def __format_return_chain_name(self, s):
+        return s[0] + ("-" if s[1] == " " else s[1]) + s[2:] if len(s) > 1 else s
 
     def __plugin_parameter(self, strip_index, stack_index):
         u""" Return the parameter that is assigned to the given channel strip
@@ -535,6 +542,16 @@ class ChannelStripController(MackieControlComponent):
             return False
         return True
 
+    def __number_of_sends_to_show(self):
+        number_of_returns = len(self.song().return_tracks)
+        for track in self.song().visible_tracks:
+            if track.can_show_chains and track.is_showing_chains:
+                for device in track.devices:
+                    if device.can_show_chains and len(device.return_chains) > number_of_returns:
+                        number_of_returns = len(device.return_chains)
+                        break
+        return number_of_returns
+
     def __can_switch_to_prev_page(self):
         u""" return true if pressing the "next" button will have any effect """
         if self.__assignment_mode == CSM_PLUGINS:
@@ -561,7 +578,8 @@ class ChannelStripController(MackieControlComponent):
             if self.__assignment_mode == CSM_SENDS:
                 return self.__send_mode_offset + len(self.__channel_strips) < len(self.song().return_tracks)
             elif self.__assignment_mode == CSM_SENDS_SINGLE:
-                return self.chosen_send < len(self.song().return_tracks) - 1
+                return self.chosen_send < self.__number_of_sends_to_show() - 1
+#                return self.chosen_send < len(self.song().return_tracks) - 1
             return False
 
     def available_colors(self): 
@@ -662,7 +680,7 @@ class ChannelStripController(MackieControlComponent):
             self.__assignment_mode = mode
         elif mode == CSM_SENDS_SINGLE:
             self.__main_display_controller.set_show_parameter_names(True)
-            self.__main_display_controller.set_chosen_send_color(self.song().return_tracks[self.chosen_send].color)
+            #self.__main_display_controller.set_chosen_send_color(self.song().return_tracks[self.chosen_send].color)
             self.__assignment_mode = mode
         else:
             if mode == CSM_IO:
@@ -720,7 +738,7 @@ class ChannelStripController(MackieControlComponent):
                 self.__send_mode_offset -= len(self.__channel_strips)
             elif self.__assignment_mode == CSM_SENDS_SINGLE:
                 self.chosen_send -= 1
-                self.__main_display_controller.set_chosen_send_color(self.song().return_tracks[self.chosen_send].color)
+                #self.__main_display_controller.set_chosen_send_color(self.song().return_tracks[self.chosen_send].color)
                 self.__update_assignment_display()
             self.__reassign_channel_strip_parameters(for_display_only=False)
             self.__update_channel_strip_strings()
@@ -740,7 +758,7 @@ class ChannelStripController(MackieControlComponent):
                 self.__send_mode_offset += len(self.__channel_strips)
             elif self.__assignment_mode == CSM_SENDS_SINGLE:
                 self.chosen_send += 1
-                self.__main_display_controller.set_chosen_send_color(self.song().return_tracks[self.chosen_send].color)
+                #self.__main_display_controller.set_chosen_send_color(self.song().return_tracks[self.chosen_send].color)
                 self.__update_assignment_display()
             else:
                 assert 0
@@ -802,8 +820,11 @@ class ChannelStripController(MackieControlComponent):
             elif self.__assignment_mode == CSM_SENDS_SINGLE:
                 if s.assigned_track() and s.assigned_track().has_audio_output:
 #                    if isinstance(s.assigned_track(), Live.Track.Track):
-                    if s.assigned_track() is not None and hasattr(s.assigned_track(), "mixer_device") and self.chosen_send < len(s.assigned_track().mixer_device.sends):
-                        vpot_param = (s.assigned_track().mixer_device.sends[self.chosen_send], s.assigned_track().mixer_device.sends[self.chosen_send].name)
+                    if hasattr(s.assigned_track(), "mixer_device") and self.chosen_send < len(s.assigned_track().mixer_device.sends):
+                        if isinstance(s.assigned_track(), Live.Chain.Chain):
+                            vpot_param = (s.assigned_track().mixer_device.sends[self.chosen_send], self.__format_return_chain_name(s.assigned_track().canonical_parent.return_chains[self.chosen_send].name))
+                        else:
+                            vpot_param = (s.assigned_track().mixer_device.sends[self.chosen_send], s.assigned_track().mixer_device.sends[self.chosen_send].name)
                         vpot_display_mode = VPOT_DISPLAY_WRAP
                     if s.assigned_track().mixer_device.volume.is_enabled: #making sure chain volume is not disabled (mapped to macro)
                         slider_param = (s.assigned_track().mixer_device.volume, u'Volume')

@@ -18,10 +18,8 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - **Black Color Handling:** Black scribble strips are only used if explicitly selected in Live to prevent unreadable text.
 - **Grayscale Handling:** All grayscale colors (except black) default to white scribble strips.
 - **Inactive Channels:** Tracks beyond your active channels are marked with black scribble strips to indicate inactivity.
-- **Send/Plug-In Modes:**
-  - Scribble strips are lit in a single color for better readability:
-    - Yellow: Send mode.
-    - Cyan: Plug-in mode.
+- **Plug-In Mode:**
+  - Scribble strips are lit in a single color (Cyan) for better readability.
 
 ### Level Meter Enhancements
 - **Clipping Indicators:** Channel strip level meters now show clipping when it occurs.
@@ -38,11 +36,11 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - Quick access through the `USER` button will work with any device that is first in the chain on the Master channel and has "X-Touch" in its name.
 
 ### Single Send Mode (beta)
-- Default Sends mode (`SEND`) shows send levels for all return tracks on the current track.
-- New Single Send mode shows send levels for a single return track accross all tracks.
+- Default Sends mode (`SEND`) shows send levels for all return tracks/return chains on the current track/chain.
+- New Single Send mode shows send levels for a single return track/return chain accross all tracks/chains.
 - In default Sends mode, either press `SEND` again or `SHIFT + Press rotary encoder` to select the corresponding return track for Single Send mode.
-- Press `EQ` or `INST` to move control to the previous/next return track send levels.
-- Single Send Mode will skip chains visible in the mixer (scribble strip turns black), since global sends do not apply to them.
+- Press `EQ` or `INST` to move control to the previous/next return track/return chain send levels.
+- Scribble strips will turn black for unavailable sends (if the number of global return tracks differs from the number of return chains in a device with chains visible in the mixer).
 
 ### Device Control Lock (beta)
 - With the rotary encoders assigned to device parameters (`PLUG-IN` > `Press rotary encoder` to select device), press `SHIFT + PLUG-IN` to lock current assignment.
@@ -56,7 +54,8 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 ### Chains behave as groups (beta)
 - Press `SELECT` twice on a track that contains a Rack to expand its chains in the Mixer (same behaviour as with track groups).
 - Rack chains react just like normal tracks to faders, `MUTE` and `SOLO` buttons and encoders (in Pan and Sends mode).
-- Chain colors appear in scribble strips and can be modified just like track colors (press `TRACK` x5 for color mode)
+- Chain colors appear in scribble strips and can be modified just like track colors (press `TRACK` x5 for color mode).
+- Note: if volume or panning for a device chain is macro mapped, the fader/rotary encoder for that chain will have no effect.
 - Limitations: chains audio metering and audio routing are currently unavailable in Live's API.
 
 ## Button Mappings

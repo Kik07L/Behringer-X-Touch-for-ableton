@@ -27,7 +27,7 @@ class MainDisplayController(MackieControlComponent):
         self.__channel_strip_strings = [ u'' for x in range(NUM_CHANNEL_STRIPS) ]
         self.__channel_strip_mode = True
         self.__show_parameter_names = False
-        self.__chosen_send_color = None
+        #self.__chosen_send_color = None
         self.__bank_channel_offset = 0
         self.__meters_enabled = False
         self.__show_return_tracks = False
@@ -72,10 +72,10 @@ class MainDisplayController(MackieControlComponent):
 
     def set_show_parameter_names(self, enable):
         self.__show_parameter_names = enable
-        self.__chosen_send_color = None
+        #self.__chosen_send_color = None
 
-    def set_chosen_send_color(self, chosen_send_color):
-        self.__chosen_send_color = chosen_send_color
+    # def set_chosen_send_color(self, chosen_send_color):
+        # self.__chosen_send_color = chosen_send_color
 
     def set_channel_offset(self, channel_offset):
         self.__bank_channel_offset = channel_offset
