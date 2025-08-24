@@ -50,4 +50,7 @@ class MackieControlComponent:
         return self.__main_script.visible_tracks_including_chains()
         
     def tracks_including_chains(self):
-        return self.__main_script.tracks_including_chains()
+        return self.__main_script.tracks_including_chains()        
+        
+    def chainable_device(self, track):
+        return self.__main_script.chainable_device(track)

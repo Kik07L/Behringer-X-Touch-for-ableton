@@ -333,28 +333,42 @@ class ChannelStrip(MackieControlComponent):
 
     def __select_track(self):
         if self.__assigned_track:
+            chainable_device = self.chainable_device(self.__assigned_track)
             all_tracks = tuple(self.visible_tracks_including_chains()) + tuple(self.song().return_tracks)
-            if isinstance(all_tracks[self.__assigned_track_index()], Live.Chain.Chain):
-                if self.song().view.selected_chain != all_tracks[self.__assigned_track_index()]:
-                    self.song().view.selected_chain = all_tracks[self.__assigned_track_index()]
-            elif self.song().view.selected_track != all_tracks[self.__assigned_track_index()]:
+            if isinstance(all_tracks[self.__assigned_track_index()], Live.Chain.Chain) and self.song().view.selected_chain != all_tracks[self.__assigned_track_index()]:
+                self.song().view.selected_chain = all_tracks[self.__assigned_track_index()]
+            elif isinstance(all_tracks[self.__assigned_track_index()], Live.Track.Track) and self.song().view.selected_track != all_tracks[self.__assigned_track_index()]:
                 self.song().view.selected_track = all_tracks[self.__assigned_track_index()]
             else:
 #            elif self.application().view.is_view_visible(u'Arranger'):
-                if self.__assigned_track.is_foldable:
+                if hasattr(self.__assigned_track, 'is_foldable') and self.__assigned_track.is_foldable:
                     if self.__assigned_track.fold_state:
                         self.__assigned_track.fold_state = 0
                     else:
                         self.__assigned_track.fold_state = 1
-                elif self.__assigned_track.can_show_chains:
-                    if self.song().view.selected_chain:
-                        self.song().view.selected_track = all_tracks[self.__assigned_track_index()]
-                    else:
-                        self.__assigned_track.is_showing_chains = not self.__assigned_track.is_showing_chains
+                elif hasattr(self.__assigned_track, 'can_show_chains') and self.__assigned_track.can_show_chains:
+                    # if self.song().view.selected_chain:
+                        # self.song().view.selected_track = all_tracks[self.__assigned_track_index()]
+                    # else:
+                    self.__assigned_track.is_showing_chains = not self.__assigned_track.is_showing_chains
+                    if hasattr(self.__assigned_track, 'view'):
                         self.__assigned_track.view.is_collapsed = not self.__assigned_track.is_showing_chains
+                elif chainable_device:
+                    # if self.song().view.selected_chain:
+                        # self.song().view.selected_track = all_tracks[self.__assigned_track_index()]
+                    # else:
+                    chainable_device.is_showing_chains = not chainable_device.is_showing_chains
+                    self.__channel_strip_controller.refresh_state()
                 else:
-                    self.__assigned_track.view.is_collapsed = not self.__assigned_track.view.is_collapsed
+                    if hasattr(self.__assigned_track, 'view'):
+                        self.__assigned_track.view.is_collapsed = not self.__assigned_track.view.is_collapsed
                     #self.__update_track_is_selected_led()
+
+    # def __chainable_device(self, track):
+        # for chain_device in track.devices:
+            # if isinstance(chain_device, Live.RackDevice.RackDevice) and chain_device.can_show_chains:
+                # return chain_device
+        # return None
 
     def __update_arm_led(self):
         track = self.__assigned_track

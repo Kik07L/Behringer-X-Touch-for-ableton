@@ -5,6 +5,7 @@ from builtins import object
 from XTouch.consts import *
 from XTouch.MainDisplay import MainDisplay
 from XTouch.ChannelStrip import ChannelStrip
+from itertools import chain
 import Live
 
 class MackieControlXT(object):
@@ -195,11 +196,17 @@ class MackieControlXT(object):
             if track.can_show_chains and track.is_showing_chains:
                 # If so, extend our list with the track's chains.
                 for device in track.devices:
-                    if device.can_show_chains:
+                    if device.can_show_chains and device.is_showing_chains:
+                        for single_chain in chain(device.chains, device.return_chains):
+                            tracks_and_chains_list.append(single_chain)
+                            for chain_device in single_chain.devices:
+                                if isinstance(chain_device, Live.RackDevice.RackDevice) and chain_device.can_show_chains and chain_device.is_showing_chains:
+                                    tracks_and_chains_list.extend(list(chain_device.chains))
+                                    tracks_and_chains_list.extend(list(chain_device.return_chains))
                         # This is the correct device (e.g., a Drum Rack).
                         # Extend our list with its chains.
-                        tracks_and_chains_list.extend(list(device.chains))
-                        tracks_and_chains_list.extend(list(device.return_chains))                        
+                        # tracks_and_chains_list.extend(list(device.chains))
+                        # tracks_and_chains_list.extend(list(device.return_chains))
                         # Once found, we can break the inner loop
                         # as only one device's chains can be shown at a time.
                         break
@@ -224,12 +231,24 @@ class MackieControlXT(object):
                 # If so, extend our list with the track's chains.
                 for device in track.devices:
                     if device.can_show_chains:
+                        for single_chain in chain(device.chains, device.return_chains):
+                            tracks_and_chains_list.append(single_chain)
+                            for chain_device in single_chain.devices:
+                                if isinstance(chain_device, Live.RackDevice.RackDevice) and chain_device.can_show_chains:
+                                    tracks_and_chains_list.extend(list(chain_device.chains))
+                                    tracks_and_chains_list.extend(list(chain_device.return_chains))
                         # This is the correct device (e.g., a Drum Rack).
                         # Extend our list with its chains.
-                        tracks_and_chains_list.extend(list(device.chains))
-                        tracks_and_chains_list.extend(list(device.return_chains))
+                        # tracks_and_chains_list.extend(list(device.chains))
+                        # tracks_and_chains_list.extend(list(device.return_chains))
                         # Once found, we can break the inner loop
                         # as only one device's chains can be shown at a time.
                         break
         
         return tracks_and_chains_list
+
+    def chainable_device(self, track):
+        for chain_device in track.devices:
+            if isinstance(chain_device, Live.RackDevice.RackDevice) and chain_device.can_show_chains:
+                return chain_device
+        return None
