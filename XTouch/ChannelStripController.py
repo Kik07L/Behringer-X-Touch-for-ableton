@@ -7,6 +7,8 @@ from past.utils import old_div
 from .MackieControlComponent import *
 from _Generic.Devices import *
 from itertools import chain
+import math
+import Live
 #flatten_target = lambda routing_target: routing_target.display_name
 flatten_target = lambda routing_target: (
     routing_target.display_name if hasattr(routing_target, 'display_name') else routing_target["display_name"]
@@ -98,6 +100,7 @@ class ChannelStripController(MackieControlComponent):
         self.__bank_cha_offset = 0
         self.__bank_cha_offset_returns = 0
         self.__within_track_added_or_deleted = False
+        self.__pending_quantized_solo = None
         self.song().add_visible_tracks_listener(self.__on_tracks_added_or_deleted)
         self.song().view.add_selected_track_listener(self.__on_selected_track_changed)
         self.song().view.add_selected_chain_listener(self.__on_selected_track_changed)
@@ -209,6 +212,10 @@ class ChannelStripController(MackieControlComponent):
     def on_update_display_timer(self):
         self.__cleanup_stored_soloed_tracks()
         self.__update_channel_strip_strings()
+        if self.__pending_quantized_solo is not None:
+            if self.song().current_song_time >= self.__pending_quantized_solo:
+                self.__do_global_solo_toggle()
+                self.__pending_quantized_solo = None
 
     def toggle_meter_mode(self):
         u""" called from the main script when the display toggle button was pressed """
@@ -287,13 +294,19 @@ class ChannelStripController(MackieControlComponent):
                 if self.shift_is_pressed():
                     self.remove_solos()
                     self.reset_solos()
-                elif self.can_restore_solos:
-                    self.restore_solos()
-                elif self.any_track_soloed:
-                    self.store_solos()
+                elif self.control_is_pressed():
+                    beats = self.__quantization_to_beats(self.song().clip_trigger_quantization)
+                    if beats > 0:
+                        now = self.song().current_song_time
+                        next_boundary = math.ceil(now / beats) * beats
+                        self.__pending_quantized_solo = next_boundary
+                        # optional LED feedback: blink until executed
+                        # self.send_button_led(SID_MARKER_END, BUTTON_STATE_BLINKING)
+                    else:
+                        self.__do_global_solo_toggle()
                 else:
-                    sel_track = self.song().view.selected_track
-                    sel_track.solo = True
+                    self.__pending_quantized_solo = None # override any active delayed Global Solo toggle
+                    self.__do_global_solo_toggle()
         elif switch_id == SID_SOFTWARE_F16:
             if value == BUTTON_PRESSED:
                 self.__show_macro_mapper()
@@ -354,6 +367,38 @@ class ChannelStripController(MackieControlComponent):
                 track.solo = True
                 track.solo = False
         self.song().view.selected_track = sel_track
+
+    def __quantization_to_beats(self, q):
+        num = self.song().signature_numerator
+        den = self.song().signature_denominator
+        beats_per_bar = (num * 4.0) / den
+
+        mapping = {
+            0: 0,                       # None
+            1: 8 * beats_per_bar,       # 8 Bars
+            2: 4 * beats_per_bar,       # 4 Bars
+            3: 2 * beats_per_bar,       # 2 Bars
+            4: 1 * beats_per_bar,       # 1 Bar
+            5: beats_per_bar / 2.0,     # 1/2
+            6: (beats_per_bar / 2.0) * 2.0/3.0,  # 1/2T
+            7: beats_per_bar / 4.0,     # 1/4
+            8: (beats_per_bar / 4.0) * 2.0/3.0,  # 1/4T
+            9: beats_per_bar / 8.0,     # 1/8
+            10: (beats_per_bar / 8.0) * 2.0/3.0, # 1/8T
+            11: beats_per_bar / 16.0,   # 1/16
+            12: (beats_per_bar / 16.0) * 2.0/3.0,# 1/16T
+            13: beats_per_bar / 32.0,   # 1/32
+        }
+        return mapping.get(q, 0)
+
+    def __do_global_solo_toggle(self):
+        if self.can_restore_solos:
+            self.restore_solos()
+        elif self.any_track_soloed:
+            self.store_solos()
+        else:
+            sel_track = self.song().view.selected_track
+            sel_track.solo = True
 
     def restore_solos(self):
         sel_track = self.song().view.selected_track

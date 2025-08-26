@@ -103,6 +103,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - ON: Tracks soloed, press to unsolo all at once.
   - Blinking: Previously soloed tracks stored, press to restore.
   - OFF: No tracks soloed, press to solo current track.
+  - `CONTROL + SOLO`: Toggle solo states in time with song (delayed according to global launch quantization as set in Live).
   - `SHIFT + SOLO`: Reset.
 
 ### **Utility Section**
