@@ -129,9 +129,9 @@ class MainDisplayController(MackieControlComponent):
                                 elif isinstance(tracks[t], Live.Chain.Chain):
                                     curr_color = display.match_color(tracks[t].canonical_parent.return_chains[channel_strip_controller.chosen_send].color)
                             elif assignment_mode == CSM_SENDS:
-                                if self.song().view.selected_chain:
+                                if self.song().view.selected_chain and t < len(self.song().view.selected_chain.canonical_parent.return_chains):
                                     curr_color = display.match_color(self.song().view.selected_chain.canonical_parent.return_chains[t].color)
-                                else:
+                                elif t < len(self.song().return_tracks):
                                     curr_color = display.match_color(self.song().return_tracks[t].color)
                             else:
                                 curr_color = assignment_mode_colors[assignment_mode]

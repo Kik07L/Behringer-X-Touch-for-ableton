@@ -30,6 +30,10 @@ class ChannelStrip(MackieControlComponent):
         self.__within_destroy = True
         if self.__assigned_track:
             self.__remove_listeners()
+        if self.song().view.selected_track_has_listener(self.__update_track_is_selected_led):
+            self.song().view.remove_selected_track_listener(self.__update_track_is_selected_led)
+        if self.song().view.selected_chain_has_listener(self.__update_track_is_selected_led):
+            self.song().view.remove_selected_chain_listener(self.__update_track_is_selected_led)
         self.__assigned_track = None
         self.send_midi((208, 0 + (self.__strip_index << 4)))
         self.__meters_enabled = False
@@ -249,30 +253,27 @@ class ChannelStrip(MackieControlComponent):
             assert 0
 
     def __add_listeners(self):
-        if not self.song().view.selected_track_has_listener(self.__update_track_is_selected_led()):
-            self.song().view.add_selected_track_listener(self.__update_track_is_selected_led())
-        if isinstance(self.__assigned_track, Live.Track.Track) and self.__assigned_track.can_be_armed:
-            self.__assigned_track.add_arm_listener(self.__update_arm_led)
-            self.__assigned_track.add_current_monitoring_state_listener(self.__update_arm_led)
-        self.__assigned_track.add_mute_listener(self.__update_mute_led)
-        self.__assigned_track.add_solo_listener(self.__update_solo_led)
         if not self.song().view.selected_track_has_listener(self.__update_track_is_selected_led):
             self.song().view.add_selected_track_listener(self.__update_track_is_selected_led)
         if not self.song().view.selected_chain_has_listener(self.__update_track_is_selected_led):
             self.song().view.add_selected_chain_listener(self.__update_track_is_selected_led)
-
+        if hasattr(self.__assigned_track, 'can_be_armed') and self.__assigned_track.can_be_armed:
+            self.__assigned_track.add_arm_listener(self.__update_arm_led)
+            self.__assigned_track.add_current_monitoring_state_listener(self.__update_arm_led)
+        self.__assigned_track.add_mute_listener(self.__update_mute_led)
+        self.__assigned_track.add_solo_listener(self.__update_solo_led)
 
 
     def __remove_listeners(self):
-        if self.song().view.selected_track_has_listener(self.__update_track_is_selected_led()):
-            self.song().view.remove_selected_track_listener(self.__update_track_is_selected_led())
-        if isinstance(self.__assigned_track, Live.Track.Track) and self.__assigned_track.can_be_armed:
-            self.__assigned_track.remove_arm_listener(self.__update_arm_led)
-            self.__assigned_track.remove_current_monitoring_state_listener(self.__update_arm_led)
-        self.__assigned_track.remove_mute_listener(self.__update_mute_led)
-        self.__assigned_track.remove_solo_listener(self.__update_solo_led)
-        self.song().view.remove_selected_track_listener(self.__update_track_is_selected_led)
-        self.song().view.remove_selected_chain_listener(self.__update_track_is_selected_led)
+        if hasattr(self.__assigned_track, 'can_be_armed') and self.__assigned_track.can_be_armed:
+            if self.__assigned_track.arm_has_listener(self.__update_arm_led):
+                self.__assigned_track.remove_arm_listener(self.__update_arm_led)
+            if self.__assigned_track.current_monitoring_state_has_listener(self.__update_arm_led):
+                self.__assigned_track.remove_current_monitoring_state_listener(self.__update_arm_led)
+        if self.__assigned_track.mute_has_listener(self.__update_mute_led):
+             self.__assigned_track.remove_mute_listener(self.__update_mute_led)
+        if self.__assigned_track.solo_has_listener(self.__update_solo_led):
+             self.__assigned_track.remove_solo_listener(self.__update_solo_led)
 
     def __send_meter_mode(self):
         on_mode = 1
@@ -394,7 +395,8 @@ class ChannelStrip(MackieControlComponent):
             self.send_button_led(SID_SOLO_BASE + self.__strip_index, BUTTON_STATE_OFF)
 
     def __update_track_is_selected_led(self):
-        if isinstance(self.__assigned_track, Live.Chain.Chain) and self.song().view.selected_chain == self.__assigned_track:
+#        if isinstance(self.__assigned_track, Live.Chain.Chain) and self.song().view.selected_chain == self.__assigned_track:
+        if self.song().view.selected_chain and self.song().view.selected_chain == self.__assigned_track:
             self.send_button_led(SID_SELECT_BASE + self.__strip_index, BUTTON_STATE_ON)
 #        elif self.__assigned_track.is_part_of_selection:
         elif self.song().view.selected_track == self.__assigned_track:
