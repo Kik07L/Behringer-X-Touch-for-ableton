@@ -131,6 +131,10 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `CONTROL + Rotation`: Change tempo.
 - `ZOOM BUTTON + Rotation`: Zoom in/out in Arrangement view.
 
+### **Function Section**
+- `SHIFT + F1-F8`: Enable/disable record quantization selection. Leave disabled to allow Function buttons to be MIDI mapped. Setting is remembered across sessions.
+- `F1-F8`: Select Record Quantization. Press lit button again for no quantization.
+
 ### **Gray Section**
 - `GLOBAL VIEW`: Switch between Session and Arrangement views.
 - `MIDI TRACKS`: Create a new MIDI track.

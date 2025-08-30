@@ -48,6 +48,7 @@ class MackieControl(object):
         self._preferences_spec = {
             "NIGHT_MODE_ON":     (False, lambda v: v.lower() in ("1", "true", "yes", "on")),
             "ALTERNATIVE_COLOR_DISTANCE_MODE":     (False, lambda v: v.lower() in ("1", "true", "yes", "on")),
+            "USE_FUNCTION_KEYS_FOR_QUANTIZATION_MODE":     (False, lambda v: v.lower() in ("1", "true", "yes", "on")),
         }
 
         # copy defaults into attributes (lowercase names)
@@ -68,6 +69,7 @@ class MackieControl(object):
         self._refresh_state_next_time = 0
         self._ensure_default_preferences_file()
         self._load_preferences()
+        self.save_preferences() # in case an options.txt file already exists but new preferences have been added
 
     def disconnect(self):
         for c in self.__components:
@@ -155,8 +157,9 @@ class MackieControl(object):
 
         self.__master_strip.build_midi_map(midi_map_handle)
         for i in range(SID_FIRST, SID_LAST + 1):
-            if i not in function_key_control_switch_ids:
-                Live.MidiMap.forward_midi_note(self.handle(), midi_map_handle, 0, i)
+            Live.MidiMap.forward_midi_note(self.handle(), midi_map_handle, 0, i)
+            # if self.use_function_keys_for_quantization_mode or i not in function_key_control_switch_ids:
+                # Live.MidiMap.forward_midi_note(self.handle(), midi_map_handle, 0, i)
 
         Live.MidiMap.forward_midi_cc(self.handle(), midi_map_handle, 0, JOG_WHEEL_CC_NO)
 

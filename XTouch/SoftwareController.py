@@ -24,6 +24,7 @@ class SoftwareController(MackieControlComponent):
         self.song().add_session_automation_record_listener(self.__update_automation_record_button_led)
         self.song().add_re_enable_automation_enabled_listener(self.__update_re_enable_automation_enabled_button_led)
         self.song().add_arrangement_overdub_listener(self.__update_arrangement_overdub_button_led)
+        self.song().add_midi_recording_quantization_listener(self.__update_midi_recording_quantization_buttons_led)
         self.__update_automation_record_button_led()
 
     def destroy(self):
@@ -36,6 +37,7 @@ class SoftwareController(MackieControlComponent):
         self.song().remove_back_to_arranger_listener(self.__update_back_to_arranger_button_led)
         self.song().remove_can_capture_midi_listener(self.__update_capture_midi_button_led)
         self.song().remove_arrangement_overdub_listener(self.__update_arrangement_overdub_button_led)
+        self.song().remove_midi_recording_quantization_listener(self.__update_midi_recording_quantization_buttons_led)
         for note in software_controls_switch_ids:
             self.send_button_led(note, BUTTON_STATE_OFF)
 
@@ -48,7 +50,17 @@ class SoftwareController(MackieControlComponent):
         MackieControlComponent.destroy(self)
 
     def handle_function_key_switch_ids(self, switch_id, value):
-        assert 0
+        current_quantization = SID_SOFTWARE_F1 + self.song().midi_recording_quantization - 1
+        if value == BUTTON_PRESSED:
+            if self.shift_is_pressed():
+                self.main_script().use_function_keys_for_quantization_mode = not self.main_script().use_function_keys_for_quantization_mode
+                self.main_script().save_preferences()
+                self.__update_midi_recording_quantization_buttons_led()
+            elif self.main_script().use_function_keys_for_quantization_mode == True:
+                if switch_id == current_quantization:
+                    self.song().midi_recording_quantization = 0
+                else:
+                    self.song().midi_recording_quantization = switch_id - SID_SOFTWARE_F1 + 1
 
     def handle_modify_key_switch_ids(self, switch_id, value):
         if switch_id == SID_MOD_SHIFT:
@@ -356,6 +368,18 @@ class SoftwareController(MackieControlComponent):
                 self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_BLINKING)
             else:
                 self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_OFF)
+
+    def __update_midi_recording_quantization_buttons_led(self):
+        if self.main_script().use_function_keys_for_quantization_mode == True:
+            current_quantization = SID_SOFTWARE_F1 + self.song().midi_recording_quantization - 1
+            for key in function_key_control_switch_ids:
+                if key == current_quantization:
+                    self.send_button_led(key, BUTTON_STATE_ON)
+                else:
+                    self.send_button_led(key, BUTTON_STATE_OFF)
+        else:
+            for key in function_key_control_switch_ids:
+                self.send_button_led(key, BUTTON_STATE_OFF)
 
     def __update_capture_midi_button_led(self): #
         if self.song().can_capture_midi:
