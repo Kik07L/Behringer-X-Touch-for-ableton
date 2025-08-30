@@ -12,7 +12,7 @@ class SoftwareController(MackieControlComponent):
         self.__selected_track_group_state = 0
         self.__master_track_selected_state = False
         av = self.application().view
-        self.__night_mode_on = False
+        #self.night_mode_on = False
         self.__leds_flashing = False
         av.add_is_view_visible_listener(u'Session', self.__update_session_arranger_button_led)
         av.add_is_view_visible_listener(u'Detail/Clip', self.__update_detail_sub_view_button_led)
@@ -59,7 +59,7 @@ class SoftwareController(MackieControlComponent):
             self.main_script().set_control_is_pressed(value == BUTTON_PRESSED)
         elif switch_id == SID_MOD_ALT:
             self.main_script().set_alt_is_pressed(value == BUTTON_PRESSED)
-        if self.__night_mode_on and value == BUTTON_PRESSED:
+        if self.main_script().night_mode_on and value == BUTTON_PRESSED:
             self.__flash_leds(1)
         elif value == BUTTON_RELEASED:
             self.__flash_leds(0)
@@ -67,18 +67,19 @@ class SoftwareController(MackieControlComponent):
             self.__toggle_night_mode()
 
     def __toggle_night_mode(self):
-        self.__night_mode_on = not self.__night_mode_on
+        self.main_script().night_mode_on = not self.main_script().night_mode_on
+        self.main_script().save_preferences()
         self.__update_night_mode_leds()
 
     def __update_night_mode_leds(self):
         led_state = BUTTON_STATE_OFF
-        if self.__night_mode_on == True:
+        if self.main_script().night_mode_on == True:
             led_state = BUTTON_STATE_ON
         for note in range(SID_MOD_SHIFT, SID_MOD_ALT + 1):
             self.send_button_led(note, led_state)
 
     # def handle_touch_master_fader(self, switch_id, value):
-        # if value == BUTTON_PRESSED and self.__night_mode_on:
+        # if value == BUTTON_PRESSED and self.main_script().night_mode_on:
             # self.__flash_leds(1)
         # elif value == BUTTON_RELEASED:
             # self.__flash_leds(0)

@@ -115,7 +115,7 @@ class MainDisplay(MackieControlComponent):
         return (dh / 180.0) ** 2 + (s1 - s2) ** 2 + (v1 - v2) ** 2
 
     def color_distance(self, color1, color2):
-        if self.main_script().advanced_color_distance_mode():
+        if self.main_script().get_alternative_color_distance_mode():
             # hue-first perceptual distance
 #            return self.hsv_distance(color1, color2)
             # categorical: return 0 if same bin, 1 if different
@@ -127,7 +127,7 @@ class MainDisplay(MackieControlComponent):
                    ((color1[2] - color2[2]) ** 2)
 
     # def color_distance(self, color1, color2):
-        # if self.main_script().advanced_color_distance_mode(): #activated by SHIFT + DISPLAY/NAME/VALUE; however, only two colors (Vista Blue and Pomelo Green) yield a different result, so not worth the extra compute
+        # if self.main_script().alternative_color_distance_mode(): #activated by SHIFT + DISPLAY/NAME/VALUE; however, only two colors (Vista Blue and Pomelo Green) yield a different result, so not worth the extra compute
             # r_mean = (color1[0] + color2[0]) / 2
             # r_diff = (color1[0] - color2[0])
             # g_diff = (color1[1] - color2[1])

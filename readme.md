@@ -50,6 +50,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - Press all four `MODIFY` buttons (`SHIFT`, `OPTION`, `CONTROL` and `ALT`) simultaneously to toggle Night Mode.
 - `MODIFY` section LEDs are permanently lit for enhanced visibility.
 - Press any `MODIFY` button to temporarily light up all buttons.
+- Night Mode setting is remembered across sessions.
 
 ### Chains behave as groups (beta)
 - Press `SELECT` twice on a track that contains a Rack to expand its chains in the Mixer (same behaviour as with track groups).

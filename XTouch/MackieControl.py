@@ -13,6 +13,7 @@ from .Transport import Transport
 from itertools import chain
 import Live
 import MidiRemoteScript
+import os
 
 class MackieControl(object):
     u"""Main class that establishes the Mackie Control <-> Live interaction. It acts
@@ -40,6 +41,19 @@ class MackieControl(object):
         for s in self.__channel_strips:
             self.__components.append(s)
 
+        # -------------------------------------------------------------------
+        # Preferences system
+        # -------------------------------------------------------------------
+        # key -> (default_value, parser)
+        self._preferences_spec = {
+            "NIGHT_MODE_ON":     (False, lambda v: v.lower() in ("1", "true", "yes", "on")),
+            "ALTERNATIVE_COLOR_DISTANCE_MODE":     (False, lambda v: v.lower() in ("1", "true", "yes", "on")),
+        }
+
+        # copy defaults into attributes (lowercase names)
+        for key, (default, _) in self._preferences_spec.items():
+            setattr(self, key.lower(), default)
+
         self.__master_strip = MasterChannelStrip(self)
         self.__components.append(self.__master_strip)
         self.__channel_strip_controller = ChannelStripController(self, self.__channel_strips, self.__master_strip, self.__main_display_controller)
@@ -48,10 +62,12 @@ class MackieControl(object):
         self.__option_is_pressed = False
         self.__control_is_pressed = False
         self.__alt_is_pressed = False
-        self.__advanced_color_distance_mode = False
+#        self.alternative_color_distance_mode = False
         self.is_pro_version = False
         self._received_firmware_version = False
         self._refresh_state_next_time = 0
+        self._ensure_default_preferences_file()
+        self._load_preferences()
 
     def disconnect(self):
         for c in self.__components:
@@ -245,11 +261,12 @@ class MackieControl(object):
     def set_alt_is_pressed(self, pressed):
         self.__alt_is_pressed = pressed
 
-    def advanced_color_distance_mode(self):
-        return self.__advanced_color_distance_mode
+    def get_alternative_color_distance_mode(self):
+        return self.alternative_color_distance_mode
 
-    def toggle_advanced_color_distance_mode(self):
-        self.__advanced_color_distance_mode = not self.__advanced_color_distance_mode
+    def toggle_alternative_color_distance_mode(self):
+        self.alternative_color_distance_mode = not self.alternative_color_distance_mode
+        self.save_preferences()
 
     def __handle_display_switch_ids(self, switch_id, value):
         if switch_id == SID_DISPLAY_NAME_VALUE:
@@ -344,3 +361,89 @@ class MackieControl(object):
             if isinstance(chain_device, Live.RackDevice.RackDevice) and chain_device.can_show_chains:
                 return chain_device
         return None
+
+    def _load_preferences(self):
+        prefs_path = os.path.join(os.path.dirname(__file__), "options.txt")
+        if not os.path.exists(prefs_path):
+            return
+
+        with open(prefs_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+
+                # chop off inline comments
+                if "#" in line:
+                    line = line.split("#", 1)[0].strip()
+
+                if "=" not in line:
+                    continue
+                key, value = [p.strip() for p in line.split("=", 1)]
+                self._apply_preference(key, value)
+
+    def _apply_preference(self, key, value):
+        spec = self._preferences_spec.get(key)
+        if not spec:
+            return  # unknown key, ignore
+        default, parser = spec
+        try:
+            parsed_value = parser(value)
+            setattr(self, key.lower(), parsed_value)
+        except Exception:
+            setattr(self, key.lower(), default)
+
+    def _ensure_default_preferences_file(self):
+        prefs_path = os.path.join(os.path.dirname(__file__), "options.txt")
+        if os.path.exists(prefs_path):
+            return  # don't overwrite user's file
+
+        # build a default file with comments
+        lines = [
+            "# User preferences for Behringer X-Touch",
+            "",
+        ]
+        for key, (default, _) in self._preferences_spec.items():
+            if isinstance(default, bool):
+                val_str = "true" if default else "false"
+                comment = " (true/false)"
+            elif isinstance(default, float):
+                val_str = str(default)
+                comment = " (float)"
+            elif isinstance(default, int):
+                val_str = str(default)
+                comment = " (integer)"
+            else:
+                val_str = str(default)
+                comment = ""
+            lines.append(f"{key} = {val_str}    #{comment}")
+
+        with open(prefs_path, "w") as f:
+            f.write("\n".join(lines) + "\n")
+
+    def save_preferences(self):
+        """Write current preference values back into options.txt"""
+        prefs_path = os.path.join(os.path.dirname(__file__), "options.txt")
+
+        lines = [
+            "# User preferences for Behringer X-Touch",
+            "",
+        ]
+        for key, (default, parser) in self._preferences_spec.items():
+            current_value = getattr(self, key.lower(), default)
+            if isinstance(current_value, bool):
+                val_str = "true" if current_value else "false"
+                comment = " (true/false)"
+            elif isinstance(current_value, float):
+                val_str = f"{current_value:.3f}".rstrip("0").rstrip(".")
+                comment = " (float)"
+            elif isinstance(current_value, int):
+                val_str = str(current_value)
+                comment = " (integer)"
+            else:
+                val_str = str(current_value)
+                comment = ""
+            lines.append(f"{key} = {val_str}    #{comment}")
+
+        with open(prefs_path, "w") as f:
+            f.write("\n".join(lines) + "\n")
