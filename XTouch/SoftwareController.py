@@ -23,6 +23,7 @@ class SoftwareController(MackieControlComponent):
         self.song().add_can_capture_midi_listener(self.__update_capture_midi_button_led) #
         self.song().add_session_automation_record_listener(self.__update_automation_record_button_led)
         self.song().add_re_enable_automation_enabled_listener(self.__update_re_enable_automation_enabled_button_led)
+        self.song().add_arrangement_overdub_listener(self.__update_arrangement_overdub_button_led)
         self.__update_automation_record_button_led()
 
     def destroy(self):
@@ -33,7 +34,8 @@ class SoftwareController(MackieControlComponent):
         av.remove_is_view_visible_listener(u'Detail', self.__update_detail_button_led)
         self.song().view.remove_draw_mode_listener(self.__update_draw_mode_button_led)
         self.song().remove_back_to_arranger_listener(self.__update_back_to_arranger_button_led)
-        self.song().remove_can_capture_midi_listener(self.__update_capture_midi_button_led) #
+        self.song().remove_can_capture_midi_listener(self.__update_capture_midi_button_led)
+        self.song().remove_arrangement_overdub_listener(self.__update_arrangement_overdub_button_led)
         for note in software_controls_switch_ids:
             self.send_button_led(note, BUTTON_STATE_OFF)
 
@@ -143,9 +145,15 @@ class SoftwareController(MackieControlComponent):
         elif switch_id == SID_SOFTWARE_F11:
             if value == BUTTON_PRESSED:
                 self.song().create_audio_track()
+        elif switch_id == SID_SOFTWARE_F14:
+            if value == BUTTON_PRESSED:
+                self.song().create_return_track()
         elif switch_id == SID_SOFTWARE_F15:
             if value == BUTTON_PRESSED:
                 self.__show_master_channel()
+        elif switch_id == SID_FUNC_TRIM:
+            if value == BUTTON_PRESSED:
+                self.__toggle_arrangement_overdub()
 
     def refresh_state(self):
         self.main_script().set_shift_is_pressed(False)
@@ -223,6 +231,9 @@ class SoftwareController(MackieControlComponent):
         else:
             self.application().view.show_view(u'Detail')
 
+    def __toggle_arrangement_overdub(self):
+        self.song().arrangement_overdub = not self.song().arrangement_overdub
+
     def __toggle_back_to_arranger(self):
         self.song().back_to_arranger = not self.song().back_to_arranger
 
@@ -255,6 +266,11 @@ class SoftwareController(MackieControlComponent):
     def __toggle_automation_record(self):
         self.song().session_automation_record = not self.song().session_automation_record
 
+    def __update_arrangement_overdub_button_led(self):
+        if self.song().arrangement_overdub:
+            self.send_button_led(SID_FUNC_TRIM, BUTTON_STATE_ON)
+        else:
+            self.send_button_led(SID_FUNC_TRIM, BUTTON_STATE_OFF)
 
     def __update_session_arranger_button_led(self):
         if self.application().view.is_view_visible(u'Session'):

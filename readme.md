@@ -117,7 +117,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `WRITE`: Arm for automation recording.
 - `TOUCH`: Toggle Draw mode.
 - `LATCH`: Toggle Follow mode.
-- `TRIM`: Currently unused.
+- `TRIM`: Toggle MIDI arrangement overdub.
 - `GROUP`: Expand/collapse selected track (if it is a group or contains chains). LED behavior:
   - ON: Current track is a group or contains chains.
   - Blinking: Current track is within a group or is a chain within a track.
@@ -137,7 +137,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `AUDIO TRACKS`: Create a new audio track.
 - `AUDIO INST`: Open/close the details view.
 - `AUX`: Toggle between clip and device views. LED is on in clip view.
-- `BUSES`: Currently unused.
+- `BUSES`: Create a new return track.
 - `OUTPUTS`: Select the Master Track. Press again to show Master device chain.
 - `USER`: Press and hold to show Macro Mapper.
   - `SHIFT + USER`: Lock Macro Mapper.
