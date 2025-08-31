@@ -2,8 +2,6 @@
 from __future__ import absolute_import, print_function, unicode_literals
 from builtins import range
 from .MackieControlComponent import *
-import math
-import colorsys
 
 class MainDisplay(MackieControlComponent):
     u""" Representing one main 2 row display of a Mackie Control or Extension
@@ -74,89 +72,6 @@ class MainDisplay(MackieControlComponent):
              device_type,
              114) + colors + (247,)
             self.send_midi(colors_sysex)
-
-    def map_to_xtouch_color(self, rgb):
-        r, g, b = [x/255.0 for x in rgb]
-        h, s, v = colorsys.rgb_to_hsv(r, g, b)  # h in [0..1], s/v in [0..1]
-        h_deg = h * 360
-
-        # thresholds (tweakable)
-        if v < 0.2:
-            return "black"
-        if s < 0.2:
-            return "white"
-
-        # nearest hue among 6 primaries
-        hue_map = {
-            "red": 0,
-            "yellow": 60,
-            "green": 120,
-            "cyan": 180,
-            "blue": 240,
-            "magenta": 300
-        }
-        nearest = min(hue_map.items(), key=lambda kv: min(abs(h_deg - kv[1]), 360 - abs(h_deg - kv[1])))
-        return nearest[0]
-
-    def hsv_distance(self, c1, c2):
-        # convert RGB (0-255) to HSV
-        r1, g1, b1 = [x/255.0 for x in c1]
-        r2, g2, b2 = [x/255.0 for x in c2]
-        h1, s1, v1 = colorsys.rgb_to_hsv(r1, g1, b1)
-        h2, s2, v2 = colorsys.rgb_to_hsv(r2, g2, b2)
-
-        # hues are 0..1, map to degrees
-        h1, h2 = h1 * 360, h2 * 360
-
-        # shortest angular distance
-        dh = min(abs(h1 - h2), 360 - abs(h1 - h2))
-
-        # weigh hue most strongly, sat/value lightly
-        return (dh / 180.0) ** 2 + (s1 - s2) ** 2 + (v1 - v2) ** 2
-
-    def color_distance(self, color1, color2):
-        if self.main_script().get_alternative_color_distance_mode():
-            # hue-first perceptual distance
-#            return self.hsv_distance(color1, color2)
-            # categorical: return 0 if same bin, 1 if different
-            return 0 if self.map_to_xtouch_color(color1) == self.map_to_xtouch_color(color2) else 1
-        else:
-            # fast RGB squared distance
-            return ((color1[0] - color2[0]) ** 2) + \
-                   ((color1[1] - color2[1]) ** 2) + \
-                   ((color1[2] - color2[2]) ** 2)
-
-    # def color_distance(self, color1, color2):
-        # if self.main_script().alternative_color_distance_mode(): #activated by SHIFT + DISPLAY/NAME/VALUE; however, only two colors (Vista Blue and Pomelo Green) yield a different result, so not worth the extra compute
-            # r_mean = (color1[0] + color2[0]) / 2
-            # r_diff = (color1[0] - color2[0])
-            # g_diff = (color1[1] - color2[1])
-            # b_diff = (color1[2] - color2[2])
-            # return math.sqrt(((2 + (r_mean / 256)) * (r_diff ** 2)) + (4 * (g_diff ** 2)) + ((2 + ((255 - r_mean) / 256)) * (b_diff ** 2)))
-        # else:
-            # return ((color1[0] - color2[0]) ** 2) + ((color1[1] - color2[1]) ** 2) + ((color1[2] - color2[2]) ** 2)
-
-    def match_color(self, trackRGBint):
-        track_R = (trackRGBint >> 16) & 255
-        track_G = (trackRGBint >> 8) & 255
-        track_B = trackRGBint & 255
-        if (track_R <= 60 and track_G <= 60 and track_B <= 60): #Ableton Live's black swatch or darker
-            return 0
-        elif (track_R == track_G and track_G == track_B): #grayscale defaults to white
-            return 7
-        trackRGB = (track_R, track_G, track_B)
-#        colors_compare_list = []
-        colors_compare_list = [195075] #exclude black by setting first value to highest possible
-#        colors_compare_list.append(self.color_distance(trackRGB, scribble_black)) #exclude black from comparison (only true black should get a black scribble script)
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_red))
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_green))
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_yellow))
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_blue))
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_magenta))
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_cyan))
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_white))
-        closest = min(colors_compare_list)
-        return colors_compare_list.index(closest)
 
     def refresh_state(self):
         self.__last_send_messages = [[], []]

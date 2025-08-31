@@ -287,6 +287,8 @@ class ChannelStripController(MackieControlComponent):
             if value == BUTTON_PRESSED:
                 if self.shift_is_pressed():
                     self.main_script().toggle_alternative_color_distance_mode()
+                # elif self.option_is_pressed():
+                    # self.toggle_meter_mode()
                 else:
                     self.__toggle_view_returns()
         elif switch_id == SID_MARKER_END:

@@ -173,7 +173,7 @@ class MackieControlXT(object):
         if cc_no in range(FID_PANNING_BASE, FID_PANNING_BASE + NUM_CHANNEL_STRIPS):
             result = Live.MidiMap.MapMode.relative_signed_bit
         return result
-        
+
     def visible_tracks_including_chains(self):
         """
         Returns a flattened list of all visible tracks, including any chains

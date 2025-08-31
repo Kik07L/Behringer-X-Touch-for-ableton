@@ -49,6 +49,7 @@ class MackieControl(object):
             "NIGHT_MODE_ON":     (False, lambda v: v.lower() in ("1", "true", "yes", "on")),
             "ALTERNATIVE_COLOR_DISTANCE_MODE":     (False, lambda v: v.lower() in ("1", "true", "yes", "on")),
             "USE_FUNCTION_KEYS_FOR_QUANTIZATION_MODE":     (False, lambda v: v.lower() in ("1", "true", "yes", "on")),
+            "SHOW_CLOCK": (0, lambda v: self._parse_show_clock(v)),
         }
 
         # copy defaults into attributes (lowercase names)
@@ -63,7 +64,6 @@ class MackieControl(object):
         self.__option_is_pressed = False
         self.__control_is_pressed = False
         self.__alt_is_pressed = False
-#        self.alternative_color_distance_mode = False
         self.is_pro_version = False
         self._received_firmware_version = False
         self._refresh_state_next_time = 0
@@ -278,11 +278,10 @@ class MackieControl(object):
         elif switch_id == SID_DISPLAY_SMPTE_BEATS:
             if value == BUTTON_PRESSED:
                 if self.shift_is_pressed():
-                    self.__time_display.toggle_show_current_time()
+                    self.__time_display.toggle_show_clock()
                 else:
                     self.__time_display.toggle_mode()
 
-#
     def get_channel_strip_controller(self):
         return self.__channel_strip_controller
         
@@ -407,7 +406,10 @@ class MackieControl(object):
             "",
         ]
         for key, (default, _) in self._preferences_spec.items():
-            if isinstance(default, bool):
+            if key == "SHOW_CLOCK":
+                val_str = str(default)
+                comment = " (0=off, 1=on with seconds, 2=on without seconds)"
+            elif isinstance(default, bool):
                 val_str = "true" if default else "false"
                 comment = " (true/false)"
             elif isinstance(default, float):
@@ -434,7 +436,11 @@ class MackieControl(object):
         ]
         for key, (default, parser) in self._preferences_spec.items():
             current_value = getattr(self, key.lower(), default)
-            if isinstance(current_value, bool):
+            if key == "SHOW_CLOCK":
+                # Always save as integer 0/1/2
+                val_str = str(current_value)
+                comment = " (0=off, 1=on with seconds, 2=on without seconds)"
+            elif isinstance(current_value, bool):
                 val_str = "true" if current_value else "false"
                 comment = " (true/false)"
             elif isinstance(current_value, float):
@@ -450,3 +456,13 @@ class MackieControl(object):
 
         with open(prefs_path, "w") as f:
             f.write("\n".join(lines) + "\n")
+
+    def _parse_show_clock(self, v):
+        v = v.strip().lower()
+        if v in ("0", "off", "false", "no"):
+            return 0
+        if v in ("1", "on", "full"):
+            return 1
+        if v in ("2", "short", "no-seconds", "nos"):
+            return 2
+        return 0
