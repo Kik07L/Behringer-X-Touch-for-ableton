@@ -67,6 +67,9 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - Some global settings (Night Mode, show clock...) are now preserved across sessions.
 - Settings are saved in options.txt.
 
+### Feedback messages (beta)
+- Short messages on Time Display provide feedback on various actions.
+
 ## Button Mappings
 ### **Encoder Assign Section**
 - `TRACK`: Assign encoders to track properties (cycles through Input Type, Input Channel, Output Type, Output Channel, Track Color).

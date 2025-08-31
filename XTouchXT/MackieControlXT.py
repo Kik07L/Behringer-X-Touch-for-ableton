@@ -48,6 +48,9 @@ class MackieControlXT(object):
     def is_extension(self):
         return True
 
+    def time_display(self):
+        return self.__time_display.instance()
+
     def mackie_control_main(self, mackie_control_main):
         return self.__mackie_control_main
 

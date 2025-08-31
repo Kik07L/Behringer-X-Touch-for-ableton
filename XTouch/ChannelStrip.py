@@ -190,7 +190,7 @@ class ChannelStrip(MackieControlComponent):
                 if self.__assigned_track.can_be_armed and self.__assigned_track.arm:
                     if self.__assigned_track.has_midi_input:
                         meter_value = self.__assigned_track.input_meter_level
-                    if self.main_script().get_snappy_meters():
+                    elif self.main_script().get_snappy_meters():
                         meter_value = max(self.__assigned_track.input_meter_left,
                                           self.__assigned_track.input_meter_right)
                     else:

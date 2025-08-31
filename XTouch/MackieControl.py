@@ -159,6 +159,9 @@ class MackieControl(object):
         """
         return self.__c_instance.handle()
 
+    def time_display(self):
+        return self.__time_display.instance()
+
     def refresh_state(self):
         for c in self.__components:
             c.refresh_state()
@@ -300,6 +303,10 @@ class MackieControl(object):
 
     def toggle_alternative_color_distance_mode(self):
         self.alternative_color_distance_mode = not self.alternative_color_distance_mode
+        if self.alternative_color_distance_mode:
+            self.__time_display.show_priority_message("Color  hue", 2000)
+        else:
+            self.__time_display.show_priority_message("Color  rgb", 2000)
         self.save_preferences()
 
     def __handle_display_switch_ids(self, switch_id, value):
@@ -487,43 +494,6 @@ class MackieControl(object):
         # Write to options.txt
         with open(prefs_path, "w") as f:
             f.write("\n".join(lines) + "\n")
-
-    """def save_preferences(self):
-        Write current preference values back into options.txt
-        prefs_path = os.path.join(os.path.dirname(__file__), "options.txt")
-
-        lines = [
-            "# User preferences for Behringer X-Touch",
-            "",
-        ]
-        for key, (default, parser) in self._preferences_spec.items():
-            current_value = getattr(self, key.lower(), default)
-            if key == "SHOW_CLOCK":
-                # Always save as integer 0/1/2
-                val_str = str(current_value)
-                comment = " (0=off, 1=on with seconds, 2=on without seconds)"
-            elif key == "ALTERNATIVE_COLOR_DISTANCE_MODE":
-                val_str = str(current_value)
-                comment = " (true = match colors by primarily by hue/false = match by RGB distance)"
-            elif key == "ALTERNATIVE_COLOR_DISTANCE_MODE_WHITE_CUTOFF":
-                val_str = str(current_value)
-                comment = " (float 0.00-1.00, higher value = more colors map to white scribble strip)"
-            elif isinstance(current_value, bool):
-                val_str = "true" if current_value else "false"
-                comment = " (true/false)"
-            elif isinstance(current_value, float):
-                val_str = f"{current_value:.3f}".rstrip("0").rstrip(".")
-                comment = " (float)"
-            elif isinstance(current_value, int):
-                val_str = str(current_value)
-                comment = " (integer)"
-            else:
-                val_str = str(current_value)
-                comment = ""
-            lines.append(f"{key} = {val_str}    #{comment}")
-
-        with open(prefs_path, "w") as f:
-            f.write("\n".join(lines) + "\n")"""
 
     def _parse_show_clock(self, v):
         v = v.strip().lower()

@@ -26,6 +26,7 @@ class SoftwareController(MackieControlComponent):
         self.song().add_arrangement_overdub_listener(self.__update_arrangement_overdub_button_led)
         self.song().add_midi_recording_quantization_listener(self.__update_midi_recording_quantization_buttons_led)
         self.__update_automation_record_button_led()
+        self.__quantization_strings = ("quant 0ff", "1'4", "1'8", "1'8T", "1'8 1'8T", "1'16", "1'16T", "1'16 1'16T", "1'32")
 
     def destroy(self):
         av = self.application().view
@@ -54,6 +55,11 @@ class SoftwareController(MackieControlComponent):
         if value == BUTTON_PRESSED:
             if self.shift_is_pressed():
                 self.main_script().use_function_keys_for_quantization_mode = not self.main_script().use_function_keys_for_quantization_mode
+                if self.main_script().use_function_keys_for_quantization_mode:
+                    self.main_script().time_display().show_priority_message("F quantize")
+                else:
+                    self.main_script().time_display().show_priority_message("F disabled")
+#                    self.main_script().time_display().show_priority_message("1'16 1'16T")
                 self.main_script().save_preferences()
                 self.__update_midi_recording_quantization_buttons_led()
             elif self.main_script().use_function_keys_for_quantization_mode == True:
@@ -61,6 +67,7 @@ class SoftwareController(MackieControlComponent):
                     self.song().midi_recording_quantization = 0
                 else:
                     self.song().midi_recording_quantization = switch_id - SID_SOFTWARE_F1 + 1
+                self.main_script().time_display().show_priority_message(self.__quantization_strings[self.song().midi_recording_quantization], 1000)
 
     def handle_modify_key_switch_ids(self, switch_id, value):
         if switch_id == SID_MOD_SHIFT:
@@ -80,6 +87,11 @@ class SoftwareController(MackieControlComponent):
 
     def __toggle_night_mode(self):
         self.main_script().night_mode_on = not self.main_script().night_mode_on
+        self.main_script().time_display().show_priority_message("night mode", 1000)
+        if not self.main_script().night_mode_on:
+            self.main_script().time_display().show_message("0ff", 2000)
+        else:
+            self.main_script().time_display().show_message("0m", 2000)
         self.main_script().save_preferences()
         self.__update_night_mode_leds()
 

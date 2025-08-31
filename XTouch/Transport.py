@@ -314,6 +314,7 @@ class Transport(MackieControlComponent):
         if switch_id == SID_JOG_CURSOR_UP:
             if self.shift_is_pressed() and value == BUTTON_PRESSED and self.main_script().get_alternative_color_distance_mode() == True:
                 self.main_script().increment_alternative_color_distance_mode_white_cutoff(+0.01)
+                self.main_script().time_display().show_priority_message("white  " + f'{self.main_script().get_alternative_color_distance_mode_white_cutoff():.2f}', 1000)
                 self.main_script().save_preferences()
             elif value == BUTTON_PRESSED:
                 self.__cursor_up_is_down = True
@@ -324,6 +325,7 @@ class Transport(MackieControlComponent):
         elif switch_id == SID_JOG_CURSOR_DOWN:
             if self.shift_is_pressed() and value == BUTTON_PRESSED and self.main_script().get_alternative_color_distance_mode() == True:
                 self.main_script().increment_alternative_color_distance_mode_white_cutoff(-0.01)
+                self.main_script().time_display().show_priority_message("white  " + f'{self.main_script().get_alternative_color_distance_mode_white_cutoff():.2f}', 1000)
                 self.main_script().save_preferences()
             elif value == BUTTON_PRESSED:
                 self.__cursor_down_is_down = True
