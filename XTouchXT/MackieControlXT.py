@@ -196,7 +196,7 @@ class MackieControlXT(object):
             if track.can_show_chains and track.is_showing_chains:
                 # If so, extend our list with the track's chains.
                 for device in track.devices:
-                    if device.can_show_chains and device.is_showing_chains:
+                    if hasattr(device, 'can_show_chains') and device.can_show_chains and device.is_showing_chains:
                         for single_chain in chain(device.chains, device.return_chains):
                             tracks_and_chains_list.append(single_chain)
                             for chain_device in single_chain.devices:
@@ -230,7 +230,7 @@ class MackieControlXT(object):
             if track.can_show_chains:
                 # If so, extend our list with the track's chains.
                 for device in track.devices:
-                    if device.can_show_chains:
+                    if hasattr(device, 'can_show_chains') and device.can_show_chains:
                         for single_chain in chain(device.chains, device.return_chains):
                             tracks_and_chains_list.append(single_chain)
                             for chain_device in single_chain.devices:
