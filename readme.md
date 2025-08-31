@@ -20,6 +20,10 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - **Inactive Channels:** Tracks beyond your active channels are marked with black scribble strips to indicate inactivity.
 - **Plug-In Mode:**
   - Scribble strips are lit in a single color (Cyan) for better readability.
+- **Alternative color matching method (beta):**
+  - Attempts to improve color matching by prioritizing hue, to avoid light colors automatically mapping to white.
+  - `SHIFT + DISPLAY`: Toggle between default (RGB distance-based) and alternative (hue-based) method. Setting is preserved across sessions.
+  - `SHIFT + UP/DOWN`: Tune white cut-off for hue-based matching (higher = more colors map to white scribble strip).
 
 ### Level Meter Enhancements
 - **Clipping Indicators:** Channel strip level meters now show clipping when it occurs.
@@ -37,7 +41,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 
 ### Single Send Mode (beta)
 - Default Sends mode (`SEND`) shows send levels for all return tracks/return chains on the current track/chain.
-- New Single Send mode shows send levels for a single return track/return chain accross all tracks/chains.
+- New Single Send mode shows send levels for a single return track/return chain across all tracks/chains.
 - In default Sends mode, either press `SEND` again or `SHIFT + Press rotary encoder` to select the corresponding return track for Single Send mode.
 - Press `EQ` or `INST` to move control to the previous/next return track/return chain send levels.
 - Scribble strips will turn black for unavailable sends (if the number of global return tracks differs from the number of return chains in a device with chains visible in the mixer).
@@ -58,6 +62,10 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - Chain colors appear in scribble strips and can be modified just like track colors (press `TRACK` x5 for color mode).
 - Note: if volume or panning for a device chain is macro mapped, the fader/rotary encoder for that chain will have no effect.
 - Limitations: chains audio metering and audio routing are currently unavailable in Live's API.
+
+### Persistent settings (beta)
+- Some global settings (Night Mode, show clock...) are now preserved across sessions.
+- Settings are saved in options.txt.
 
 ## Button Mappings
 ### **Encoder Assign Section**

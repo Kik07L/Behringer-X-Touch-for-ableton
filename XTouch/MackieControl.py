@@ -44,18 +44,49 @@ class MackieControl(object):
         # -------------------------------------------------------------------
         # Preferences system
         # -------------------------------------------------------------------
-        # key -> (default_value, parser)
+        # key -> (default_value, parser, comment, formatter)
         self._preferences_spec = {
-            "NIGHT_MODE_ON":     (False, lambda v: v.lower() in ("1", "true", "yes", "on")),
-            "ALTERNATIVE_COLOR_DISTANCE_MODE":     (False, lambda v: v.lower() in ("1", "true", "yes", "on")),
-            "USE_FUNCTION_KEYS_FOR_QUANTIZATION_MODE":     (False, lambda v: v.lower() in ("1", "true", "yes", "on")),
-            "SHOW_CLOCK": (0, lambda v: self._parse_show_clock(v)),
+            "NIGHT_MODE_ON": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Enable Night Mode (true/false)",
+                lambda v: "true" if v else "false"
+            ),
+            "ALTERNATIVE_COLOR_DISTANCE_MODE": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Use alternative color matching method (true = match primarily by hue, false = match by RGB distance)",
+                lambda v: "true" if v else "false"
+            ),
+            "ALTERNATIVE_COLOR_DISTANCE_MODE_WHITE_CUTOFF": (
+                0.19,
+                lambda v: float(v) if v else 0.19,
+                "White cutoff for alternative color matching method (0.00-1.00, higher value = more colors map to white scribble strip)",
+                lambda v: f"{v:.3f}".rstrip("0").rstrip(".")
+            ),
+            "USE_FUNCTION_KEYS_FOR_QUANTIZATION_MODE": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Use Function keys to set MIDI Record Quantization (true/false)",
+                lambda v: "true" if v else "false"
+            ),
+            "SHOW_CLOCK": (
+                0,
+                lambda v: self._parse_show_clock(v),
+                "Show current time instead of song time/beats (0=off, 1=on with seconds, 2=on without seconds)",
+                str
+            ),
+            "SNAPPY_METERS": (
+                True,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Use snappy level meters (true/false)",
+                lambda v: "true" if v else "false"
+            ),
         }
-
         # copy defaults into attributes (lowercase names)
-        for key, (default, _) in self._preferences_spec.items():
+        for key, (default, _, _, _) in self._preferences_spec.items():
             setattr(self, key.lower(), default)
-
+            
         self.__master_strip = MasterChannelStrip(self)
         self.__components.append(self.__master_strip)
         self.__channel_strip_controller = ChannelStripController(self, self.__channel_strips, self.__master_strip, self.__main_display_controller)
@@ -284,7 +315,18 @@ class MackieControl(object):
 
     def get_channel_strip_controller(self):
         return self.__channel_strip_controller
-        
+
+    def get_snappy_meters(self):
+        return self.snappy_meters
+
+    def get_alternative_color_distance_mode_white_cutoff(self):
+        return self.alternative_color_distance_mode_white_cutoff
+
+    def increment_alternative_color_distance_mode_white_cutoff(self, increment):
+        self.alternative_color_distance_mode_white_cutoff = min(
+            max(self.alternative_color_distance_mode_white_cutoff + increment, 0.0), 1.0
+        )
+
     def visible_tracks_including_chains(self):
         """
         Returns a flattened list of all visible tracks, including any chains
@@ -365,6 +407,7 @@ class MackieControl(object):
         return None
 
     def _load_preferences(self):
+        """Load preferences from options.txt and apply them."""
         prefs_path = os.path.join(os.path.dirname(__file__), "options.txt")
         if not os.path.exists(prefs_path):
             return
@@ -375,7 +418,7 @@ class MackieControl(object):
                 if not line or line.startswith("#"):
                     continue
 
-                # chop off inline comments
+                # Chop off inline comments
                 if "#" in line:
                     line = line.split("#", 1)[0].strip()
 
@@ -384,50 +427,69 @@ class MackieControl(object):
                 key, value = [p.strip() for p in line.split("=", 1)]
                 self._apply_preference(key, value)
 
+
     def _apply_preference(self, key, value):
+        """Apply a single preference from string using the parser in the spec."""
         spec = self._preferences_spec.get(key)
         if not spec:
             return  # unknown key, ignore
-        default, parser = spec
+        default, parser, _, _ = spec
         try:
             parsed_value = parser(value)
             setattr(self, key.lower(), parsed_value)
         except Exception:
             setattr(self, key.lower(), default)
 
+
     def _ensure_default_preferences_file(self):
+        """Create options.txt with default values and comments if it doesn't exist."""
         prefs_path = os.path.join(os.path.dirname(__file__), "options.txt")
         if os.path.exists(prefs_path):
             return  # don't overwrite user's file
 
-        # build a default file with comments
         lines = [
-            "# User preferences for Behringer X-Touch",
-            "",
+            "# User preferences for Behringer X-Touch"
         ]
-        for key, (default, _) in self._preferences_spec.items():
-            if key == "SHOW_CLOCK":
-                val_str = str(default)
-                comment = " (0=off, 1=on with seconds, 2=on without seconds)"
-            elif isinstance(default, bool):
-                val_str = "true" if default else "false"
-                comment = " (true/false)"
-            elif isinstance(default, float):
-                val_str = str(default)
-                comment = " (float)"
-            elif isinstance(default, int):
-                val_str = str(default)
-                comment = " (integer)"
-            else:
-                val_str = str(default)
-                comment = ""
-            lines.append(f"{key} = {val_str}    #{comment}")
+        for key, (default, _, comment, formatter) in self._preferences_spec.items():
+            val_str = formatter(default)
+            comment_str = f" {comment}" if comment else ""
+            lines.append("")
+            lines.append(f"#{comment_str}")
+            lines.append(f"# Default = {val_str}")
+            lines.append(f"{key} = {val_str}")
 
         with open(prefs_path, "w") as f:
             f.write("\n".join(lines) + "\n")
 
+
     def save_preferences(self):
         """Write current preference values back into options.txt"""
+        prefs_path = os.path.join(os.path.dirname(__file__), "options.txt")
+
+        lines = [
+            "# User preferences for Behringer X-Touch",
+        ]
+        for key, (default, parser, comment, formatter) in self._preferences_spec.items():
+            # Get the current value, falling back to the default if not set
+            current_value = getattr(self, key.lower(), default)
+
+            # Format the value using the provided formatter
+            val_str = formatter(current_value)
+
+            # Include comment if present
+            comment_str = f" {comment}" if comment else ""
+
+            lines.append("")
+            lines.append(f"#{comment_str}")
+            lines.append(f"# Default = {formatter(default)}")
+            lines.append(f"{key} = {val_str}")
+
+        # Write to options.txt
+        with open(prefs_path, "w") as f:
+            f.write("\n".join(lines) + "\n")
+
+    """def save_preferences(self):
+        Write current preference values back into options.txt
         prefs_path = os.path.join(os.path.dirname(__file__), "options.txt")
 
         lines = [
@@ -440,6 +502,12 @@ class MackieControl(object):
                 # Always save as integer 0/1/2
                 val_str = str(current_value)
                 comment = " (0=off, 1=on with seconds, 2=on without seconds)"
+            elif key == "ALTERNATIVE_COLOR_DISTANCE_MODE":
+                val_str = str(current_value)
+                comment = " (true = match colors by primarily by hue/false = match by RGB distance)"
+            elif key == "ALTERNATIVE_COLOR_DISTANCE_MODE_WHITE_CUTOFF":
+                val_str = str(current_value)
+                comment = " (float 0.00-1.00, higher value = more colors map to white scribble strip)"
             elif isinstance(current_value, bool):
                 val_str = "true" if current_value else "false"
                 comment = " (true/false)"
@@ -455,7 +523,7 @@ class MackieControl(object):
             lines.append(f"{key} = {val_str}    #{comment}")
 
         with open(prefs_path, "w") as f:
-            f.write("\n".join(lines) + "\n")
+            f.write("\n".join(lines) + "\n")"""
 
     def _parse_show_clock(self, v):
         v = v.strip().lower()

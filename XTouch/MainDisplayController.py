@@ -111,11 +111,17 @@ class MainDisplayController(MackieControlComponent):
         """Return cached match_color() result if raw_color hasn't changed
         and color distance mode is the same."""
         current_mode = self.main_script.get_alternative_color_distance_mode()
+        current_white_cutoff = self.main_script.get_alternative_color_distance_mode_white_cutoff()
 
         # if mode changed, invalidate cache
         if getattr(self, "_last_color_mode", None) != current_mode:
             self.__last_color_inputs.clear()
             self._last_color_mode = current_mode
+
+        # if white cutoff changed, invalidate cache
+        if getattr(self, "_last_white_cutoff", None) != current_white_cutoff:
+            self.__last_color_inputs.clear()
+            self._last_white_cutoff = current_mode
 
         key = (display_index, t)
         last = self.__last_color_inputs.get(key)
@@ -253,7 +259,8 @@ class MainDisplayController(MackieControlComponent):
         # thresholds (tweakable)
         if v < 0.2:
             return "black"
-        if s < 0.2:
+#        if s < 0.2:
+        if s < self.main_script.get_alternative_color_distance_mode_white_cutoff():
             return "white"
 
         # nearest hue among 6 primaries

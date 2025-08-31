@@ -84,14 +84,11 @@ class MackieControlXT(object):
             is_pressed = self.__mackie_control_main.alt_is_pressed()
         return is_pressed
 
-    def get_alternative_color_distance_mode(self):
-        mode = False
+    def get_snappy_meters(self):
+        result = False
         if self.__mackie_control_main != None:
-            mode = self.__mackie_control_main.get_alternative_color_distance_mode()
-        return mode
-
-    # def toggle_alternative_color_distance_mode(self):
-        # self.alternative_color_distance_mode = not self.alternative_color_distance_mode
+            result = self.__mackie_control_main.get_snappy_meters()
+        return result
 
     def application(self):
         return Live.Application.get_application()

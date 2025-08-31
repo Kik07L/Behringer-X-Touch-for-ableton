@@ -312,14 +312,20 @@ class Transport(MackieControlComponent):
 
     def handle_jog_wheel_switch_ids(self, switch_id, value):
         if switch_id == SID_JOG_CURSOR_UP:
-            if value == BUTTON_PRESSED:
+            if self.shift_is_pressed() and value == BUTTON_PRESSED and self.main_script().get_alternative_color_distance_mode() == True:
+                self.main_script().increment_alternative_color_distance_mode_white_cutoff(+0.01)
+                self.main_script().save_preferences()
+            elif value == BUTTON_PRESSED:
                 self.__cursor_up_is_down = True
                 self.__cursor_repeat_delay = 0
                 self.__on_cursor_up_pressed()
             elif value == BUTTON_RELEASED:
                 self.__cursor_up_is_down = False
         elif switch_id == SID_JOG_CURSOR_DOWN:
-            if value == BUTTON_PRESSED:
+            if self.shift_is_pressed() and value == BUTTON_PRESSED and self.main_script().get_alternative_color_distance_mode() == True:
+                self.main_script().increment_alternative_color_distance_mode_white_cutoff(-0.01)
+                self.main_script().save_preferences()
+            elif value == BUTTON_PRESSED:
                 self.__cursor_down_is_down = True
                 self.__cursor_repeat_delay = 0
                 self.__on_cursor_down_pressed()
