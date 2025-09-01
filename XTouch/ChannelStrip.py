@@ -163,6 +163,8 @@ class ChannelStrip(MackieControlComponent):
                         touched = value == BUTTON_PRESSED
                         self.set_is_touched(touched)
                         self.__channel_strip_controller.handle_fader_touch(self.__strip_index, self.__stack_offset, touched)
+                if  value == BUTTON_PRESSED and self.main_script().get_touch_fader_to_select():
+                    self.__select_track_without_folding()
         # elif sw_id == SID_FUNC_GROUP:
             # if value == BUTTON_PRESSED:
                 # self.__toggle_group_mode()
@@ -262,6 +264,7 @@ class ChannelStrip(MackieControlComponent):
             self.__assigned_track.add_arm_listener(self.__update_arm_led)
             self.__assigned_track.add_current_monitoring_state_listener(self.__update_arm_led)
         self.__assigned_track.add_mute_listener(self.__update_mute_led)
+        self.__assigned_track.add_muted_via_solo_listener(self.__update_mute_led)
         self.__assigned_track.add_solo_listener(self.__update_solo_led)
 
 
@@ -275,6 +278,8 @@ class ChannelStrip(MackieControlComponent):
              self.__assigned_track.remove_mute_listener(self.__update_mute_led)
         if self.__assigned_track.solo_has_listener(self.__update_solo_led):
              self.__assigned_track.remove_solo_listener(self.__update_solo_led)
+        if self.__assigned_track.muted_via_solo_has_listener(self.__update_mute_led):
+             self.__assigned_track.remove_muted_via_solo_listener(self.__update_mute_led)
 
     def __send_meter_mode(self):
         on_mode = 1
@@ -333,6 +338,15 @@ class ChannelStrip(MackieControlComponent):
                         t.solo = False
         self.song().view.selected_track = sel_track
 
+    def __select_track_without_folding(self):
+        if self.__assigned_track:
+            chainable_device = self.chainable_device(self.__assigned_track)
+            all_tracks = tuple(self.visible_tracks_including_chains()) + tuple(self.song().return_tracks)
+            if isinstance(all_tracks[self.__assigned_track_index()], Live.Chain.Chain) and self.song().view.selected_chain != all_tracks[self.__assigned_track_index()]:
+                self.song().view.selected_chain = all_tracks[self.__assigned_track_index()]
+            elif isinstance(all_tracks[self.__assigned_track_index()], Live.Track.Track) and self.song().view.selected_track != all_tracks[self.__assigned_track_index()]:
+                self.song().view.selected_track = all_tracks[self.__assigned_track_index()]
+
     def __select_track(self):
         if self.__assigned_track:
             chainable_device = self.chainable_device(self.__assigned_track)
@@ -384,6 +398,8 @@ class ChannelStrip(MackieControlComponent):
     def __update_mute_led(self):
         if self.__assigned_track and self.__assigned_track.mute:
             self.send_button_led(SID_MUTE_BASE + self.__strip_index, BUTTON_STATE_ON)
+        elif self.__assigned_track and self.main_script().get_show_muted_via_solo() and hasattr(self.__assigned_track, 'muted_via_solo') and self.__assigned_track.muted_via_solo:
+            self.send_button_led(SID_MUTE_BASE + self.__strip_index, BUTTON_STATE_BLINKING)
         else:
             self.send_button_led(SID_MUTE_BASE + self.__strip_index, BUTTON_STATE_OFF)
 

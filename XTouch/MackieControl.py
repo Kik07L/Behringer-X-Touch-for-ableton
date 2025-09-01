@@ -82,6 +82,18 @@ class MackieControl(object):
                 "Use snappy level meters (true/false)",
                 lambda v: "true" if v else "false"
             ),
+            "SHOW_MUTED_VIA_SOLO": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Flash Mute LED to indicate tracks muted by active solo (true/false)",
+                lambda v: "true" if v else "false"
+            ),
+            "TOUCH_FADER_TO_SELECT": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Select track by touching fader (true/false)",
+                lambda v: "true" if v else "false"
+            ),
         }
         # copy defaults into attributes (lowercase names)
         for key, (default, _, _, _) in self._preferences_spec.items():
@@ -333,6 +345,18 @@ class MackieControl(object):
         self.alternative_color_distance_mode_white_cutoff = min(
             max(self.alternative_color_distance_mode_white_cutoff + increment, 0.0), 1.0
         )
+
+    def get_show_muted_via_solo(self):
+        result = False
+        if hasattr(self, 'show_muted_via_solo'):
+            result = self.show_muted_via_solo
+        return result
+
+    def get_touch_fader_to_select(self):
+        result = False
+        if hasattr(self, 'touch_fader_to_select'):
+            result = self.touch_fader_to_select
+        return result
 
     def visible_tracks_including_chains(self):
         """

@@ -22,7 +22,7 @@ class MackieControlXT(object):
         for s in self.__channel_strips:
             self.__components.append(s)
 
-        self.__mackie_control_main = None
+        self._mackie_control_main = None
         self.is_pro_version = False
         self._received_firmware_version = False
         self._refresh_state_next_time = 0
@@ -52,10 +52,10 @@ class MackieControlXT(object):
         return self.__time_display.instance()
 
     def mackie_control_main(self, mackie_control_main):
-        return self.__mackie_control_main
+        return self._mackie_control_main
 
     def set_mackie_control_main(self, mackie_control_main):
-        self.__mackie_control_main = mackie_control_main
+        self._mackie_control_main = mackie_control_main
 
     def channel_strips(self):
         return self.__channel_strips
@@ -65,32 +65,44 @@ class MackieControlXT(object):
 
     def shift_is_pressed(self):
         is_pressed = False
-        if self.__mackie_control_main != None:
-            is_pressed = self.__mackie_control_main.shift_is_pressed()
+        if self._mackie_control_main != None:
+            is_pressed = self._mackie_control_main.shift_is_pressed()
         return is_pressed
 
     def option_is_pressed(self):
         is_pressed = False
-        if self.__mackie_control_main != None:
-            is_pressed = self.__mackie_control_main.option_is_pressed()
+        if self._mackie_control_main != None:
+            is_pressed = self._mackie_control_main.option_is_pressed()
         return is_pressed
 
     def control_is_pressed(self):
         is_pressed = False
-        if self.__mackie_control_main != None:
-            is_pressed = self.__mackie_control_main.control_is_pressed()
+        if self._mackie_control_main != None:
+            is_pressed = self._mackie_control_main.control_is_pressed()
         return is_pressed
 
     def alt_is_pressed(self):
         is_pressed = False
-        if self.__mackie_control_main != None:
-            is_pressed = self.__mackie_control_main.alt_is_pressed()
+        if self._mackie_control_main != None:
+            is_pressed = self._mackie_control_main.alt_is_pressed()
         return is_pressed
 
     def get_snappy_meters(self):
         result = False
-        if self.__mackie_control_main != None:
-            result = self.__mackie_control_main.get_snappy_meters()
+        if self._mackie_control_main != None:
+            result = self._mackie_control_main.get_snappy_meters()
+        return result
+
+    def get_show_muted_via_solo(self):
+        result = False
+        if hasattr(self, '_mackie_control_main') and self._mackie_control_main != None:
+            result = self._mackie_control_main.get_show_muted_via_solo()
+        return result
+
+    def get_touch_fader_to_select(self):
+        result = False
+        if hasattr(self, '_mackie_control_main') and self._mackie_control_main != None:
+            result = self._mackie_control_main.get_touch_fader_to_select()
         return result
 
     def application(self):
