@@ -60,9 +60,9 @@ class SoftwareController(MackieControlComponent):
             if self.shift_is_pressed():
                 if self.main_script().use_function_buttons == 0:
                     self.main_script().use_function_buttons = 1
-                    self.main_script().time_display().show_priority_message("F quantize")
+                    self.main_script().time_display().show_priority_message("funct:quant")
                 elif self.main_script().use_function_buttons == 1:
-                    self.main_script().time_display().show_priority_message("F disabled")
+                    self.main_script().time_display().show_priority_message("funct:  0ff")
                     self.main_script().use_function_buttons = 0
                 self.main_script().save_preferences()
                 self.__update_midi_recording_quantization_buttons_led()

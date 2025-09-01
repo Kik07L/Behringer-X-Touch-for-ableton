@@ -38,17 +38,18 @@ class MackieControl(object):
                 lambda v: "true" if v else "false",
                 "might" # m looks like capital n on 7-segment display
             ),
-            "ALTERNATIVE_COLOR_DISTANCE_MODE": (
-                False,
-                lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Use alternative color matching method (true = match primarily by hue, false = match by RGB distance)",
-                lambda v: "true" if v else "false",
-                "color"
+            "COLOR_DISTANCE_MODE": (
+                0,
+                lambda v: self._parse_color_distance_mode(v),
+                "Use alternative color matching method (0 = match by RGB distance, 1 = match primarily by hue)",
+                str,
+                "color",
+                {0: "rgb", 1: "hue"}
             ),
-            "ALTERNATIVE_COLOR_DISTANCE_MODE_WHITE_CUTOFF": (
+            "HUE_COLOR_DISTANCE_MODE_WHITE_CUTOFF": (
                 0.19,
                 lambda v: float(v) if v else 0.19,
-                "White cutoff for alternative color matching method (0.00-1.00, higher value = more colors map to white scribble strip)",
+                "White cutoff for hue-based color matching method (0.00-1.00, higher value = more colors map to white scribble strip)",
                 lambda v: f"{v:.2f}",  # fixed to 2 decimals
                 "white",
                 (0.00, 1.00)  # min/max tuple
@@ -58,7 +59,7 @@ class MackieControl(object):
                 lambda v: self._parse_use_function_buttons(v),
                 "Use Function buttons (0=disabled, 1=function buttons set MIDI Record Quantization)",
                 str,
-                "f bts",
+                "funct",
                 {0: "0ff", 1: "quant"}   # raw value → display string
             ),
             "SHOW_CLOCK": (
@@ -329,14 +330,28 @@ class MackieControl(object):
         self.__alt_is_pressed = pressed
 
     def get_alternative_color_distance_mode(self):
-        return self.alternative_color_distance_mode
+        result = False
+        if self.color_distance_mode == 1:
+            result = True
+        return result
 
     def toggle_alternative_color_distance_mode(self):
-        self.alternative_color_distance_mode = not self.alternative_color_distance_mode
-        if self.alternative_color_distance_mode:
-            self.__time_display.show_priority_message("Color  hue", 2000)
-        else:
-            self.__time_display.show_priority_message("Color  rgb", 2000)
+        # look up spec
+        spec = self._preferences_spec["COLOR_DISTANCE_MODE"]
+        default, parser, description, typ, group, mapping = spec
+
+        # cycle between available keys
+        keys = sorted(mapping.keys())
+        try:
+            idx = keys.index(self.color_distance_mode)
+        except ValueError:
+            idx = 0
+        next_val = keys[(idx + 1) % len(keys)]
+
+        # update and save
+        self.color_distance_mode = next_val
+        label = mapping.get(next_val, str(next_val))
+        self.__time_display.show_priority_message(f"Color:  {label}", 2000)
         self.save_preferences()
 
     def __handle_display_switch_ids(self, switch_id, value):
@@ -357,11 +372,11 @@ class MackieControl(object):
         return self.snappy_meters
 
     def get_alternative_color_distance_mode_white_cutoff(self):
-        return self.alternative_color_distance_mode_white_cutoff
+        return self.hue_color_distance_mode_white_cutoff
 
     def increment_alternative_color_distance_mode_white_cutoff(self, increment):
-        self.alternative_color_distance_mode_white_cutoff = min(
-            max(self.alternative_color_distance_mode_white_cutoff + increment, 0.0), 1.0
+        self.hue_color_distance_mode_white_cutoff = min(
+            max(self.hue_color_distance_mode_white_cutoff + increment, 0.0), 1.0
         )
 
     def get_show_muted_via_solo(self):
@@ -574,5 +589,13 @@ class MackieControl(object):
         if v in ("0", "off", "false", "no"):
             return 0
         if v in ("1", "on", "quantization", "quantization mode"):
+            return 1
+        return 0
+        
+    def _parse_color_distance_mode(self, v):
+        v = v.strip().lower()
+        if v in ("0", "off", "rgb", "false", "no"):
+            return 0
+        if v in ("1", "on", "hue", "true"):
             return 1
         return 0

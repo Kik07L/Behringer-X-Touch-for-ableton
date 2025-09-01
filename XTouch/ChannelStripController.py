@@ -318,6 +318,7 @@ class ChannelStripController(MackieControlComponent):
 
     def __show_macro_mapper(self):
         if len(self.song().master_track.devices) > 0 and "X-Touch" in self.song().master_track.devices[0].name:
+            self.main_script().time_display().show_priority_message("macro mapr", 1000)
             self.__macro_device_installed = True
             self.__lock_to_plugin = True
             if self.__previous_assignment_mode == None:
@@ -334,6 +335,7 @@ class ChannelStripController(MackieControlComponent):
             self.__set_plugin_mode(PCM_PARAMETERS)
         else:
             self.send_button_led(SID_SOFTWARE_F16, BUTTON_STATE_BLINKING)
+            self.main_script().time_display().show_priority_message("no mapper", 1000)
             self.__macro_device_installed = False
 
     def __hide_macro_mapper(self):
