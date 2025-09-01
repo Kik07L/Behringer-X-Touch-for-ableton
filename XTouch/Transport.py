@@ -216,79 +216,82 @@ class Transport(MackieControlComponent):
 
     def handle_jog_wheel_rotation(self, value):
         backwards = value >= 64
-        if self.control_is_pressed():
-            if self.alt_is_pressed():
-                step = 0.1
-            else:
-                step = 1.0
-            if backwards:
-                amount = -(value - 64)
-            else:
-                amount = value
-            tempo = max(20, min(999, self.song().tempo + amount * step))
-            self.song().tempo = tempo
-        elif self.session_is_visible():
-            num_steps_per_session_scroll = 4
-            if backwards:
-                self.__jog_step_count_backwards += 1
-                if self.__jog_step_count_backwards >= num_steps_per_session_scroll:
-                    self.__jog_step_count_backwards = 0
-                    step = -1
+
+        if not self._in_settings_menu:
+            if self.control_is_pressed():
+                if self.alt_is_pressed():
+                    step = 0.1
                 else:
-                    step = 0
-            else:
-                self.__jog_step_count_forward += 1
-                if self.__jog_step_count_forward >= num_steps_per_session_scroll:
-                    self.__jog_step_count_forward = 0
-                    step = 1
+                    step = 1.0
+                if backwards:
+                    amount = -(value - 64)
                 else:
-                    step = 0
-            if step:
-                new_index = list(self.song().scenes).index(self.song().view.selected_scene) + step
-                new_index = min(len(self.song().scenes) - 1, max(0, new_index))
-                self.song().view.selected_scene = self.song().scenes[new_index]
+                    amount = value
+                tempo = max(20, min(999, self.song().tempo + amount * step))
+                self.song().tempo = tempo
+            elif self.session_is_visible():
+                num_steps_per_session_scroll = 4
+                if backwards:
+                    self.__jog_step_count_backwards += 1
+                    if self.__jog_step_count_backwards >= num_steps_per_session_scroll:
+                        self.__jog_step_count_backwards = 0
+                        step = -1
+                    else:
+                        step = 0
+                else:
+                    self.__jog_step_count_forward += 1
+                    if self.__jog_step_count_forward >= num_steps_per_session_scroll:
+                        self.__jog_step_count_forward = 0
+                        step = 1
+                    else:
+                        step = 0
+                if step:
+                    new_index = list(self.song().scenes).index(self.song().view.selected_scene) + step
+                    new_index = min(len(self.song().scenes) - 1, max(0, new_index))
+                    self.song().view.selected_scene = self.song().scenes[new_index]
+            else:
+                if self.__zoom_button_down:
+    #            if self.shift_is_pressed():
+                    nav = Live.Application.Application.View.NavDirection
+                    if backwards:
+                        self.application().view.zoom_view(nav.left, u'', self.alt_is_pressed())
+                    else:
+                        self.application().view.zoom_view(nav.right, u'', self.alt_is_pressed())
+                else:
+
+                    if backwards:
+                        step = max(1.0, (value - 64) / 2.0)
+                    else:
+                        step = max(1.0, value / 2.0)
+                    if self.song().is_playing or self.shift_is_pressed():
+                        step *= 4.0
+
+                    if self.option_is_pressed():
+                        if self.alt_is_pressed():
+                            if backwards:
+                                self.song().loop_length -= step
+                            else:
+                                self.song().loop_length += step
+                        else:
+                            if backwards:
+                                self.song().loop_start -= step
+                            else:
+                                self.song().loop_start += step
+                    else:
+                        if self.alt_is_pressed():
+                            step /= 4.0
+                        if self.__scrub_button_down:
+                            if backwards:
+                                self.song().scrub_by(-step)
+                            else:
+                                self.song().scrub_by(step)
+                        elif backwards:
+                            self.song().jump_by(-step)
+                        else:
+                            self.song().jump_by(step)
         else:
-            if self.__zoom_button_down:
-#            if self.shift_is_pressed():
-                nav = Live.Application.Application.View.NavDirection
-                if backwards:
-                    self.application().view.zoom_view(nav.left, u'', self.alt_is_pressed())
-                else:
-                    self.application().view.zoom_view(nav.right, u'', self.alt_is_pressed())
-            else:
-
-                if backwards:
-                    step = max(1.0, (value - 64) / 2.0)
-                else:
-                    step = max(1.0, value / 2.0)
-                if self.song().is_playing or self.shift_is_pressed():
-                    step *= 4.0
-
-                if self.option_is_pressed():
-                    if self.alt_is_pressed():
-                        if backwards:
-                            self.song().loop_length -= step
-                        else:
-                            self.song().loop_length += step
-                    else:
-                        if backwards:
-                            self.song().loop_start -= step
-                        else:
-                            self.song().loop_start += step
-                else:
-                    if self.alt_is_pressed():
-                        step /= 4.0
-                    if self.__scrub_button_down:
-                        if backwards:
-                            self.song().scrub_by(-step)
-                        else:
-                            self.song().scrub_by(step)
-                    elif backwards:
-                        self.song().jump_by(-step)
-                    else:
-                        self.song().jump_by(step)
-
-
+            self._toggle_current_preference(not backwards)
+            self._show_current_menu_item()
 
 ##                if self.option_is_pressed():
 ##                    if self.alt_is_pressed():
