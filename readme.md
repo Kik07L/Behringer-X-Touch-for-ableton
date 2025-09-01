@@ -70,7 +70,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - Some global settings (Night Mode, show clock...) are now preserved across sessions.
 - Settings are saved in options.txt.
 
-### Optional 
+### Optional features
 - Select track by touching fader (off by default, can be enabled by editing options.txt).
 - Indicate track muted via solo by flashing `MUTE` button LED (off by default, can be enabled by editing options.txt).
 
