@@ -78,6 +78,12 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `SCRUB`: Reset setting to default.
 - `ZOOM`: Save and exit.
 
+### Quick input selection
+- `OPTION + F1-F8`: Select the first eight available Input Types for the selected track.
+- `CONTROL + F1-F8`: Select the first eight available Input Channels for the selected track.
+- `ALT + F1-F8`: Select the next eight available Input Channels for the selected track, for a total of 16, covering all available MIDI input channels.
+- For MIDI tracks, the very first item (All Ins / All Channels) is skipped, so F1 = Ch. 1 etc.. Choose an already selected channel to set the track input back to All Ins / All Channels.
+
 ### Optional features
 - Select track by touching fader (off by default, can be enabled by editing options.txt).
 - Indicate track muted via solo by flashing `MUTE` button LED (off by default, can be enabled by editing options.txt).
@@ -157,6 +163,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 ### **Function Section**
 - `SHIFT + F1-F8`: Enable/disable Record Quantization selection. Leave disabled to allow Function buttons to be MIDI mapped. Setting is remembered across sessions.
 - `F1-F8`: Select Record Quantization. Press lit button again for no quantization.
+- `OPTION/CONTROL/ALT + F1-F8`: Quick input selection
 
 ### **Gray Section**
 - `GLOBAL VIEW`: Switch between Session and Arrangement views.

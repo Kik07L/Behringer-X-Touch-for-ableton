@@ -66,6 +66,12 @@ class SoftwareController(MackieControlComponent):
                     self.main_script().use_function_buttons = 0
                 self.main_script().save_preferences()
                 self.__update_midi_recording_quantization_buttons_led()
+            elif self.option_is_pressed() and self.song().view.selected_track and hasattr(self.song().view.selected_track, 'input_routing_type'):
+                selector = (switch_id - SID_SOFTWARE_F1)
+                self.set_input_type(self.song().view.selected_track, selector, self.song().view.selected_track.has_midi_input)
+            elif self.control_is_pressed() or self.alt_is_pressed() and self.song().view.selected_track and hasattr(self.song().view.selected_track, 'input_routing_channel'):
+                selector = (switch_id - SID_SOFTWARE_F1) + (8 if self.alt_is_pressed() else 0)
+                self.set_input_channel(self.song().view.selected_track, selector, self.song().view.selected_track.has_midi_input)
             elif self.main_script().use_function_buttons == 1:
                 if switch_id == current_quantization:
                     self.song().midi_recording_quantization = 0
@@ -420,3 +426,35 @@ class SoftwareController(MackieControlComponent):
             self.send_button_led(SID_AUTOMATION_ON, BUTTON_STATE_BLINKING)
         else:
             self.send_button_led(SID_AUTOMATION_ON, BUTTON_STATE_OFF)
+
+    def set_input_channel(self, track, button_index, midi=False):
+        """
+        Set the track's input_routing_channel to the button_index-th available channel.
+        button_index: int 0–7
+        """
+        available = track.available_input_routing_channels
+        if button_index < len(available):
+            if midi:
+                if track.input_routing_channel == available[button_index + 1]:
+                    track.input_routing_channel = available[0]
+                else:
+                    track.input_routing_channel = available[button_index + 1]
+            else:
+                target = available[button_index]
+                track.input_routing_channel = target
+
+    def set_input_type(self, track, button_index, midi=False):
+        """
+        Set the track's input_routing_channel to the button_index-th available channel.
+        button_index: int 0–7
+        """
+        available = track.available_input_routing_types
+        if button_index < len(available):
+            if midi:
+                if track.input_routing_type == available[button_index + 1]:
+                    track.input_routing_type = available[0]
+                else:
+                    track.input_routing_type = available[button_index + 1]
+            else:
+                target = available[button_index]
+                track.input_routing_type = target
