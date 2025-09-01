@@ -63,12 +63,16 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - Note: if volume or panning for a device chain is macro mapped, the fader/rotary encoder for that chain will have no effect.
 - Limitations: chains audio metering and audio routing are currently unavailable in Live's API.
 
+### Feedback messages (beta)
+- Short messages on Time Display provide feedback on various actions.
+
 ### Persistent settings (beta)
 - Some global settings (Night Mode, show clock...) are now preserved across sessions.
 - Settings are saved in options.txt.
 
-### Feedback messages (beta)
-- Short messages on Time Display provide feedback on various actions.
+### Optional 
+- Select track by touching fader (off by default, can be enabled by editing options.txt).
+- Indicate track muted via solo by flashing `MUTE` button LED (off by default, can be enabled by editing options.txt).
 
 ## Button Mappings
 ### **Encoder Assign Section**
