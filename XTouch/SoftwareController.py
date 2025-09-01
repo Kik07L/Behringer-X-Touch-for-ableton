@@ -50,19 +50,23 @@ class SoftwareController(MackieControlComponent):
 
         MackieControlComponent.destroy(self)
 
+    def instance(self):
+        """Return self for public access."""
+        return self
+
     def handle_function_key_switch_ids(self, switch_id, value):
         current_quantization = SID_SOFTWARE_F1 + self.song().midi_recording_quantization - 1
         if value == BUTTON_PRESSED:
             if self.shift_is_pressed():
-                self.main_script().use_function_keys_for_quantization_mode = not self.main_script().use_function_keys_for_quantization_mode
-                if self.main_script().use_function_keys_for_quantization_mode:
+                if self.main_script().use_function_buttons == 0:
+                    self.main_script().use_function_buttons = 1
                     self.main_script().time_display().show_priority_message("F quantize")
-                else:
+                elif self.main_script().use_function_buttons == 1:
                     self.main_script().time_display().show_priority_message("F disabled")
-#                    self.main_script().time_display().show_priority_message("1'16 1'16T")
+                    self.main_script().use_function_buttons = 0
                 self.main_script().save_preferences()
                 self.__update_midi_recording_quantization_buttons_led()
-            elif self.main_script().use_function_keys_for_quantization_mode == True:
+            elif self.main_script().use_function_buttons == 1:
                 if switch_id == current_quantization:
                     self.song().midi_recording_quantization = 0
                 else:
@@ -382,7 +386,7 @@ class SoftwareController(MackieControlComponent):
                 self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_OFF)
 
     def __update_midi_recording_quantization_buttons_led(self):
-        if self.main_script().use_function_keys_for_quantization_mode == True:
+        if self.main_script().use_function_buttons == 1:
             current_quantization = SID_SOFTWARE_F1 + self.song().midi_recording_quantization - 1
             for key in function_key_control_switch_ids:
                 if key == current_quantization:

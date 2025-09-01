@@ -136,8 +136,20 @@ class TimeDisplay(MackieControlComponent):
         expire_time = time.time() + (duration / 1000.0)
         # Clear queue and override current
         self.__message_queue = []
+        self.main_script().transport().save_preferences_and_exit()
         self.__current_message = (time_string, points)
         self.__message_expire = expire_time
+        self.__send_time_string(time_string, points_positions=points)
+
+    def show_permanent_message(self, msg, align_left=True):
+        """Show a message immediately, interrupting current/queued ones."""
+        if msg is None:
+            return
+        time_string, points = self.__prepare_display_string(msg, align_left=align_left)
+        # Clear queue and override current
+        self.__message_queue = []
+        self.__current_message = (time_string, points)
+        self.__message_expire = time.time() + 9999
         self.__send_time_string(time_string, points_positions=points)
 
     def __update_message_state(self):

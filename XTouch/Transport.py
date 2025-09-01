@@ -24,6 +24,12 @@ class Transport(MackieControlComponent):
         self.__jog_step_count_forward = 0
         self.__jog_step_count_backwards = 0
         self.__last_focussed_clip_play_state = CLIP_STATE_INVALID
+
+        """ Settings menu system """
+        self._in_settings_menu = False
+        self._menu_items = list(self.main_script()._preferences_spec.items())  # [(key, (default, parser, desc, formatter, short_name)), ...]
+        self._menu_index = 0
+
         self.song().add_record_mode_listener(self.__update_record_button_led)
         self.song().add_is_playing_listener(self.__update_play_button_led)
         self.song().add_loop_listener(self.__update_loop_button_led)
@@ -56,6 +62,10 @@ class Transport(MackieControlComponent):
             self.send_button_led(note, BUTTON_STATE_OFF)
 
         MackieControlComponent.destroy(self)
+
+    def instance(self):
+        """Return self for public access."""
+        return self
 
     def refresh_state(self):
         self.__update_play_button_led()
@@ -311,66 +321,93 @@ class Transport(MackieControlComponent):
 ##                        self.song().jump_by(step)
 
     def handle_jog_wheel_switch_ids(self, switch_id, value):
-        if switch_id == SID_JOG_CURSOR_UP:
-            if self.shift_is_pressed() and value == BUTTON_PRESSED and self.main_script().get_alternative_color_distance_mode() == True:
-                self.main_script().increment_alternative_color_distance_mode_white_cutoff(+0.01)
-                self.main_script().time_display().show_priority_message("white  " + f'{self.main_script().get_alternative_color_distance_mode_white_cutoff():.2f}', 1000)
-                self.main_script().save_preferences()
-            elif value == BUTTON_PRESSED:
-                self.__cursor_up_is_down = True
-                self.__cursor_repeat_delay = 0
-                self.__on_cursor_up_pressed()
-            elif value == BUTTON_RELEASED:
-                self.__cursor_up_is_down = False
-        elif switch_id == SID_JOG_CURSOR_DOWN:
-            if self.shift_is_pressed() and value == BUTTON_PRESSED and self.main_script().get_alternative_color_distance_mode() == True:
-                self.main_script().increment_alternative_color_distance_mode_white_cutoff(-0.01)
-                self.main_script().time_display().show_priority_message("white  " + f'{self.main_script().get_alternative_color_distance_mode_white_cutoff():.2f}', 1000)
-                self.main_script().save_preferences()
-            elif value == BUTTON_PRESSED:
-                self.__cursor_down_is_down = True
-                self.__cursor_repeat_delay = 0
-                self.__on_cursor_down_pressed()
-            elif value == BUTTON_RELEASED:
-                self.__cursor_down_is_down = False
-        elif switch_id == SID_JOG_CURSOR_LEFT:
-            if value == BUTTON_PRESSED:
-                self.__cursor_left_is_down = True
-                self.__cursor_repeat_delay = 0
-                self.__on_cursor_left_pressed()
-            elif value == BUTTON_RELEASED:
-                self.__cursor_left_is_down = False
-        elif switch_id == SID_JOG_CURSOR_RIGHT:
-            if value == BUTTON_PRESSED:
-                self.__cursor_right_is_down = True
-                self.__cursor_repeat_delay = 0
-                self.__on_cursor_right_pressed()
-            elif value == BUTTON_RELEASED:
-                self.__cursor_right_is_down = False
-        elif switch_id == SID_JOG_ZOOM:
-            if value == BUTTON_PRESSED:
-                if self.session_is_visible():
-                    if self.selected_clip_slot():
-                        if self.alt_is_pressed():
-                            self.selected_clip_slot().has_stop_button = not self.selected_clip_slot().has_stop_button
-                        elif self.option_is_pressed():
-                            self.selected_clip_slot().stop()
-                        else:
-                            self.selected_clip_slot().fire()
-                else:
-                    self.__zoom_button_down = not self.__zoom_button_down
-                    self.__update_zoom_button_led()
-        elif switch_id == SID_JOG_SCRUB:
-            if value == BUTTON_PRESSED:
-                if self.session_is_visible():
-                    if self.option_is_pressed():
-                        self.song().stop_all_clips()
+        if not self._in_settings_menu:
+            if switch_id == SID_JOG_CURSOR_UP:
+                if self.shift_is_pressed() and value == BUTTON_PRESSED and self.main_script().get_alternative_color_distance_mode() == True:
+                    self.main_script().increment_alternative_color_distance_mode_white_cutoff(+0.01)
+                    self.main_script().main_script().time_display().show_priority_message("white  " + f'{self.main_script().get_alternative_color_distance_mode_white_cutoff():.2f}', 1000)
+                    self.main_script().save_preferences()
+                elif value == BUTTON_PRESSED:
+                    self.__cursor_up_is_down = True
+                    self.__cursor_repeat_delay = 0
+                    self.__on_cursor_up_pressed()
+                elif value == BUTTON_RELEASED:
+                    self.__cursor_up_is_down = False
+            elif switch_id == SID_JOG_CURSOR_DOWN:
+                if self.shift_is_pressed() and value == BUTTON_PRESSED and self.main_script().get_alternative_color_distance_mode() == True:
+                    self.main_script().increment_alternative_color_distance_mode_white_cutoff(-0.01)
+                    self.main_script().main_script().time_display().show_priority_message("white  " + f'{self.main_script().get_alternative_color_distance_mode_white_cutoff():.2f}', 1000)
+                    self.main_script().save_preferences()
+                elif value == BUTTON_PRESSED:
+                    self.__cursor_down_is_down = True
+                    self.__cursor_repeat_delay = 0
+                    self.__on_cursor_down_pressed()
+                elif value == BUTTON_RELEASED:
+                    self.__cursor_down_is_down = False
+            elif switch_id == SID_JOG_CURSOR_LEFT:
+                if value == BUTTON_PRESSED:
+                    self.__cursor_left_is_down = True
+                    self.__cursor_repeat_delay = 0
+                    self.__on_cursor_left_pressed()
+                elif value == BUTTON_RELEASED:
+                    self.__cursor_left_is_down = False
+            elif switch_id == SID_JOG_CURSOR_RIGHT:
+                if value == BUTTON_PRESSED:
+                    self.__cursor_right_is_down = True
+                    self.__cursor_repeat_delay = 0
+                    self.__on_cursor_right_pressed()
+                elif value == BUTTON_RELEASED:
+                    self.__cursor_right_is_down = False
+            elif switch_id == SID_JOG_ZOOM:
+                if value == BUTTON_PRESSED:
+                    if self.shift_is_pressed() and not self._in_settings_menu:
+                        # Enter settings menu
+                        self._in_settings_menu = True
+                        self._menu_index = 0
+                        self._show_current_menu_item()
+                    elif self.session_is_visible():
+                        if self.selected_clip_slot():
+                            if self.alt_is_pressed():
+                                self.selected_clip_slot().has_stop_button = not self.selected_clip_slot().has_stop_button
+                            elif self.option_is_pressed():
+                                self.selected_clip_slot().stop()
+                            else:
+                                self.selected_clip_slot().fire()
                     else:
-                        self.song().view.selected_scene.fire_as_selected()
-                else:
-                    self.__scrub_button_down = not self.__scrub_button_down
-#                    self.song().back_to_arranger = 0
-                    self.__update_scrub_button_led()
+                        self.__zoom_button_down = not self.__zoom_button_down
+                        self.__update_zoom_button_led()
+            elif switch_id == SID_JOG_SCRUB:
+                if value == BUTTON_PRESSED:
+                    if self.session_is_visible():
+                        if self.option_is_pressed():
+                            self.song().stop_all_clips()
+                        else:
+                            self.song().view.selected_scene.fire_as_selected()
+                    else:
+                        self.__scrub_button_down = not self.__scrub_button_down
+    #                    self.song().back_to_arranger = 0
+                        self.__update_scrub_button_led()
+
+        elif value == BUTTON_PRESSED:
+            if switch_id == SID_JOG_CURSOR_UP:
+                self._menu_index = (self._menu_index - 1) % len(self._menu_items)
+            elif switch_id == SID_JOG_CURSOR_DOWN:
+                self._menu_index = (self._menu_index + 1) % len(self._menu_items)
+            elif switch_id in (SID_JOG_CURSOR_LEFT, SID_JOG_CURSOR_RIGHT):
+                self._toggle_current_preference(switch_id == SID_JOG_CURSOR_RIGHT)
+            elif switch_id == SID_JOG_ZOOM:
+                self.save_preferences_and_exit()
+                self.main_script().time_display().show_priority_message("SAWED", 1000)
+                return True
+            elif switch_id == SID_JOG_SCRUB:
+                self._reset_current_preference_to_default()
+            self._show_current_menu_item()
+            return True
+
+
+
+
+
 
     def __on_cursor_up_pressed(self):
         nav = Live.Application.Application.View.NavDirection
@@ -580,3 +617,73 @@ class Transport(MackieControlComponent):
             self.send_button_led(SID_CLICK, BUTTON_STATE_BLINKING)
         else:
             self.send_button_led(SID_CLICK, BUTTON_STATE_OFF)
+
+
+    """ Settings menu system """
+    
+    def _show_current_menu_item(self):
+        key, spec = self._menu_items[self._menu_index]
+        default, parser, desc, formatter, short_name, *rest = spec
+        value = getattr(self.main_script(), key.lower())
+
+        label = None
+        if rest:
+            choices_or_limits = rest[0]
+            if isinstance(choices_or_limits, dict):
+                label = choices_or_limits.get(value, str(value))
+
+        display_val = label if label else formatter(value)
+        msg = f"{short_name[:5]}.{display_val:>5}"
+        self.main_script().time_display().show_permanent_message(msg)
+
+    def _reset_current_preference_to_default(self):
+        key, spec = self._menu_items[self._menu_index]
+        default, parser, desc, formatter, short_name, *rest = spec
+        value = getattr(self.main_script(), key.lower())
+        
+        setattr(self.main_script(), key.lower(), default)
+        self.main_script().refresh_state()
+
+    def _toggle_current_preference(self, forward=True):
+        key, spec = self._menu_items[self._menu_index]
+        default, parser, desc, formatter, short_name, *rest = spec
+        value = getattr(self.main_script(), key.lower())
+
+        choices_or_limits = rest[0] if rest else None
+
+        if isinstance(choices_or_limits, dict):
+            # Discrete choices (like SHOW_CLOCK)
+            keys = list(choices_or_limits.keys())
+            idx = keys.index(value) if value in keys else 0
+            idx = (idx + (1 if forward else -1)) % len(keys)
+            new_value = keys[idx]
+
+        elif isinstance(default, bool):
+            # Simple toggle
+            new_value = not value
+
+        elif isinstance(default, int):
+            # Integer step
+            new_value = value + (1 if forward else -1)
+
+        elif isinstance(default, float):
+            # Float step
+            step = 0.01
+            new_value = round(value + (step if forward else -step), 3)
+
+        else:
+            new_value = value  # fallback (shouldn’t really happen)
+
+        # Apply numeric limits if specified
+        if isinstance(choices_or_limits, tuple) and len(choices_or_limits) == 2:
+            min_val, max_val = choices_or_limits
+            if isinstance(new_value, (int, float)):
+                new_value = max(min_val, min(new_value, max_val))
+
+        setattr(self.main_script(), key.lower(), new_value)
+        self.main_script().refresh_state()
+
+    def save_preferences_and_exit(self):
+        self.main_script().save_preferences()
+        self._in_settings_menu = False  # exit menu
+        return True

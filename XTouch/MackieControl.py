@@ -25,6 +25,79 @@ class MackieControl(object):
     """
 
     def __init__(self, c_instance):
+
+        # -------------------------------------------------------------------
+        # Preferences system
+        # -------------------------------------------------------------------
+        # key -> (default_value, parser, comment, formatter, short_name, choices_or_limits)
+        self._preferences_spec = {
+            "NIGHT_MODE_ON": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Enable Night Mode (true/false)",
+                lambda v: "true" if v else "false",
+                "might" # m looks like capital n on 7-segment display
+            ),
+            "ALTERNATIVE_COLOR_DISTANCE_MODE": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Use alternative color matching method (true = match primarily by hue, false = match by RGB distance)",
+                lambda v: "true" if v else "false",
+                "color"
+            ),
+            "ALTERNATIVE_COLOR_DISTANCE_MODE_WHITE_CUTOFF": (
+                0.19,
+                lambda v: float(v) if v else 0.19,
+                "White cutoff for alternative color matching method (0.00-1.00, higher value = more colors map to white scribble strip)",
+                lambda v: f"{v:.2f}",  # fixed to 2 decimals
+                "white",
+                (0.00, 1.00)  # min/max tuple
+            ),
+            "USE_FUNCTION_BUTTONS": (
+                0,
+                lambda v: self._parse_use_function_buttons(v),
+                "Use Function buttons (0=disabled, 1=function buttons set MIDI Record Quantization)",
+                str,
+                "f bts",
+                {0: "0ff", 1: "quant"}   # raw value → display string
+            ),
+            "SHOW_CLOCK": (
+                0,
+                lambda v: self._parse_show_clock(v),
+                "Show current time instead of song time/beats (0=off, 1=on with seconds, 2=on without seconds)",
+                str,
+                "clock",
+                {0: "0ff", 1: "0m", 2: "short"}   # raw value → display string
+            ),
+            "SNAPPY_METERS": (
+                True,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Use snappy level meters (true/false)",
+                lambda v: "true" if v else "false",
+                "snppy"
+            ),
+            "SHOW_MUTED_VIA_SOLO": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Flash Mute LED to indicate tracks muted by active solo (true/false)",
+                lambda v: "true" if v else "false",
+                "muted"
+            ),
+            "TOUCH_FADER_TO_SELECT": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Select track by touching fader (true/false)",
+                lambda v: "true" if v else "false",
+                "touch"
+            ),
+        }
+        # copy defaults into attributes (lowercase names)
+        for key, spec in self._preferences_spec.items():
+            default = spec[0]
+            setattr(self, key.lower(), default)
+
+        self._preferences = {k: spec[0] for k, spec in self._preferences_spec.items()}
+
         self.__c_instance = c_instance
         self.__components = []
         self.__main_display = MainDisplay(self)
@@ -40,64 +113,6 @@ class MackieControl(object):
         self.__channel_strips = [ ChannelStrip(self, i) for i in range(NUM_CHANNEL_STRIPS) ]
         for s in self.__channel_strips:
             self.__components.append(s)
-
-        # -------------------------------------------------------------------
-        # Preferences system
-        # -------------------------------------------------------------------
-        # key -> (default_value, parser, comment, formatter)
-        self._preferences_spec = {
-            "NIGHT_MODE_ON": (
-                False,
-                lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Enable Night Mode (true/false)",
-                lambda v: "true" if v else "false"
-            ),
-            "ALTERNATIVE_COLOR_DISTANCE_MODE": (
-                False,
-                lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Use alternative color matching method (true = match primarily by hue, false = match by RGB distance)",
-                lambda v: "true" if v else "false"
-            ),
-            "ALTERNATIVE_COLOR_DISTANCE_MODE_WHITE_CUTOFF": (
-                0.19,
-                lambda v: float(v) if v else 0.19,
-                "White cutoff for alternative color matching method (0.00-1.00, higher value = more colors map to white scribble strip)",
-                lambda v: f"{v:.3f}".rstrip("0").rstrip(".")
-            ),
-            "USE_FUNCTION_KEYS_FOR_QUANTIZATION_MODE": (
-                False,
-                lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Use Function keys to set MIDI Record Quantization (true/false)",
-                lambda v: "true" if v else "false"
-            ),
-            "SHOW_CLOCK": (
-                0,
-                lambda v: self._parse_show_clock(v),
-                "Show current time instead of song time/beats (0=off, 1=on with seconds, 2=on without seconds)",
-                str
-            ),
-            "SNAPPY_METERS": (
-                True,
-                lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Use snappy level meters (true/false)",
-                lambda v: "true" if v else "false"
-            ),
-            "SHOW_MUTED_VIA_SOLO": (
-                False,
-                lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Flash Mute LED to indicate tracks muted by active solo (true/false)",
-                lambda v: "true" if v else "false"
-            ),
-            "TOUCH_FADER_TO_SELECT": (
-                False,
-                lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Select track by touching fader (true/false)",
-                lambda v: "true" if v else "false"
-            ),
-        }
-        # copy defaults into attributes (lowercase names)
-        for key, (default, _, _, _) in self._preferences_spec.items():
-            setattr(self, key.lower(), default)
             
         self.__master_strip = MasterChannelStrip(self)
         self.__components.append(self.__master_strip)
@@ -173,6 +188,9 @@ class MackieControl(object):
 
     def time_display(self):
         return self.__time_display.instance()
+
+    def transport(self):
+        return self.__transport.instance()
 
     def refresh_state(self):
         for c in self.__components:
@@ -464,7 +482,25 @@ class MackieControl(object):
         spec = self._preferences_spec.get(key)
         if not spec:
             return  # unknown key, ignore
-        default, parser, _, _ = spec
+        default, parser, comment, formatter, short_name, *rest = spec
+        choices_or_limits = rest[0] if rest else None
+        try:
+            parsed_value = parser(value)
+            # If choices_or_limits is a tuple of (min, max), clamp
+            if isinstance(choices_or_limits, tuple) and len(choices_or_limits) == 2:
+                min_val, max_val = choices_or_limits
+                parsed_value = max(min_val, min(parsed_value, max_val))
+            setattr(self, key.lower(), parsed_value)
+        except Exception:
+            setattr(self, key.lower(), default)
+
+
+    def _apply_preference(self, key, value):
+        """Apply a single preference from string using the parser in the spec."""
+        spec = self._preferences_spec.get(key)
+        if not spec:
+            return  # unknown key, ignore
+        default, parser, comment, formatter, short_name, *rest = spec
         try:
             parsed_value = parser(value)
             setattr(self, key.lower(), parsed_value)
@@ -481,7 +517,9 @@ class MackieControl(object):
         lines = [
             "# User preferences for Behringer X-Touch"
         ]
-        for key, (default, _, comment, formatter) in self._preferences_spec.items():
+        for key, spec in self._preferences_spec.items():
+            default, parser, comment, formatter, short_name, *rest = spec
+
             val_str = formatter(default)
             comment_str = f" {comment}" if comment else ""
             lines.append("")
@@ -500,7 +538,9 @@ class MackieControl(object):
         lines = [
             "# User preferences for Behringer X-Touch",
         ]
-        for key, (default, parser, comment, formatter) in self._preferences_spec.items():
+        for key, spec in self._preferences_spec.items():
+            default, parser, comment, formatter, short_name, *rest = spec
+
             # Get the current value, falling back to the default if not set
             current_value = getattr(self, key.lower(), default)
 
@@ -527,4 +567,12 @@ class MackieControl(object):
             return 1
         if v in ("2", "short", "no-seconds", "nos"):
             return 2
+        return 0
+
+    def _parse_use_function_buttons(self, v):
+        v = v.strip().lower()
+        if v in ("0", "off", "false", "no"):
+            return 0
+        if v in ("1", "on", "quantization", "quantization mode"):
+            return 1
         return 0
