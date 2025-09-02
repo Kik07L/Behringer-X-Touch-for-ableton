@@ -73,7 +73,7 @@ class ChannelStripController(MackieControlComponent):
        because its always mapped to the master_volume.
     """
 
-    def __init__(self, main_script, channel_strips, master_strip, main_display_controller):
+    def __init__(self, main_script, channel_strips, master_strip, main_display_controller, software_controller=None):
         MackieControlComponent.__init__(self, main_script)
         self.__left_extensions = []
         self.__right_extensions = []
@@ -81,6 +81,7 @@ class ChannelStripController(MackieControlComponent):
         self.__master_strip = master_strip
         self.__channel_strips = channel_strips
         self.__main_display_controller = main_display_controller
+        self.__software_controller = software_controller
         self.__meters_enabled = False
         self.__assignment_mode = CSM_VOLPAN
         self.__previous_assignment_mode = None
@@ -1146,12 +1147,21 @@ class ChannelStripController(MackieControlComponent):
         u""" Notifier, called as soon as the selected track has changed
         """
         st = self.__last_attached_selected_track
-        if st and st.devices_has_listener(self.__on_selected_device_chain_changed):
-            st.remove_devices_listener(self.__on_selected_device_chain_changed)
+        if st:
+            if st.devices_has_listener(self.__on_selected_device_chain_changed):
+                st.remove_devices_listener(self.__on_selected_device_chain_changed)
+            if hasattr(st, 'input_routing_channel') and st.input_routing_channel_has_listener(self.__update_function_keys_leds):
+                st.remove_input_routing_channel_listener(self.__update_function_keys_leds)
+            if hasattr(st, 'input_routing_type') and st.input_routing_type_has_listener(self.__update_function_keys_leds):
+                st.remove_input_routing_type_listener(self.__update_function_keys_leds)
         self.__last_attached_selected_track = self.song().view.selected_track
         st = self.__last_attached_selected_track
         if st:
             st.add_devices_listener(self.__on_selected_device_chain_changed)
+            if hasattr(st, 'input_routing_channel') and not st.input_routing_channel_has_listener(self.__update_function_keys_leds):
+                st.add_input_routing_channel_listener(self.__update_function_keys_leds)
+            if hasattr(st, 'input_routing_type') and not st.input_routing_type_has_listener(self.__update_function_keys_leds):
+                st.add_input_routing_type_listener(self.__update_function_keys_leds)
         if self.__assignment_mode == CSM_PLUGINS and not self.__lock_to_plugin:
             self.__plugin_mode_offsets = [ 0 for x in range(PCM_NUMMODES) ]
             if self.__chosen_plugin != None:
@@ -1167,6 +1177,7 @@ class ChannelStripController(MackieControlComponent):
             self.__reassign_channel_strip_parameters(for_display_only=False)
             self.__update_assignment_display()
             self.request_rebuild_midi_map()
+        self.__update_function_keys_leds()
 
     def __on_flip_changed(self):
         u""" Update the flip button LED when the flip mode changed
@@ -1263,3 +1274,7 @@ class ChannelStripController(MackieControlComponent):
             else:
                 result = [ (p, p.name) for p in self.__chosen_plugin.parameters[1:] ]
         self.__ordered_plugin_parameters = result
+
+    def __update_function_keys_leds(self):
+        if self.__software_controller is not None:
+            self.__software_controller._update_function_keys_leds(False)

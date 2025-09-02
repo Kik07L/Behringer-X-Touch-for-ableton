@@ -24,10 +24,12 @@ class SoftwareController(MackieControlComponent):
         self.song().add_session_automation_record_listener(self.__update_automation_record_button_led)
         self.song().add_re_enable_automation_enabled_listener(self.__update_re_enable_automation_enabled_button_led)
         self.song().add_arrangement_overdub_listener(self.__update_arrangement_overdub_button_led)
-        self.song().add_midi_recording_quantization_listener(self.__update_midi_recording_quantization_buttons_led)
+        self.song().add_midi_recording_quantization_listener(self._update_function_keys_leds)
         self.__update_automation_record_button_led()
-        self.__quantization_strings = ("quant:  0ff", "1'4", "1'8", "1'8T", "1'8 1'8T", "1'16", "1'16T", "1'16 1'16T", "1'32")
-
+#        self.__quantization_strings = ("quant:  0ff", "1'4", "1'8", "1'8T", "1'8 1'8T", "1'16", "1'16T", "1'16 1'16T", "1'32")
+        self.__quantization_strings = ("quant: 0ff", "quant: 4", "quant: 8", "quant: 8T", "quant: 8 8T", "quant:16", "quant:16T", "quant:1616T", "quant:32")
+        self.__save_current_view(False)
+        
     def destroy(self):
         av = self.application().view
         av.remove_is_view_visible_listener(u'Session', self.__update_session_arranger_button_led)
@@ -38,7 +40,7 @@ class SoftwareController(MackieControlComponent):
         self.song().remove_back_to_arranger_listener(self.__update_back_to_arranger_button_led)
         self.song().remove_can_capture_midi_listener(self.__update_capture_midi_button_led)
         self.song().remove_arrangement_overdub_listener(self.__update_arrangement_overdub_button_led)
-        self.song().remove_midi_recording_quantization_listener(self.__update_midi_recording_quantization_buttons_led)
+        self.song().remove_midi_recording_quantization_listener(self._update_function_keys_leds)
         for note in software_controls_switch_ids:
             self.send_button_led(note, BUTTON_STATE_OFF)
 
@@ -57,21 +59,34 @@ class SoftwareController(MackieControlComponent):
     def handle_function_key_switch_ids(self, switch_id, value):
         if value == BUTTON_PRESSED:
             if self.shift_is_pressed():
-                if self.main_script().use_function_buttons == 0:
-                    self.main_script().use_function_buttons = 1
-                    self.main_script().time_display().show_priority_message("funct:quant")
-                elif self.main_script().use_function_buttons == 1:
-                    self.main_script().time_display().show_priority_message("funct:  0ff")
-                    self.main_script().use_function_buttons = 0
-                self.main_script().save_preferences()
-                self.__update_midi_recording_quantization_buttons_led(False)
-            elif self.option_is_pressed() and self.song().view.selected_track and hasattr(self.song().view.selected_track, 'input_routing_type'):
+                spec = self.main_script()._preferences_spec["USE_FUNCTION_BUTTONS"]
+                default, parser, comment, formatter, short_name, choices_or_limits = spec
+                selector = (switch_id - SID_SOFTWARE_F1)
+                # Only allow values defined in choices_or_limits
+                if selector in choices_or_limits:
+                    self.main_script().use_function_buttons = selector
+                    self.main_script().save_preferences()
+                    label = choices_or_limits[selector]
+                    self.main_script().time_display().show_priority_message(
+                        f"{short_name[:5]}.{label}", 2000
+                    )
+                # if self.main_script().use_function_buttons == 0:
+                    # self.main_script().use_function_buttons = 1
+                    # self.main_script().time_display().show_priority_message("funct:quant")
+                # elif self.main_script().use_function_buttons == 1:
+                    # self.main_script().time_display().show_priority_message("funct:  0ff")
+                    # self.main_script().use_function_buttons = 0
+                # self.main_script().save_preferences()
+                self._update_function_keys_leds(False)
+            elif (self.option_is_pressed() or self.main_script().use_function_buttons == 2) and self.song().view.selected_track and hasattr(self.song().view.selected_track, 'input_routing_type'):
                 selector = (switch_id - SID_SOFTWARE_F1)
                 self.set_input_type(self.song().view.selected_track, selector, self.song().view.selected_track.has_midi_input)
-            elif self.control_is_pressed() or self.alt_is_pressed() and self.song().view.selected_track and hasattr(self.song().view.selected_track, 'input_routing_channel'):
+                self._update_function_keys_leds(False)
+            elif (self.control_is_pressed() or self.alt_is_pressed() or self.main_script().use_function_buttons == 3) and self.song().view.selected_track and hasattr(self.song().view.selected_track, 'input_routing_channel'):
                 selector = (switch_id - SID_SOFTWARE_F1) + (8 if self.alt_is_pressed() else 0)
                 self.set_input_channel(self.song().view.selected_track, selector, self.song().view.selected_track.has_midi_input)
-            elif self.main_script().use_function_buttons == 1:
+                self._update_function_keys_leds(False)
+            elif self.main_script().use_function_buttons == 1: # quantization mode
                 current_quantization = SID_SOFTWARE_F1 + self.song().midi_recording_quantization - 1
                 if switch_id == current_quantization:
                     self.song().midi_recording_quantization = 0
@@ -134,7 +149,12 @@ class SoftwareController(MackieControlComponent):
     def handle_software_controls_switch_ids(self, switch_id, value):
         if switch_id == SID_ARRAGEMENT_SESSION:    #elif switch_id == SID_AUTOMATION_ON:
             if value == BUTTON_PRESSED:
-                self.__toggle_session_arranger_is_visible()
+                if self.control_is_pressed():
+                    self.__save_current_view()
+                elif self.shift_is_pressed():
+                    self.__recall_saved_view()
+                else:
+                    self.__toggle_session_arranger_is_visible()
         elif switch_id == SID_SOFTWARE_F13:
             if value == BUTTON_PRESSED:
                 self.__toggle_detail_sub_view()
@@ -207,7 +227,7 @@ class SoftwareController(MackieControlComponent):
         self.__update_group_mode_button_led()
         self.__update_outputs_button_led()
         self.__update_night_mode_leds()
-        self.__update_midi_recording_quantization_buttons_led(False)
+        self._update_function_keys_leds(False)
 
     def on_update_display_timer(self):
         self.__update_group_mode_button_led() #have to include here since we can't add a listener for this
@@ -224,6 +244,36 @@ class SoftwareController(MackieControlComponent):
             self.song().view.selected_track = self.song().master_track
         else:
             self.application().view.show_view(u'Detail/DeviceChain')
+
+    def __save_current_view(self, verbose=True):
+        self.__saved_view_session_arranger = self.application().view.focused_document_view
+        self.__saved_view_browser = self.application().view.is_view_visible(u'Browser')
+        self.__saved_view_detail_clip = self.application().view.is_view_visible(u'Detail/Clip')
+        self.__saved_view_detail_device_chain = self.application().view.is_view_visible(u'Detail/DeviceChain')
+        self.__saved_view_detail = self.application().view.is_view_visible(u'Detail')
+        if verbose:
+            self.main_script().time_display().show_priority_message("Wieu sawed")
+
+    def __recall_saved_view(self, verbose=True):
+        self.application().view.focus_view(self.__saved_view_session_arranger)
+        if self.__saved_view_browser:
+            self.application().view.show_view(u'Browser')
+        else:
+            self.application().view.hide_view(u'Browser')
+        if self.__saved_view_detail_clip:
+            self.application().view.show_view(u'Detail/Clip')
+        else:
+            self.application().view.hide_view(u'Detail/Clip')
+        if self.__saved_view_detail_device_chain:
+            self.application().view.show_view(u'Detail/DeviceChain')
+        else:
+            self.application().view.hide_view(u'Detail/DeviceChain')
+        if self.__saved_view_detail:
+            self.application().view.show_view(u'Detail')
+        else:
+            self.application().view.hide_view(u'Detail')
+        if verbose:
+            self.main_script().time_display().show_priority_message("Wieu recal")
 
     def __toggle_session_arranger_is_visible(self):
         if self.application().view.is_view_visible(u'Session'):
@@ -392,7 +442,7 @@ class SoftwareController(MackieControlComponent):
             else:
                 self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_OFF)
 
-    def __update_midi_recording_quantization_buttons_led(self, show_quant=True):
+    def _update_function_keys_leds(self, verbose=True):
         if self.main_script().use_function_buttons == 1:
             current_quantization = SID_SOFTWARE_F1 + self.song().midi_recording_quantization - 1
             for key in function_key_control_switch_ids:
@@ -400,11 +450,60 @@ class SoftwareController(MackieControlComponent):
                     self.send_button_led(key, BUTTON_STATE_ON)
                 else:
                     self.send_button_led(key, BUTTON_STATE_OFF)
-            if show_quant:
+            if verbose:
                 self.main_script().time_display().show_priority_message(self.__quantization_strings[self.song().midi_recording_quantization], 1000)
+        elif self.main_script().use_function_buttons == 2:
+            led_index = SID_SOFTWARE_F1 + self.get_input_type_index(self.song().view.selected_track)
+            if self.song().view.selected_track.has_midi_input:
+                led_index -= 1
+            for key in function_key_control_switch_ids:
+                if key == led_index or led_index < SID_SOFTWARE_F1: # or led_index < SID_SOFTWARE_F1 to light all LEDs for all ins
+                    self.send_button_led(key, BUTTON_STATE_ON)
+                else:
+                    self.send_button_led(key, BUTTON_STATE_OFF)
+            if verbose:
+                self.main_script().time_display().show_priority_message(self.song().view.selected_track.input_routing_type.display_name, 1000)
+        elif self.main_script().use_function_buttons == 3:
+            led_index = SID_SOFTWARE_F1 + self.get_input_channel_index(self.song().view.selected_track)
+            if self.song().view.selected_track.has_midi_input:
+                led_index -= 1
+            for key in function_key_control_switch_ids:
+                if key == led_index or led_index < SID_SOFTWARE_F1: # or led_index < SID_SOFTWARE_F1 to light all LEDs for all channels
+                    self.send_button_led(key, BUTTON_STATE_ON)
+                elif key == led_index - 8:
+                    self.send_button_led(key, BUTTON_STATE_BLINKING)
+                else:
+                    self.send_button_led(key, BUTTON_STATE_OFF)
+            if verbose:
+                self.main_script().time_display().show_priority_message(self.song().view.selected_track.input_routing_channel.display_name, 1000)
         else:
             for key in function_key_control_switch_ids:
                 self.send_button_led(key, BUTTON_STATE_OFF)
+
+    def get_input_type_index(self, track):
+        selected = track.input_routing_type
+        available = track.available_input_routing_types
+
+        if not available or track.is_foldable:  # group tracks are foldable
+            return 1000
+
+        for i, t in enumerate(available):
+            if t.display_name == selected.display_name:
+                return i
+        return 1000 # no input selected or available
+
+    def get_input_channel_index(self, track):
+        print(dir(track.input_routing_channel))
+        selected = track.input_routing_channel
+        available = track.available_input_routing_channels
+
+        if not available or track.is_foldable:  # group tracks are foldable
+            return 1000
+
+        for i, chan in enumerate(available):
+            if chan.display_name == selected.display_name:
+                return i
+        return 1000 # no input selected or available
 
     def __update_capture_midi_button_led(self): #
         if self.song().can_capture_midi:
@@ -436,7 +535,7 @@ class SoftwareController(MackieControlComponent):
         button_index: int 0–7
         """
         available = track.available_input_routing_channels
-        if button_index < len(available):
+        if button_index + 1 < len(available):
             if midi:
                 if track.input_routing_channel == available[button_index + 1]:
                     track.input_routing_channel = available[0]
@@ -457,7 +556,7 @@ class SoftwareController(MackieControlComponent):
         button_index: int 0–7
         """
         available = track.available_input_routing_types
-        if button_index < len(available):
+        if button_index + 1 < len(available):
             if midi:
                 if track.input_routing_type == available[button_index + 1]:
                     track.input_routing_type = available[0]

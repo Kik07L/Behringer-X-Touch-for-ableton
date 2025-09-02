@@ -57,10 +57,10 @@ class MackieControl(object):
             "USE_FUNCTION_BUTTONS": (
                 0,
                 lambda v: self._parse_use_function_buttons(v),
-                "Use Function buttons (0=disabled, 1=set MIDI Record Quantization)",
+                "Use Function buttons (0=disabled, 1=set MIDI Record Quantization, 2=set Input Type, 3=set Input Channel)",
                 str,
                 "funct",
-                {0: "0ff", 1: "quant"}   # raw value → display string
+                {0: "0ff", 1: "quant", 2: "intyp", 3: "incha"}   # raw value → display string
             ),
             "SHOW_CLOCK": (
                 0,
@@ -117,7 +117,7 @@ class MackieControl(object):
             
         self.__master_strip = MasterChannelStrip(self)
         self.__components.append(self.__master_strip)
-        self.__channel_strip_controller = ChannelStripController(self, self.__channel_strips, self.__master_strip, self.__main_display_controller)
+        self.__channel_strip_controller = ChannelStripController(self, self.__channel_strips, self.__master_strip, self.__main_display_controller, self.__software_controller)
         self.__components.append(self.__channel_strip_controller)
         self.__shift_is_pressed = False
         self.__option_is_pressed = False
@@ -590,6 +590,10 @@ class MackieControl(object):
             return 0
         if v in ("1", "on", "quantization", "quantization mode"):
             return 1
+        if v in ("2", "type", "input type"):
+            return 2
+        if v in ("3", "channel", "input channel"):
+            return 3
         return 0
         
     def _parse_color_distance_mode(self, v):

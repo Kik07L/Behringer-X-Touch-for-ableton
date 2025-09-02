@@ -78,11 +78,9 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `SCRUB`: Reset setting to default.
 - `ZOOM`: Save and exit.
 
-### Quick input selection
-- `OPTION + F1-F8`: Select the first eight available Input Types for the selected track.
-- `CONTROL + F1-F8`: Select the first eight available Input Channels for the selected track.
-- `ALT + F1-F8`: Select the next eight available Input Channels for the selected track, for a total of 16, covering all available MIDI input channels.
-- For MIDI tracks, the very first item (All Ins / All Channels) is skipped, so F1 = Ch. 1 etc.. Choose an already selected channel to set the track input back to All Ins / All Channels.
+### Function Section modes (beta)
+- Available modes: MIDI Record Quantization, current track Input Type, current track Input Channel.
+- See Button Mappings for more details.
 
 ### Optional features
 - Select track by touching fader (off by default, can be enabled by editing options.txt).
@@ -160,13 +158,10 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `CONTROL + Rotation`: Change tempo.
 - `ZOOM BUTTON + Rotation`: Zoom in/out in Arrangement view.
 
-### **Function Section**
-- `SHIFT + F1-F8`: Enable/disable Record Quantization selection. Leave disabled to allow Function buttons to be MIDI mapped. Setting is remembered across sessions.
-- `F1-F8`: Select Record Quantization. Press lit button again for no quantization.
-- `OPTION/CONTROL/ALT + F1-F8`: Quick input selection
-
 ### **Gray Section**
 - `GLOBAL VIEW`: Switch between Session and Arrangement views.
+  - `CONTROL + GLOBAL VIEW`: Store current view (Session/Arrangement, browser, clip/devices).
+  - `SHIFT + GLOBAL VIEW`: Recall stored view (Session/Arrangement, browser, clip/devices).
 - `MIDI TRACKS`: Create a new MIDI track.
 - `INPUTS`: Open/close the browser.
 - `AUDIO TRACKS`: Create a new audio track.
@@ -176,6 +171,16 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `OUTPUTS`: Select the Master Track. Press again to show Master device chain.
 - `USER`: Press and hold to show Macro Mapper.
   - `SHIFT + USER`: Lock Macro Mapper.
+
+### **Function Section**
+- `SHIFT + F1-F8`: Select Function Section mode.
+  - `F1`: Disabled (allow `F1-F8` to be MIDI mapped).  
+  - `F2`: MIDI Record Quantization (`F1-F8`, press twice for no quantization).
+  - `F3`: Current track Input Type (`F1-F8`, press twice for All Ins on MIDI track).
+  - `F4`: Current track Input Channel (`F1-F8`, `ALT + F1-F8` for Channels 9-16, press twice for All Channels on MIDI track).
+- `OPTION + F1-F8`: Quick select current track Input Type.
+- `CONTROL/ALT + F1-F8`: Quick select current track Input Channel (`CONTROL` for Channels 1-8, `ALT` for Channels 9-16).
+
 ---
 
 ## Installation

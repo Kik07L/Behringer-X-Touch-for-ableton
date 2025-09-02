@@ -267,7 +267,6 @@ class ChannelStrip(MackieControlComponent):
         self.__assigned_track.add_muted_via_solo_listener(self.__update_mute_led)
         self.__assigned_track.add_solo_listener(self.__update_solo_led)
 
-
     def __remove_listeners(self):
         if hasattr(self.__assigned_track, 'can_be_armed') and self.__assigned_track.can_be_armed:
             if self.__assigned_track.arm_has_listener(self.__update_arm_led):
@@ -434,8 +433,6 @@ class ChannelStrip(MackieControlComponent):
             self.send_button_led(SID_SELECT_BASE + self.__strip_index, BUTTON_STATE_BLINKING)
         else:
             self.send_button_led(SID_SELECT_BASE + self.__strip_index, BUTTON_STATE_OFF)
-
-
 
 
 class MasterChannelStrip(MackieControlComponent):
