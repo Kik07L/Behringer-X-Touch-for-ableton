@@ -55,7 +55,6 @@ class SoftwareController(MackieControlComponent):
         return self
 
     def handle_function_key_switch_ids(self, switch_id, value):
-        current_quantization = SID_SOFTWARE_F1 + self.song().midi_recording_quantization - 1
         if value == BUTTON_PRESSED:
             if self.shift_is_pressed():
                 if self.main_script().use_function_buttons == 0:
@@ -73,6 +72,7 @@ class SoftwareController(MackieControlComponent):
                 selector = (switch_id - SID_SOFTWARE_F1) + (8 if self.alt_is_pressed() else 0)
                 self.set_input_channel(self.song().view.selected_track, selector, self.song().view.selected_track.has_midi_input)
             elif self.main_script().use_function_buttons == 1:
+                current_quantization = SID_SOFTWARE_F1 + self.song().midi_recording_quantization - 1
                 if switch_id == current_quantization:
                     self.song().midi_recording_quantization = 0
                 else:
@@ -399,6 +399,7 @@ class SoftwareController(MackieControlComponent):
                     self.send_button_led(key, BUTTON_STATE_ON)
                 else:
                     self.send_button_led(key, BUTTON_STATE_OFF)
+            self.main_script().time_display().show_priority_message(self.__quantization_strings[self.song().midi_recording_quantization], 1000)
         else:
             for key in function_key_control_switch_ids:
                 self.send_button_led(key, BUTTON_STATE_OFF)
@@ -442,6 +443,11 @@ class SoftwareController(MackieControlComponent):
             else:
                 target = available[button_index]
                 track.input_routing_channel = target
+            chan = track.input_routing_channel
+            if chan is not None:
+                name = chan.display_name.replace(" ","")[:10]
+            self.main_script().time_display().show_priority_message(name, 1000)
+        
 
     def set_input_type(self, track, button_index, midi=False):
         """
@@ -458,3 +464,7 @@ class SoftwareController(MackieControlComponent):
             else:
                 target = available[button_index]
                 track.input_routing_type = target
+            typ = track.input_routing_type
+            if typ is not None:
+                name = typ.display_name.replace(" ","")[:10]
+            self.main_script().time_display().show_priority_message(name, 1000)

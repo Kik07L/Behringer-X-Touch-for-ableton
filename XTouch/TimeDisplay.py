@@ -215,7 +215,7 @@ class TimeDisplay(MackieControlComponent):
         assert len(time_string) == 10
         for c in range(0, 10):
             char = time_string[9 - c].upper()
-            char_code = g7_seg_led_conv_table[char]
+            char_code = g7_seg_led_conv_table.get(char, g7_seg_led_conv_table[' '])
             if c in points_positions:
                 char_code += 64
             self.send_midi((176, 64 + c, char_code))

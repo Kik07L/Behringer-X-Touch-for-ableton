@@ -57,7 +57,7 @@ class MackieControl(object):
             "USE_FUNCTION_BUTTONS": (
                 0,
                 lambda v: self._parse_use_function_buttons(v),
-                "Use Function buttons (0=disabled, 1=function buttons set MIDI Record Quantization)",
+                "Use Function buttons (0=disabled, 1=set MIDI Record Quantization)",
                 str,
                 "funct",
                 {0: "0ff", 1: "quant"}   # raw value → display string
