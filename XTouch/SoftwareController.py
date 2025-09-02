@@ -26,7 +26,7 @@ class SoftwareController(MackieControlComponent):
         self.song().add_arrangement_overdub_listener(self.__update_arrangement_overdub_button_led)
         self.song().add_midi_recording_quantization_listener(self.__update_midi_recording_quantization_buttons_led)
         self.__update_automation_record_button_led()
-        self.__quantization_strings = ("quant 0ff", "1'4", "1'8", "1'8T", "1'8 1'8T", "1'16", "1'16T", "1'16 1'16T", "1'32")
+        self.__quantization_strings = ("quant:  0ff", "1'4", "1'8", "1'8T", "1'8 1'8T", "1'16", "1'16T", "1'16 1'16T", "1'32")
 
     def destroy(self):
         av = self.application().view
@@ -64,7 +64,7 @@ class SoftwareController(MackieControlComponent):
                     self.main_script().time_display().show_priority_message("funct:  0ff")
                     self.main_script().use_function_buttons = 0
                 self.main_script().save_preferences()
-                self.__update_midi_recording_quantization_buttons_led()
+                self.__update_midi_recording_quantization_buttons_led(False)
             elif self.option_is_pressed() and self.song().view.selected_track and hasattr(self.song().view.selected_track, 'input_routing_type'):
                 selector = (switch_id - SID_SOFTWARE_F1)
                 self.set_input_type(self.song().view.selected_track, selector, self.song().view.selected_track.has_midi_input)
@@ -207,6 +207,7 @@ class SoftwareController(MackieControlComponent):
         self.__update_group_mode_button_led()
         self.__update_outputs_button_led()
         self.__update_night_mode_leds()
+        self.__update_midi_recording_quantization_buttons_led(False)
 
     def on_update_display_timer(self):
         self.__update_group_mode_button_led() #have to include here since we can't add a listener for this
@@ -391,7 +392,7 @@ class SoftwareController(MackieControlComponent):
             else:
                 self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_OFF)
 
-    def __update_midi_recording_quantization_buttons_led(self):
+    def __update_midi_recording_quantization_buttons_led(self, show_quant=True):
         if self.main_script().use_function_buttons == 1:
             current_quantization = SID_SOFTWARE_F1 + self.song().midi_recording_quantization - 1
             for key in function_key_control_switch_ids:
@@ -399,7 +400,8 @@ class SoftwareController(MackieControlComponent):
                     self.send_button_led(key, BUTTON_STATE_ON)
                 else:
                     self.send_button_led(key, BUTTON_STATE_OFF)
-            self.main_script().time_display().show_priority_message(self.__quantization_strings[self.song().midi_recording_quantization], 1000)
+            if show_quant:
+                self.main_script().time_display().show_priority_message(self.__quantization_strings[self.song().midi_recording_quantization], 1000)
         else:
             for key in function_key_control_switch_ids:
                 self.send_button_led(key, BUTTON_STATE_OFF)
