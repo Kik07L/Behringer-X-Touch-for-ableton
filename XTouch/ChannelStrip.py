@@ -467,7 +467,10 @@ class MasterChannelStrip(MackieControlComponent):
     def build_midi_map(self, midi_map_handle):
         if self.__assigned_track:
             needs_takeover = False
-            volume = self.__assigned_track.mixer_device.volume
+            if self.main_script().get_flip() and self.main_script().master_fader_controls_cue_volume_on_flip:
+                volume = self.__assigned_track.mixer_device.cue_volume
+            else:
+                volume = self.__assigned_track.mixer_device.volume
             feeback_rule = Live.MidiMap.PitchBendFeedbackRule()
             feeback_rule.channel = self.__strip_index
             feeback_rule.value_pair_map = tuple()

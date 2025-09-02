@@ -91,6 +91,13 @@ class MackieControl(object):
                 lambda v: "true" if v else "false",
                 "touch"
             ),
+            "MASTER_FADER_CONTROLS_CUE_VOLUME_ON_FLIP": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Master fader controls cue volume when channel strips are flipped (true/false)",
+                lambda v: "true" if v else "false",
+                "cue  "
+            ),
         }
         # copy defaults into attributes (lowercase names)
         for key, spec in self._preferences_spec.items():
@@ -389,6 +396,12 @@ class MackieControl(object):
         result = False
         if hasattr(self, 'touch_fader_to_select'):
             result = self.touch_fader_to_select
+        return result
+
+    def get_flip(self):
+        result = False
+        if self.__channel_strip_controller  != None:
+            result = self.__channel_strip_controller.flip()
         return result
 
     def visible_tracks_including_chains(self):

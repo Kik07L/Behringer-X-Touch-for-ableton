@@ -951,6 +951,9 @@ class ChannelStripController(MackieControlComponent):
             self.__flip = not self.__flip
             self.__on_flip_changed()
 
+    def flip(self):
+        return self.__flip
+
     def __toggle_view_returns(self):
         u""" Toggle if we want to control the return tracks or normal tracks
         """
