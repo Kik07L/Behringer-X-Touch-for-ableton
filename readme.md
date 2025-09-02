@@ -85,6 +85,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 ### Optional features
 - Select track by touching fader (off by default, can be enabled by editing options.txt).
 - Indicate track muted via solo by flashing `MUTE` button LED (off by default, can be enabled by editing options.txt).
+- When faders are flipped, master fader controls Cue volume (off by default, can be enabled by editing options.txt).
 
 ## Button Mappings
 ### **Encoder Assign Section**
