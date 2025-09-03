@@ -141,6 +141,11 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `OPTION + F1-F8`: Quick select current track Input Type.
 - `CONTROL/ALT + F1-F8`: Quick select current track Input Channel (`CONTROL` for Channels 1-8, `ALT` for Channels 9-16).
 
+### **Master Channel Strip**
+- `FLIP`: Swap faders and rotary encoders.
+  - If enabled in the global settings menu, `Master Fader` controls Cue/Preview volume in flipped state.
+- `SHIFT + FLIP`: Select the Master Track. Press again to show Master device chain.
+
 ### **Automation Section**
 - `READ/OFF`: Re-enable automation.
 - `WRITE`: Arm for automation recording.

@@ -283,7 +283,10 @@ class ChannelStripController(MackieControlComponent):
                     self.__set_channel_offset(self.__strip_offset() + 1)
         elif switch_id == SID_FADERBANK_FLIP:
             if value == BUTTON_PRESSED:
-                self.__toggle_flip()
+                if (self.shift_is_pressed() or self.main_script().get_ordered_layout()) and not (self.shift_is_pressed() and self.main_script().get_ordered_layout()):
+                    self.__software_controller._show_master_channel()
+                else:
+                    self.__toggle_flip()
         elif switch_id == SID_FADERBANK_EDIT:
             if value == BUTTON_PRESSED:
                 if self.option_is_pressed():
@@ -1072,6 +1075,8 @@ class ChannelStripController(MackieControlComponent):
 
     def __update_flip_led(self):
         if self.__flip and self.__can_flip():
+            self.send_button_led(SID_FADERBANK_FLIP, BUTTON_STATE_BLINKING)
+        elif self.song().view.selected_track == self.song().master_track:
             self.send_button_led(SID_FADERBANK_FLIP, BUTTON_STATE_ON)
         else:
             self.send_button_led(SID_FADERBANK_FLIP, BUTTON_STATE_OFF)
@@ -1182,6 +1187,7 @@ class ChannelStripController(MackieControlComponent):
             self.request_rebuild_midi_map()
         self.__update_function_keys_leds()
         self.__software_controller.update_outputs_button_led()
+        self.__update_flip_led()
 
     def __on_flip_changed(self):
         u""" Update the flip button LED when the flip mode changed
