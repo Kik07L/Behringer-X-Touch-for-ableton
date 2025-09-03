@@ -95,14 +95,14 @@ class MackieControl(object):
             "MASTER_FADER_CONTROLS_CUE_VOLUME_ON_FLIP": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Master fader controls cue volume when channel strips are flipped (true/false)",
+                "Master fader controls Preview/Cue volume when channel strips are flipped (true/false)",
                 lambda v: "true" if v else "false",
                 "cue  "
             ),
             "ORDERED_LAYOUT": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Alternative lay-out for overlay\n# Places New MIDI, Audio and Return Track buttons next to each other instead of following the original button labels (true/false)",
+                "Alternative lay-out for Gray Section (true/false)\n# Groups New MIDI, Audio and Return Track functions instead of following the original button labels\n# - MIDI TRACKS: Open/close the browser\n# - INPUTS: Open/close the details view\n# - AUDIO TRACKS: Toggle between clip and device views\n# - AUDIO INST: Select the Master Track\n# - AUX: Create a new MIDI track\n# - BUSES: Create a new audio track\n# - OUTPUTS: Create a new return track",
                 lambda v: "true" if v else "false",
                 "lyout"
             ),
