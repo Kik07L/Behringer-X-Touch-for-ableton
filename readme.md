@@ -118,47 +118,6 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `SELECT`: Select track. Press again to fold/unfold.
   - Parent track of a selected grouped track or chain will blink to indicate where group/chain starts.
 
-### **Transport Section**
-- `CLICK`: Toggle metronome. LED blinks when active.
-  - `CONTROL + CLICK`: Tap tempo.
-- `SCRUB`: Play selected clip in Session view.
-- `MARKER`: Jump to the previous marker.
-  - `CONTROL + MARKER`: Create or delete a marker at the current position.
-- `NUDGE`: Jump to the next marker.
-- `CYCLE`: Toggle loop.
-- `DROP`: Toggle punch in.
-- `REPLACE`: Toggle punch out.
-- `SOLO`: Lights up when one or more tracks are soloed. Press to toggle all solo states on and off at once (Global Solo function). LED behavior:
-  - ON: Tracks soloed, press to unsolo all at once.
-  - Blinking: Previously soloed tracks stored, press to restore.
-  - OFF: No tracks soloed, press to solo current track.
-  - `CONTROL + SOLO`: Toggle solo states in time with song (delayed according to global launch quantization as set in Live).
-  - `SHIFT + SOLO`: Reset.
-
-### **Utility Section**
-- `SAVE`: Capture MIDI. LED lights up when active.
-- `UNDO`: Undo last action.
-- `ENTER`: Redo last action.
-- `CANCEL`: Return to Arrangement view. LED lights up when enabled.
-
-### **Automation Section**
-- `READ/OFF`: Re-enable automation.
-- `WRITE`: Arm for automation recording.
-- `TOUCH`: Toggle Draw mode.
-- `LATCH`: Toggle Follow mode.
-- `TRIM`: Toggle MIDI arrangement overdub.
-- `GROUP`: Expand/collapse selected track (if it is a group or contains chains). LED behavior:
-  - ON: Current track is a group or contains chains.
-  - Blinking: Current track is within a group or is a chain within a track.
-
-### **Jog Wheel**
-- `SHIFT + Rotation`: Faster movement.
-- `ALT + Rotation`: Slower movement.
-- `OPTION + Rotation`: Move loop region (faster with `SHIFT`).
-- `OPTION + ALT + Rotation`: Move loop end bracket (faster with `SHIFT`).
-- `CONTROL + Rotation`: Change tempo.
-- `ZOOM BUTTON + Rotation`: Zoom in/out in Arrangement view.
-
 ### **Gray Section**
 - `GLOBAL VIEW`: Switch between Session and Arrangement views.
   - `CONTROL + GLOBAL VIEW`: Store current view (Session/Arrangement, browser, clip/devices).
@@ -181,6 +140,53 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - `F4`: Current track Input Channel (`F1-F8`, `ALT + F1-F8` for Channels 9-16, press twice for All Channels on MIDI track).
 - `OPTION + F1-F8`: Quick select current track Input Type.
 - `CONTROL/ALT + F1-F8`: Quick select current track Input Channel (`CONTROL` for Channels 1-8, `ALT` for Channels 9-16).
+
+### **Automation Section**
+- `READ/OFF`: Re-enable automation.
+- `WRITE`: Arm for automation recording.
+- `TOUCH`: Toggle Draw mode.
+- `LATCH`: Toggle Follow mode.
+- `TRIM`: Toggle MIDI arrangement overdub.
+- `GROUP`: Expand/collapse selected track (if it is a group or contains chains). LED behavior:
+  - ON: Current track is a group or contains chains.
+  - Blinking: Current track is within a group or is a chain within a track.
+
+### **Utility Section**
+- `SAVE`: Capture MIDI. LED lights up when active.
+- `UNDO`: Undo last action.
+- `ENTER`: Redo last action.
+- `CANCEL`: Return to Arrangement view. LED lights up when enabled.
+
+### **Transport Section**
+- `CLICK`: Toggle metronome. LED blinks when active.
+  - `CONTROL + CLICK`: Tap tempo.
+- `SCRUB`: Play selected clip in Session view.
+- `MARKER`: Jump to the previous marker.
+  - `CONTROL + MARKER`: Create or delete a marker at the current position.
+- `NUDGE`: Jump to the next marker.
+- `CYCLE`: Toggle loop.
+- `DROP`: Toggle punch in.
+- `REPLACE`: Toggle punch out.
+- `SOLO`: Lights up when one or more tracks are soloed. Press to toggle all solo states on and off at once (Global Solo function). LED behavior:
+  - ON: Tracks soloed, press to unsolo all at once.
+  - Blinking: Previously soloed tracks stored, press to restore.
+  - OFF: No tracks soloed, press to solo current track.
+  - `CONTROL + SOLO`: Toggle solo states in time with song (delayed according to global launch quantization as set in Live).
+  - `SHIFT + SOLO`: Reset.
+
+### **Jog Wheel**
+- `SHIFT + Rotation`: Faster movement.
+- `ALT + Rotation`: Slower movement.
+- `OPTION + Rotation`: Move loop region (faster with `SHIFT`).
+- `OPTION + ALT + Rotation`: Move loop end bracket (faster with `SHIFT`).
+- `CONTROL + Rotation`: Change tempo.
+- `ZOOM BUTTON + Rotation`: Zoom in/out (in Arrangement view).
+- `SCRUB`: Fire selected scene (in Session view).
+  - `OPTION + SCRUB`: Stop all clips (in Session view).
+- `ZOOM BUTTON`: Fire selected clip (in Session view).
+  - `OPTION + ZOOM BUTTON`: Stop selected clip (in Session view).
+  - `ALT + ZOOM BUTTON`: Toggle stop button for selected clip slot (in Session view).
+  - Hold `ZOOM` and press `UP`, `DOWN`, `LEFT` or `RIGHT` to zoom.
 
 ---
 
