@@ -186,6 +186,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `ZOOM BUTTON`: Fire selected clip (in Session view).
   - `OPTION + ZOOM BUTTON`: Stop selected clip (in Session view).
   - `ALT + ZOOM BUTTON`: Toggle stop button for selected clip slot (in Session view).
+  - Hold `ZOOM` and press `UP`, `DOWN`, `LEFT` or `RIGHT` to zoom.
 
 ---
 
