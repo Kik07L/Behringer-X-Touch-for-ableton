@@ -110,8 +110,8 @@ class MainDisplayController(MackieControlComponent):
     def _get_cached_color(self, display_index, t, raw_color):
         """Return cached match_color() result if raw_color hasn't changed
         and color distance mode is the same."""
-        current_mode = self.main_script.get_alternative_color_distance_mode()
-        current_white_cutoff = self.main_script.get_alternative_color_distance_mode_white_cutoff()
+        current_mode = self.main_script.get_color_distance_mode()
+        current_white_cutoff = self.main_script.get_hue_color_distance_mode_white_cutoff()
 
         # if mode changed, invalidate cache
         if getattr(self, "_last_color_mode", None) != current_mode:
@@ -260,7 +260,7 @@ class MainDisplayController(MackieControlComponent):
         if v < 0.2:
             return "black"
 #        if s < 0.2:
-        if s < self.main_script.get_alternative_color_distance_mode_white_cutoff():
+        if s < self.main_script.get_hue_color_distance_mode_white_cutoff():
             return "white"
 
         # nearest hue among 6 primaries
@@ -292,7 +292,7 @@ class MainDisplayController(MackieControlComponent):
         return (dh / 180.0) ** 2 + (s1 - s2) ** 2 + (v1 - v2) ** 2
 
     def color_distance(self, color1, color2):
-        if self.main_script.get_alternative_color_distance_mode():
+        if self.main_script.get_color_distance_mode() == 1:  # hue-first mode
             # hue-first perceptual distance
 #            return self.hsv_distance(color1, color2)
             # categorical: return 0 if same bin, 1 if different

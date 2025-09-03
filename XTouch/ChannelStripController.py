@@ -286,10 +286,10 @@ class ChannelStripController(MackieControlComponent):
                 self.__toggle_flip()
         elif switch_id == SID_FADERBANK_EDIT:
             if value == BUTTON_PRESSED:
-                if self.shift_is_pressed():
-                    self.main_script().toggle_alternative_color_distance_mode()
-                # elif self.option_is_pressed():
-                    # self.toggle_meter_mode()
+                if self.option_is_pressed():
+                    self.toggle_meter_mode() # not sure what this does?
+                # elif self.shift_is_pressed():   # shortcut to toggle color matching method, redundant thanks to settings menu
+                    # self.main_script().toggle_color_distance_mode()
                 else:
                     self.__toggle_view_returns()
         elif switch_id == SID_MARKER_END:

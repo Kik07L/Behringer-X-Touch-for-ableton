@@ -326,22 +326,28 @@ class Transport(MackieControlComponent):
     def handle_jog_wheel_switch_ids(self, switch_id, value):
         if not self._in_settings_menu:
             if switch_id == SID_JOG_CURSOR_UP:
-                if self.shift_is_pressed() and value == BUTTON_PRESSED and self.main_script().get_alternative_color_distance_mode() == True:
-                    self.main_script().increment_alternative_color_distance_mode_white_cutoff(+0.01)
-                    self.main_script().time_display().show_priority_message("white. " + f'{self.main_script().get_alternative_color_distance_mode_white_cutoff():.2f}', 1000)
+                """ code for direct white cut-off control for hue color matching method, redundant now thanks to settings menu
+                if self.shift_is_pressed() and value == BUTTON_PRESSED and self.main_script().get_color_distance_mode() == True:
+                    self.main_script().increment_hue_color_distance_mode_white_cutoff(+0.01)
+                    self.main_script().time_display().show_priority_message("white. " + f'{self.main_script().get_hue_color_distance_mode_white_cutoff():.2f}', 1000)
                     self.main_script().save_preferences()
                 elif value == BUTTON_PRESSED:
+                """
+                if value == BUTTON_PRESSED:
                     self.__cursor_up_is_down = True
                     self.__cursor_repeat_delay = 0
                     self.__on_cursor_up_pressed()
                 elif value == BUTTON_RELEASED:
                     self.__cursor_up_is_down = False
             elif switch_id == SID_JOG_CURSOR_DOWN:
-                if self.shift_is_pressed() and value == BUTTON_PRESSED and self.main_script().get_alternative_color_distance_mode() == True:
-                    self.main_script().increment_alternative_color_distance_mode_white_cutoff(-0.01)
-                    self.main_script().time_display().show_priority_message("white. " + f'{self.main_script().get_alternative_color_distance_mode_white_cutoff():.2f}', 1000)
+                """ code for direct white cut-off control for hue color matching method, redundant now thanks to settings menu
+                if self.shift_is_pressed() and value == BUTTON_PRESSED and self.main_script().get_color_distance_mode() == True:
+                    self.main_script().increment_hue_color_distance_mode_white_cutoff(-0.01)
+                    self.main_script().time_display().show_priority_message("white. " + f'{self.main_script().get_hue_color_distance_mode_white_cutoff():.2f}', 1000)
                     self.main_script().save_preferences()
                 elif value == BUTTON_PRESSED:
+                """
+                if value == BUTTON_PRESSED:
                     self.__cursor_down_is_down = True
                     self.__cursor_repeat_delay = 0
                     self.__on_cursor_down_pressed()
@@ -393,9 +399,11 @@ class Transport(MackieControlComponent):
 
         elif value == BUTTON_PRESSED:
             if switch_id == SID_JOG_CURSOR_UP:
-                self._menu_index = (self._menu_index - 1) % len(self._menu_items)
+                self._previous_menu_item()
+                # self._menu_index = (self._menu_index - 1) % len(self._menu_items)
             elif switch_id == SID_JOG_CURSOR_DOWN:
-                self._menu_index = (self._menu_index + 1) % len(self._menu_items)
+                self._next_menu_item()
+                # self._menu_index = (self._menu_index + 1) % len(self._menu_items)
             elif switch_id in (SID_JOG_CURSOR_LEFT, SID_JOG_CURSOR_RIGHT):
                 self._toggle_current_preference(switch_id == SID_JOG_CURSOR_RIGHT)
             elif switch_id == SID_JOG_ZOOM:
@@ -624,7 +632,29 @@ class Transport(MackieControlComponent):
 
     """ Settings menu system """
     
+
+    def _next_menu_item(self):
+        self._rebuild_menu_items()
+        if not self._menu_items:
+            return
+        self._menu_index = (self._menu_index + 1) % len(self._menu_items)
+        self._show_current_menu_item()
+
+    def _previous_menu_item(self):
+        self._rebuild_menu_items()
+        if not self._menu_items:
+            return
+        self._menu_index = (self._menu_index - 1) % len(self._menu_items)
+        self._show_current_menu_item()
+
     def _show_current_menu_item(self):
+        self._rebuild_menu_items()
+        if not self._menu_items:
+            return  # nothing to show
+
+        if self._menu_index >= len(self._menu_items):
+            self._menu_index = 0
+
         key, spec = self._menu_items[self._menu_index]
         default, parser, desc, formatter, short_name, *rest = spec
         value = getattr(self.main_script(), key.lower())
@@ -639,15 +669,31 @@ class Transport(MackieControlComponent):
         msg = f"{short_name[:5]}.{display_val:>5}"
         self.main_script().time_display().show_permanent_message(msg)
 
+
     def _reset_current_preference_to_default(self):
+        self._rebuild_menu_items()
+        if not self._menu_items:
+            return
+
+        if self._menu_index >= len(self._menu_items):
+            self._menu_index = 0
+
         key, spec = self._menu_items[self._menu_index]
         default, parser, desc, formatter, short_name, *rest = spec
-        value = getattr(self.main_script(), key.lower())
-        
+
         setattr(self.main_script(), key.lower(), default)
         self.main_script().refresh_state()
+        self._rebuild_menu_items()
+
 
     def _toggle_current_preference(self, forward=True):
+        self._rebuild_menu_items()
+        if not self._menu_items:
+            return
+
+        if self._menu_index >= len(self._menu_items):
+            self._menu_index = 0
+
         key, spec = self._menu_items[self._menu_index]
         default, parser, desc, formatter, short_name, *rest = spec
         value = getattr(self.main_script(), key.lower())
@@ -655,29 +701,24 @@ class Transport(MackieControlComponent):
         choices_or_limits = rest[0] if rest else None
 
         if isinstance(choices_or_limits, dict):
-            # Discrete choices (like SHOW_CLOCK)
             keys = list(choices_or_limits.keys())
             idx = keys.index(value) if value in keys else 0
             idx = (idx + (1 if forward else -1)) % len(keys)
             new_value = keys[idx]
 
         elif isinstance(default, bool):
-            # Simple toggle
             new_value = not value
 
         elif isinstance(default, int):
-            # Integer step
             new_value = value + (1 if forward else -1)
 
         elif isinstance(default, float):
-            # Float step
             step = 0.01
             new_value = round(value + (step if forward else -step), 3)
 
         else:
-            new_value = value  # fallback (shouldn’t really happen)
+            new_value = value
 
-        # Apply numeric limits if specified
         if isinstance(choices_or_limits, tuple) and len(choices_or_limits) == 2:
             min_val, max_val = choices_or_limits
             if isinstance(new_value, (int, float)):
@@ -686,8 +727,22 @@ class Transport(MackieControlComponent):
         setattr(self.main_script(), key.lower(), new_value)
         self.main_script().save_preferences()
         self.main_script().refresh_state()
+        self._rebuild_menu_items()
 
     def save_preferences_and_exit(self):
         self.main_script().save_preferences()
         self._in_settings_menu = False  # exit menu
         return True
+
+    def _rebuild_menu_items(self):
+        """Rebuilds the list of menu items depending on active preferences."""
+        self._menu_items = []
+        for key, spec in self.main_script()._preferences_spec.items():
+            *base, last = spec
+            visible_if = last if callable(last) else None
+            if visible_if and not visible_if(self.main_script()):
+                continue
+            self._menu_items.append((key, spec))
+
+        if self._menu_index >= len(self._menu_items):
+            self._menu_index = 0

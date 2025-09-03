@@ -52,7 +52,8 @@ class MackieControl(object):
                 "White cutoff for hue-based color matching method (0.00-1.00, higher value = more colors map to white scribble strip)",
                 lambda v: f"{v:.2f}",  # fixed to 2 decimals
                 "white",
-                (0.00, 1.00)  # min/max tuple
+                (0.00, 1.00),  # min/max tuple
+                lambda script: script.color_distance_mode == 1  # only visible if hue mode
             ),
             "USE_FUNCTION_BUTTONS": (
                 0,
@@ -336,13 +337,13 @@ class MackieControl(object):
     def set_alt_is_pressed(self, pressed):
         self.__alt_is_pressed = pressed
 
-    def get_alternative_color_distance_mode(self):
+    def get_color_distance_mode(self):
         result = False
         if self.color_distance_mode == 1:
             result = True
         return result
 
-    def toggle_alternative_color_distance_mode(self):
+    def toggle_color_distance_mode(self):  # no longer called because settings menu has made shortcut redundant, but we'll leave it in in case we need it one day
         # look up spec
         spec = self._preferences_spec["COLOR_DISTANCE_MODE"]
         default, parser, description, typ, group, mapping = spec
@@ -378,10 +379,10 @@ class MackieControl(object):
     def get_snappy_meters(self):
         return self.snappy_meters
 
-    def get_alternative_color_distance_mode_white_cutoff(self):
+    def get_hue_color_distance_mode_white_cutoff(self):
         return self.hue_color_distance_mode_white_cutoff
 
-    def increment_alternative_color_distance_mode_white_cutoff(self, increment):
+    def increment_hue_color_distance_mode_white_cutoff(self, increment):  # redundant now that shortcut has been superseded by settings menu
         self.hue_color_distance_mode_white_cutoff = min(
             max(self.hue_color_distance_mode_white_cutoff + increment, 0.0), 1.0
         )
