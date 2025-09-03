@@ -244,7 +244,8 @@ class SoftwareController(MackieControlComponent):
         if self.song().view.selected_track != self.song().master_track:
             self.song().view.selected_track = self.song().master_track
         elif show_detail:
-            self.__toggle_detail_is_visible(focus=False)
+            self.song().master_track.view.is_collapsed = not self.song().master_track.view.is_collapsed
+            #self.__toggle_detail_is_visible(focus=False)
 
     def __save_current_view(self, verbose=True):
         self.__saved_view_session_arranger = self.application().view.focused_document_view
