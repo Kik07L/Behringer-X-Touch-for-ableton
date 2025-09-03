@@ -2,7 +2,7 @@
 
 This repository contains a modified version of the MackieControl script, adapted specifically for Behringer X-Touch controllers. Originally developed by Arthur Montvidas and further enhanced by Robrecht & posted on github with the contribution of Kik07L, this version adds support for Ableton Live 12 with numerous improvements, including Extender functionality and colored scribble strips.
 
-# We highly recommend downloading the Release version [here](https://github.com/Kik07L/Behringer-X-Touch-for-ableton/releases). The source code here may include untested or beta features that are potentially unstable.
+# We highly recommend downloading the Release version [here](https://github.com/Kik07L/Behringer-X-Touch-for-ableton/releases). The source code [here](https://github.com/Kik07L/Behringer-X-Touch-for-ableton/archive/refs/heads/main.zip) may include untested or beta features that are potentially unstable.
 For a stable experience, please use the latest Release. 😄  
 
 ---
@@ -67,8 +67,8 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - Short messages on Time Display provide feedback on various actions.
 
 ### Persistent settings (beta)
-- Some global settings (Night Mode, show clock...) are now preserved across sessions.
-- Settings are saved in options.txt.
+- Global settings (Night Mode, show clock...) are now preserved across sessions.
+- Settings can be edited through built-in global settings menu and are saved in options.txt.
 
 ### Global settings menu (beta)
 - `SHIFT + ZOOM`: Open settings menu.
@@ -82,9 +82,10 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - Available modes: MIDI Record Quantization, current track Input Type, current track Input Channel.
 - See Button Mappings for more details.
 
-### Optional features
-- Select track by touching fader (off by default, can be enabled by editing options.txt).
-- Indicate track muted via solo by flashing `MUTE` button LED (off by default, can be enabled by editing options.txt).
+### Other optional features
+- Select track by touching fader (off by default, can be enabled through settings menu).
+- Indicate track muted via solo by flashing `MUTE` button LED (off by default, can be enabled through settings menu).
+- When faders are flipped, master fader controls Cue volume (off by default, can be enabled through settings menu).
 
 ## Button Mappings
 ### **Encoder Assign Section**
