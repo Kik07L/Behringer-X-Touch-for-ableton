@@ -166,7 +166,9 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `NUDGE`: Jump to the next marker.
 - `CYCLE`: Toggle loop.
 - `DROP`: Toggle punch in.
+  - `CONTROL + DROP`: Set loop start at current song time.
 - `REPLACE`: Toggle punch out.
+  - `CONTROL + REPLACE`: Set loop end at current song time.
 - `SOLO`: Lights up when one or more tracks are soloed. Press to toggle all solo states on and off at once (Global Solo function). LED behavior:
   - ON: Tracks soloed, press to unsolo all at once.
   - Blinking: Previously soloed tracks stored, press to restore.
@@ -174,19 +176,23 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - `CONTROL + SOLO`: Toggle solo states in time with song (delayed according to global launch quantization as set in Live).
   - `SHIFT + SOLO`: Reset.
 
-### **Jog Wheel**
+### **Jog Wheel and Navigation Buttons**
+- `Rotation`, `UP`, `DOWN`, `LEFT`, `RIGHT`: Move playhead/clip slot selection.
 - `SHIFT + Rotation`: Faster movement.
 - `ALT + Rotation`: Slower movement.
+- `ALT + LEFT`, `ALT + RIGHT`: Select time region.
 - `OPTION + Rotation`: Move loop region (faster with `SHIFT`).
 - `OPTION + ALT + Rotation`: Move loop end bracket (faster with `SHIFT`).
 - `CONTROL + Rotation`: Change tempo.
-- `ZOOM BUTTON + Rotation`: Zoom in/out (in Arrangement view).
-- `SCRUB`: Fire selected scene (in Session view).
-  - `OPTION + SCRUB`: Stop all clips (in Session view).
+- `ZOOM BUTTON`: Activate zoom (in Arrangement view).
+  - `Rotation`, `LEFT` or `RIGHT`: Zoom in/out.
+  - `UP`, `DOWN`: Adjust current track height.
+  - `ALT + UP`, `ALT + DOWN`: Adjust all tracks height.
 - `ZOOM BUTTON`: Fire selected clip (in Session view).
   - `OPTION + ZOOM BUTTON`: Stop selected clip (in Session view).
   - `ALT + ZOOM BUTTON`: Toggle stop button for selected clip slot (in Session view).
-  - Hold `ZOOM` and press `UP`, `DOWN`, `LEFT` or `RIGHT` to zoom.
+- `SCRUB`: Fire selected scene (in Session view).
+  - `OPTION + SCRUB`: Stop all clips (in Session view).
 
 ---
 
