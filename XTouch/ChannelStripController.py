@@ -1181,6 +1181,7 @@ class ChannelStripController(MackieControlComponent):
             self.__update_assignment_display()
             self.request_rebuild_midi_map()
         self.__update_function_keys_leds()
+        self.__software_controller.update_outputs_button_led()
 
     def __on_flip_changed(self):
         u""" Update the flip button LED when the flip mode changed

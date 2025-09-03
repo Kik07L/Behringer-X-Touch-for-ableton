@@ -26,9 +26,11 @@ class SoftwareController(MackieControlComponent):
         self.song().add_arrangement_overdub_listener(self.__update_arrangement_overdub_button_led)
         self.song().add_midi_recording_quantization_listener(self._update_function_keys_leds)
         self.__update_automation_record_button_led()
+        self.update_outputs_button_led()
 #        self.__quantization_strings = ("quant:  0ff", "1'4", "1'8", "1'8T", "1'8 1'8T", "1'16", "1'16T", "1'16 1'16T", "1'32")
         self.__quantization_strings = ("quant: 0ff", "quant: 4", "quant: 8", "quant: 8T", "quant: 8 8T", "quant:16", "quant:16T", "quant:1616T", "quant:32")
         self.__save_current_view(False)
+        self.__toggle_user_button_mapping()
         
     def destroy(self):
         av = self.application().view
@@ -225,13 +227,14 @@ class SoftwareController(MackieControlComponent):
         self.__update_back_to_arranger_button_led()
         self.__update_capture_midi_button_led() #
         self.__update_group_mode_button_led()
-        self.__update_outputs_button_led()
+        self.update_outputs_button_led()
         self.__update_night_mode_leds()
         self._update_function_keys_leds(False)
+        self.__toggle_user_button_mapping()
 
     def on_update_display_timer(self):
         self.__update_group_mode_button_led() #have to include here since we can't add a listener for this
-        self.__update_outputs_button_led() #have to include here since we can't add a listener for this
+#        self.__update_outputs_button_led() #have to include here since we can't add a listener for this
         if self.__last_can_undo_state != self.song().can_undo:
             self.__last_can_undo_state = self.song().can_undo
             self.__update_undo_button_led()
@@ -358,6 +361,14 @@ class SoftwareController(MackieControlComponent):
         else:
             self.send_button_led(SID_FUNC_TRIM, BUTTON_STATE_OFF)
 
+    def __update_grey_section_leds(self):
+        for i in range(62, 69):
+            self.send_button_led(i, BUTTON_STATE_OFF)
+        self.__update_detail_button_led()
+        self.__update_detail_sub_view_button_led()
+        self.__update_browser_button_led()
+        self.update_outputs_button_led()
+
     def __update_session_arranger_button_led(self):
         if self.application().view.is_view_visible(u'Session'):
             #self.send_button_led(SID_AUTOMATION_ON, BUTTON_STATE_ON)
@@ -396,7 +407,14 @@ class SoftwareController(MackieControlComponent):
         else:
             self.send_button_led(SID_FUNC_REDO, BUTTON_STATE_OFF)
 
-    def __update_outputs_button_led(self):
+    def update_outputs_button_led(self):
+        if self.song().view.selected_track == self.song().master_track:
+            self.send_button_led(SID_SOFTWARE_F15, BUTTON_STATE_ON)
+        else:
+            self.send_button_led(SID_SOFTWARE_F15, BUTTON_STATE_OFF)
+
+    """
+    def update_outputs_button_led(self):
         if self.song().view.selected_track == self.song().master_track:
             self.new_master_track_selected_state = True
         else:
@@ -409,7 +427,7 @@ class SoftwareController(MackieControlComponent):
 #                self.send_button_led(SID_SOFTWARE_F15, BUTTON_STATE_ON)
             else:
                 self.send_button_led(SID_SOFTWARE_F15, BUTTON_STATE_OFF)
-#                self.send_button_led(SID_SOFTWARE_F15, BUTTON_STATE_OFF)
+#                self.send_button_led(SID_SOFTWARE_F15, BUTTON_STATE_OFF)"""
 
     def __update_back_to_arranger_button_led(self):
         if self.song().back_to_arranger:
@@ -569,3 +587,13 @@ class SoftwareController(MackieControlComponent):
             if typ is not None:
                 name = typ.display_name.replace(" ","")[:10]
             self.main_script().time_display().show_priority_message(name, 1000)
+
+    def __toggle_user_button_mapping(self): # toggles an alternative Gray Section layout where view buttons and new track buttons are grouped
+        global SID_SOFTWARE_F9, SID_SOFTWARE_F10, SID_SOFTWARE_F11, SID_SOFTWARE_F12, SID_SOFTWARE_F13, SID_SOFTWARE_F14, SID_SOFTWARE_F15
+        if not self.main_script().get_ordered_layout():
+            SID_SOFTWARE_F9, SID_SOFTWARE_F10, SID_SOFTWARE_F11, SID_SOFTWARE_F12, SID_SOFTWARE_F13, SID_SOFTWARE_F14, SID_SOFTWARE_F15 = range(62, 69)
+        else:
+            SID_SOFTWARE_F9, SID_SOFTWARE_F10, SID_SOFTWARE_F11, SID_SOFTWARE_F12, SID_SOFTWARE_F13, SID_SOFTWARE_F14, SID_SOFTWARE_F15 = 66, 62, 67, 63, 64, 68, 65 # New MIDI, Audio and Return Track buttons to the right
+#            SID_SOFTWARE_F9, SID_SOFTWARE_F10, SID_SOFTWARE_F11, SID_SOFTWARE_F12, SID_SOFTWARE_F13, SID_SOFTWARE_F14 = 62, 65, 63, 66, 67, 64, 68 # New MIDI, Audio and Return Track buttons to the left
+        self.__update_grey_section_leds()
+

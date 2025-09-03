@@ -99,6 +99,13 @@ class MackieControl(object):
                 lambda v: "true" if v else "false",
                 "cue  "
             ),
+            "ORDERED_LAYOUT": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Alternative lay-out for overlay\n# Places New MIDI, Audio and Return Track buttons next to each other instead of following the original button labels (true/false)",
+                lambda v: "true" if v else "false",
+                "lyout"
+            ),
         }
         # copy defaults into attributes (lowercase names)
         for key, spec in self._preferences_spec.items():
@@ -342,6 +349,9 @@ class MackieControl(object):
         if self.color_distance_mode == 1:
             result = True
         return result
+
+    def get_ordered_layout(self):
+        return self.ordered_layout
 
     def toggle_color_distance_mode(self):  # no longer called because settings menu has made shortcut redundant, but we'll leave it in in case we need it one day
         # look up spec
