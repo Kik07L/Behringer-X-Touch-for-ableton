@@ -698,8 +698,16 @@ class Transport(MackieControlComponent):
         default, parser, desc, formatter, short_name, *rest = spec
         value = getattr(self.main_script(), key.lower())
 
-        choices_or_limits = rest[0] if rest else None
+        # Unpack optional fields safely
+        choices_or_limits = rest[0] if len(rest) >= 1 else None
+        visibility_func    = rest[1] if len(rest) >= 2 else None
+        step_size          = rest[2] if len(rest) >= 3 else 0.01
 
+        # Skip invisible items
+        if visibility_func and not visibility_func(self.main_script()):
+            return
+
+        # Toggle/update value
         if isinstance(choices_or_limits, dict):
             keys = list(choices_or_limits.keys())
             idx = keys.index(value) if value in keys else 0
@@ -713,17 +721,18 @@ class Transport(MackieControlComponent):
             new_value = value + (1 if forward else -1)
 
         elif isinstance(default, float):
-            step = 0.01
-            new_value = round(value + (step if forward else -step), 3)
+            new_value = round(value + (step_size if forward else -step_size), 3)
 
         else:
             new_value = value
 
+        # Apply numeric limits
         if isinstance(choices_or_limits, tuple) and len(choices_or_limits) == 2:
             min_val, max_val = choices_or_limits
             if isinstance(new_value, (int, float)):
                 new_value = max(min_val, min(new_value, max_val))
 
+        # Store and refresh
         setattr(self.main_script(), key.lower(), new_value)
         self.main_script().save_preferences()
         self.main_script().refresh_state()

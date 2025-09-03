@@ -259,19 +259,23 @@ class MainDisplayController(MackieControlComponent):
         # thresholds (tweakable)
         if v < 0.2:
             return "black"
-#        if s < 0.2:
         if s < self.main_script.get_hue_color_distance_mode_white_cutoff():
             return "white"
 
-        # nearest hue among 6 primaries
+        # get boundary offsets, could be made user-adjustable
+        red_yellow_offset = 0
+        blue_magenta_offset = 0
+
+        # nearest hue among 6 primaries, applying offsets where desired
         hue_map = {
-            "red": 0,
-            "yellow": 60,
+            "red": (0 + red_yellow_offset) % 360,
+            "yellow": (60 + red_yellow_offset) % 360,
             "green": 120,
             "cyan": 180,
-            "blue": 240,
-            "magenta": 300
+            "blue": (240 + blue_magenta_offset) % 360,
+            "magenta": (300 + blue_magenta_offset) % 360
         }
+
         nearest = min(hue_map.items(), key=lambda kv: min(abs(h_deg - kv[1]), 360 - abs(h_deg - kv[1])))
         return nearest[0]
 
