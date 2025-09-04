@@ -83,7 +83,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - See Button Mappings for more details.
 
 ### Metronome button blinks in time (beta)
-- Metronome button (`CLICK`) blinks in time while song is playing (on by default, can be disabled through settings menu)
+- Metronome button (`CLICK`) blinks in time with the song (on by default, can be disabled through settings menu)
 
 ### Other optional features
 - Select track by touching fader (off by default, can be enabled through settings menu).
