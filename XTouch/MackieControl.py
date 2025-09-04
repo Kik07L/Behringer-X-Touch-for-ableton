@@ -99,14 +99,32 @@ class MackieControl(object):
                 lambda v: "true" if v else "false",
                 "cue  "
             ),
-            "ORDERED_LAYOUT": (
+            "METRONOME_BLINKS_IN_TIME": (
+                True,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Metronome button blinks in time (true/false)",
+                lambda v: "true" if v else "false",
+                "metro"
+            ),
+            "OVERLAY_LAYOUT": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Alternative button lay-out (true/false)\n# In the Gray Section, New MIDI, Audio and Return Track functions are grouped instead of following the original button labels\n# - MIDI TRACKS: Open/close the browser\n# - INPUTS: Open/close the details view\n# - AUDIO TRACKS: Toggle between clip and device views\n# - AUDIO INST: Select the Master Track\n# - AUX: Create a new MIDI track\n# - BUSES: Create a new audio track\n# - OUTPUTS: Create a new return track\n# FLIP button behavior reversed: FLIP selects master track, SHIFT + FLIP flips faders",
+                "Button layout for use with overlay (true/false)\n# Some buttons are swapped to more logical positions\n# Perfect for use with an overlay to hide original button labels",
                 lambda v: "true" if v else "false",
-                "lyout"
+                "lyout",
+                {False: "stdrd", True: "ovrly"}
+            ),
+            "FLIP_MASTER": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Swap FLIP and MASTER buttons (true/false",
+                lambda v: "true" if v else "false",
+                "flip ",
+                {False: "stdrd", True: "rvrse"},
+                lambda script: script.overlay_layout == False  # only visible if not in Overlay Layout
             ),
         }
+
         # copy defaults into attributes (lowercase names)
         for key, spec in self._preferences_spec.items():
             default = spec[0]
@@ -273,9 +291,10 @@ class MackieControl(object):
                 if note in channel_strip_switch_ids + fader_touch_switch_ids:
                     for s in self.__channel_strips:
                         s.handle_channel_strip_switch_ids(note, value)
-
-                if note in channel_strip_control_switch_ids:
+                if note in channel_strip_assignment_switch_ids:
                     self.__channel_strip_controller.handle_assignment_switch_ids(note, value)
+                if note in channel_strip_control_switch_ids:
+                    self.__channel_strip_controller.handle_channel_strip_control_switch_ids(note, value)
                 if note in modify_key_control_switch_ids:
                     self.__software_controller.handle_modify_key_switch_ids(note, value)
                 if note == SID_FADER_TOUCH_SENSE_MASTER:
@@ -350,8 +369,14 @@ class MackieControl(object):
             result = True
         return result
 
-    def get_ordered_layout(self):
-        return self.ordered_layout
+    def get_overlay_layout(self):
+        return self.overlay_layout
+
+    def get_flip_master(self):
+        return self.flip_master
+
+    def get_metronome_blinks_in_time(self):
+        return self.metronome_blinks_in_time
 
     def toggle_color_distance_mode(self):  # no longer called because settings menu has made shortcut redundant, but we'll leave it in in case we need it one day
         # look up spec
@@ -373,7 +398,7 @@ class MackieControl(object):
         self.save_preferences()
 
     def __handle_display_switch_ids(self, switch_id, value):
-        if switch_id == SID_DISPLAY_NAME_VALUE:
+        if switch_id == SID_FADERBANK_NAME_VALUE:
             if value == BUTTON_PRESSED:
                 self.__channel_strip_controller.toggle_meter_mode()
         elif switch_id == SID_DISPLAY_SMPTE_BEATS:

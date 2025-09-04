@@ -13,6 +13,7 @@ class SoftwareController(MackieControlComponent):
         self.__master_track_selected_state = False
         av = self.application().view
         #self.night_mode_on = False
+        self.__assign_mutable_buttons()
         self.__leds_flashing = False
         av.add_is_view_visible_listener(u'Session', self.__update_session_arranger_button_led)
         av.add_is_view_visible_listener(u'Detail/Clip', self.__update_detail_sub_view_button_led)
@@ -26,11 +27,11 @@ class SoftwareController(MackieControlComponent):
         self.song().add_arrangement_overdub_listener(self.__update_arrangement_overdub_button_led)
         self.song().add_midi_recording_quantization_listener(self._update_function_keys_leds)
         self.__update_automation_record_button_led()
-        self.update_outputs_button_led()
+        #self.update_outputs_button_led()
 #        self.__quantization_strings = ("quant:  0ff", "1'4", "1'8", "1'8T", "1'8 1'8T", "1'16", "1'16T", "1'16 1'16T", "1'32")
         self.__quantization_strings = ("quant: 0ff", "quant: 4", "quant: 8", "quant: 8T", "quant: 8 8T", "quant:16", "quant:16T", "quant:1616T", "quant:32")
         self.__save_current_view(False)
-        self.__toggle_user_button_mapping()
+        #self.__toggle_user_button_mapping()
         
     def destroy(self):
         av = self.application().view
@@ -72,13 +73,6 @@ class SoftwareController(MackieControlComponent):
                     self.main_script().time_display().show_priority_message(
                         f"{short_name[:5]}.{label}", 2000
                     )
-                # if self.main_script().use_function_buttons == 0:
-                    # self.main_script().use_function_buttons = 1
-                    # self.main_script().time_display().show_priority_message("funct:quant")
-                # elif self.main_script().use_function_buttons == 1:
-                    # self.main_script().time_display().show_priority_message("funct:  0ff")
-                    # self.main_script().use_function_buttons = 0
-                # self.main_script().save_preferences()
                 self._update_function_keys_leds(False)
             elif (self.option_is_pressed() or self.main_script().use_function_buttons == 2) and self.song().view.selected_track and hasattr(self.song().view.selected_track, 'input_routing_type'):
                 selector = (switch_id - SID_SOFTWARE_F1)
@@ -147,7 +141,17 @@ class SoftwareController(MackieControlComponent):
             self.__leds_flashing = False
 
     def handle_software_controls_switch_ids(self, switch_id, value):
-        if switch_id == SID_ARRAGEMENT_SESSION:    #elif switch_id == SID_AUTOMATION_ON:
+
+        # if switch_id == SID_GLOBAL_VIEW:
+            # if value == BUTTON_PRESSED:
+                # if self.control_is_pressed():
+                    # self.__save_current_view()
+                # elif self.shift_is_pressed():
+                    # self.__recall_saved_view()
+                # else:
+                    # self.__toggle_session_arranger_is_visible()
+
+        if switch_id == SID_SOFTWARE_MIDI_TRACKS:
             if value == BUTTON_PRESSED:
                 if self.control_is_pressed():
                     self.__save_current_view()
@@ -155,66 +159,63 @@ class SoftwareController(MackieControlComponent):
                     self.__recall_saved_view()
                 else:
                     self.__toggle_session_arranger_is_visible()
-        elif switch_id == SID_SOFTWARE_F13:
+        elif switch_id == SID_SOFTWARE_INPUTS:
             if value == BUTTON_PRESSED:
                 self.__toggle_detail_sub_view()
-        elif switch_id == SID_SOFTWARE_F10:
-            if value == BUTTON_PRESSED:
-                self.__toggle_browser_is_visible()
-        elif switch_id == SID_SOFTWARE_F12:
+        elif switch_id == SID_SOFTWARE_AUDIO_TRACKS:
             if value == BUTTON_PRESSED:
                 self.__toggle_detail_is_visible()
-        elif switch_id == SID_FUNC_UNDO:
+        elif switch_id == SID_SOFTWARE_AUDIO_INST:
             if value == BUTTON_PRESSED:
-                self.song().undo()
-        elif switch_id == SID_FUNC_REDO:
+                self.__toggle_browser_is_visible()
+        elif switch_id == SID_SOFTWARE_AUX:
             if value == BUTTON_PRESSED:
-                self.song().redo()
-        elif switch_id == SID_FUNC_CANCEL:
+                self.song().create_midi_track()
+        elif switch_id == SID_SOFTWARE_BUSES:
             if value == BUTTON_PRESSED:
-                self.__toggle_back_to_arranger()
+                self.song().create_audio_track()
+        elif switch_id == SID_SOFTWARE_OUTPUTS:
+            if value == BUTTON_PRESSED:
+                self.song().create_return_track()
+            # if value == BUTTON_PRESSED:
+                # self._show_master_channel()
+
+        elif switch_id == SID_AUTOMATION_READ_OFF:
+            if value == BUTTON_PRESSED:
+                self.song().re_enable_automation()
+        elif switch_id == SID_AUTOMATION_WRITE:
+            if value == BUTTON_PRESSED:
+                self.__toggle_automation_record()
+        elif switch_id == self.__overdub_button:
+            if value == BUTTON_PRESSED:
+                self.__toggle_arrangement_overdub()
+        elif switch_id == SID_AUTOMATION_GROUP:
+            if value == BUTTON_PRESSED:
+                self.__toggle_group_mode()
+        elif switch_id == SID_AUTOMATION_TOUCH:
+            if value == BUTTON_PRESSED:
+                self.__toggle_draw_mode()
+
         elif switch_id == SID_FUNC_SAVE: #
             if value == BUTTON_PRESSED: #
                 self.__capture_midi() #
-        elif switch_id == SID_FUNC_GROUP:
+        elif switch_id == self.__back_to_arrangement_button:
             if value == BUTTON_PRESSED:
-                self.__toggle_group_mode()
-#        elif switch_id == SID_FUNC_MARKER:
-#            if value == BUTTON_PRESSED:
-#                self.song().set_or_delete_cue()
-#        elif switch_id == SID_FUNC_MIXER:
-#            if value == BUTTON_PRESSED:
-#                self.__toggle_follow_song()
-        elif switch_id == SID_AUTOMATION_SNAPSHOT:
+                self.__toggle_back_to_arranger()
+        elif switch_id == SID_FUNC_UNDO:
             if value == BUTTON_PRESSED:
-                self.__toggle_draw_mode()
-        elif switch_id == SID_AUTOMATION_RECORD:
+                self.song().undo()
+        elif switch_id == SID_FUNC_ENTER:
             if value == BUTTON_PRESSED:
-                self.__toggle_automation_record()
-        elif switch_id == SID_AUTOMATION_ON:
-            if value == BUTTON_PRESSED:
-                self.song().re_enable_automation()
-        elif switch_id == SID_SOFTWARE_F9:
-            if value == BUTTON_PRESSED:
-                self.song().create_midi_track()
-        elif switch_id == SID_SOFTWARE_F11:
-            if value == BUTTON_PRESSED:
-                self.song().create_audio_track()
-        elif switch_id == SID_SOFTWARE_F14:
-            if value == BUTTON_PRESSED:
-                self.song().create_return_track()
-        elif switch_id == SID_SOFTWARE_F15:
-            if value == BUTTON_PRESSED:
-                self._show_master_channel()
-        elif switch_id == SID_FUNC_TRIM:
-            if value == BUTTON_PRESSED:
-                self.__toggle_arrangement_overdub()
+                self.song().redo()
+
 
     def refresh_state(self):
         self.main_script().set_shift_is_pressed(False)
         self.main_script().set_option_is_pressed(False)
         self.main_script().set_control_is_pressed(False)
         self.main_script().set_alt_is_pressed(False)
+        self.__assign_mutable_buttons()
         self.__update_session_arranger_button_led()
         self.__update_detail_sub_view_button_led()
         self.__update_browser_button_led()
@@ -225,14 +226,14 @@ class SoftwareController(MackieControlComponent):
         self.__update_back_to_arranger_button_led()
         self.__update_capture_midi_button_led() #
         self.__update_group_mode_button_led()
-        self.update_outputs_button_led()
+        #self.update_outputs_button_led()
         self.__update_night_mode_leds()
         self._update_function_keys_leds(False)
-        self.__toggle_user_button_mapping()
+        self.__update_arrangement_overdub_button_led()
+        #self.__toggle_user_button_mapping()
 
     def on_update_display_timer(self):
         self.__update_group_mode_button_led() #have to include here since we can't add a listener for this
-#        self.__update_outputs_button_led() #have to include here since we can't add a listener for this
         if self.__last_can_undo_state != self.song().can_undo:
             self.__last_can_undo_state = self.song().can_undo
             self.__update_undo_button_led()
@@ -276,6 +277,14 @@ class SoftwareController(MackieControlComponent):
             self.application().view.hide_view(u'Detail')
         if verbose:
             self.main_script().time_display().show_priority_message("Wieu recal")
+
+    def __assign_mutable_buttons(self):
+        if self.main_script().get_overlay_layout():
+            self.__overdub_button = SID_TRANSPORT_SOLO
+            self.__back_to_arrangement_button = SID_AUTOMATION_TRIM
+        else:
+            self.__overdub_button = SID_AUTOMATION_TRIM
+            self.__back_to_arrangement_button = SID_FUNC_CANCEL
 
     def __toggle_session_arranger_is_visible(self):
         if self.application().view.is_view_visible(u'Session'):
@@ -335,14 +344,14 @@ class SoftwareController(MackieControlComponent):
             if self.song().view.selected_track.is_foldable:
                 if self.song().view.selected_track.fold_state:
                     self.song().view.selected_track.fold_state = 0
-#                    self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_BLINKING)
+#                    self.send_button_led(SID_AUTOMATION_GROUP, BUTTON_STATE_BLINKING)
                 else:
                     self.song().view.selected_track.fold_state = 1
-#                    self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_ON)
+#                    self.send_button_led(SID_AUTOMATION_GROUP, BUTTON_STATE_ON)
             elif self.song().view.selected_track.is_grouped:
                 self.song().view.selected_track.group_track.fold_state = 1
 #            else:
-#                self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_OFF)
+#                self.send_button_led(SID_AUTOMATION_GROUP, BUTTON_STATE_OFF)
             elif isinstance(self.song().view.selected_track, Live.Chain.Chain):
                 self.song().view.selected_track.canonical_parent.is_showing_chains = False
             elif self.song().view.selected_track.can_show_chains:
@@ -356,43 +365,41 @@ class SoftwareController(MackieControlComponent):
 
     def __update_arrangement_overdub_button_led(self):
         if self.song().arrangement_overdub:
-            self.send_button_led(SID_FUNC_TRIM, BUTTON_STATE_ON)
+            self.send_button_led(self.__overdub_button, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_FUNC_TRIM, BUTTON_STATE_OFF)
+            self.send_button_led(self.__overdub_button, BUTTON_STATE_OFF)
 
-    def __update_grey_section_leds(self):
-        for i in range(62, 69):
-            self.send_button_led(i, BUTTON_STATE_OFF)
-        self.__update_detail_button_led()
-        self.__update_detail_sub_view_button_led()
-        self.__update_browser_button_led()
-        self.update_outputs_button_led()
+    # def __update_grey_section_leds(self):
+        # for i in range(62, 69):
+            # self.send_button_led(i, BUTTON_STATE_OFF)
+        # self.__update_detail_button_led()
+        # self.__update_detail_sub_view_button_led()
+        # self.__update_browser_button_led()
+        # self.update_outputs_button_led()
 
     def __update_session_arranger_button_led(self):
         if self.application().view.is_view_visible(u'Session'):
-            #self.send_button_led(SID_AUTOMATION_ON, BUTTON_STATE_ON)
-            self.send_button_led(SID_ARRAGEMENT_SESSION, BUTTON_STATE_ON)
+            self.send_button_led(SID_SOFTWARE_MIDI_TRACKS, BUTTON_STATE_ON)
         else:
-            #self.send_button_led(SID_AUTOMATION_ON, BUTTON_STATE_OFF)
-            self.send_button_led(SID_ARRAGEMENT_SESSION, BUTTON_STATE_OFF)
+            self.send_button_led(SID_SOFTWARE_MIDI_TRACKS, BUTTON_STATE_OFF)
 
     def __update_detail_sub_view_button_led(self):
         if self.application().view.is_view_visible(u'Detail/Clip'):
-            self.send_button_led(SID_SOFTWARE_F13, BUTTON_STATE_ON)
+            self.send_button_led(SID_SOFTWARE_INPUTS, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_SOFTWARE_F13, BUTTON_STATE_OFF)
+            self.send_button_led(SID_SOFTWARE_INPUTS, BUTTON_STATE_OFF)
 
     def __update_browser_button_led(self):
         if self.application().view.is_view_visible(u'Browser'):
-            self.send_button_led(SID_SOFTWARE_F10, BUTTON_STATE_ON)
+            self.send_button_led(SID_SOFTWARE_AUDIO_INST, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_SOFTWARE_F10, BUTTON_STATE_OFF)
+            self.send_button_led(SID_SOFTWARE_AUDIO_INST, BUTTON_STATE_OFF)
 
     def __update_detail_button_led(self):
         if self.application().view.is_view_visible(u'Detail'):
-            self.send_button_led(SID_SOFTWARE_F12, BUTTON_STATE_ON)
+            self.send_button_led(SID_SOFTWARE_AUDIO_TRACKS, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_SOFTWARE_F12, BUTTON_STATE_OFF)
+            self.send_button_led(SID_SOFTWARE_AUDIO_TRACKS, BUTTON_STATE_OFF)
 
     def __update_undo_button_led(self):
         if self.song().can_undo:
@@ -402,15 +409,9 @@ class SoftwareController(MackieControlComponent):
 
     def __update_redo_button_led(self):
         if self.song().can_redo:
-            self.send_button_led(SID_FUNC_REDO, BUTTON_STATE_ON)
+            self.send_button_led(SID_FUNC_ENTER, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_FUNC_REDO, BUTTON_STATE_OFF)
-
-    def update_outputs_button_led(self):
-        if self.song().view.selected_track == self.song().master_track:
-            self.send_button_led(SID_SOFTWARE_F15, BUTTON_STATE_ON)
-        else:
-            self.send_button_led(SID_SOFTWARE_F15, BUTTON_STATE_OFF)
+            self.send_button_led(SID_FUNC_ENTER, BUTTON_STATE_OFF)
 
     """
     def update_outputs_button_led(self):
@@ -422,17 +423,17 @@ class SoftwareController(MackieControlComponent):
         if self.__master_track_selected_state != self.new_master_track_selected_state:
             self.__master_track_selected_state = self.new_master_track_selected_state
             if self.__master_track_selected_state == True:
-                self.send_button_led(SID_SOFTWARE_F15, BUTTON_STATE_ON)
-#                self.send_button_led(SID_SOFTWARE_F15, BUTTON_STATE_ON)
+                self.send_button_led(SID_SOFTWARE_OUTPUTS, BUTTON_STATE_ON)
+#                self.send_button_led(SID_SOFTWARE_OUTPUTS, BUTTON_STATE_ON)
             else:
-                self.send_button_led(SID_SOFTWARE_F15, BUTTON_STATE_OFF)
-#                self.send_button_led(SID_SOFTWARE_F15, BUTTON_STATE_OFF)"""
+                self.send_button_led(SID_SOFTWARE_OUTPUTS, BUTTON_STATE_OFF)
+#                self.send_button_led(SID_SOFTWARE_OUTPUTS, BUTTON_STATE_OFF)"""
 
     def __update_back_to_arranger_button_led(self):
         if self.song().back_to_arranger:
-            self.send_button_led(SID_FUNC_CANCEL, BUTTON_STATE_ON)
+            self.send_button_led(self.__back_to_arrangement_button, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_FUNC_CANCEL, BUTTON_STATE_OFF)
+            self.send_button_led(self.__back_to_arrangement_button, BUTTON_STATE_OFF)
 
     def __update_group_mode_button_led(self):
         if isinstance(self.song().view.selected_chain, Live.Chain.Chain):
@@ -453,11 +454,11 @@ class SoftwareController(MackieControlComponent):
         if self.__selected_track_group_state != self.new_selected_track_group_state:
             self.__selected_track_group_state = self.new_selected_track_group_state
             if self.__selected_track_group_state == 2:
-                self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_ON)
+                self.send_button_led(SID_AUTOMATION_GROUP, BUTTON_STATE_ON)
             elif self.__selected_track_group_state == 1:
-                self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_BLINKING)
+                self.send_button_led(SID_AUTOMATION_GROUP, BUTTON_STATE_BLINKING)
             else:
-                self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_OFF)
+                self.send_button_led(SID_AUTOMATION_GROUP, BUTTON_STATE_OFF)
 
     def _update_function_keys_leds(self, verbose=True):
         if self.main_script().use_function_buttons == 1:
@@ -530,21 +531,21 @@ class SoftwareController(MackieControlComponent):
 
     def __update_draw_mode_button_led(self):
         if self.song().view.draw_mode:
-            self.send_button_led(SID_AUTOMATION_SNAPSHOT, BUTTON_STATE_ON)
+            self.send_button_led(SID_AUTOMATION_TOUCH, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_AUTOMATION_SNAPSHOT, BUTTON_STATE_OFF)
+            self.send_button_led(SID_AUTOMATION_TOUCH, BUTTON_STATE_OFF)
 
     def __update_automation_record_button_led(self):
         if self.song().session_automation_record:
-            self.send_button_led(SID_AUTOMATION_RECORD, BUTTON_STATE_ON)
+            self.send_button_led(SID_AUTOMATION_WRITE, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_AUTOMATION_RECORD, BUTTON_STATE_OFF)
+            self.send_button_led(SID_AUTOMATION_WRITE, BUTTON_STATE_OFF)
 
     def __update_re_enable_automation_enabled_button_led(self):
         if self.song().re_enable_automation_enabled:
-            self.send_button_led(SID_AUTOMATION_ON, BUTTON_STATE_BLINKING)
+            self.send_button_led(SID_AUTOMATION_READ_OFF, BUTTON_STATE_BLINKING)
         else:
-            self.send_button_led(SID_AUTOMATION_ON, BUTTON_STATE_OFF)
+            self.send_button_led(SID_AUTOMATION_READ_OFF, BUTTON_STATE_OFF)
 
     def set_input_channel(self, track, button_index, midi=False):
         """
@@ -588,11 +589,12 @@ class SoftwareController(MackieControlComponent):
             self.main_script().time_display().show_priority_message(name, 1000)
 
     def __toggle_user_button_mapping(self): # toggles an alternative Gray Section layout where view buttons and new track buttons are grouped
-        global SID_SOFTWARE_F9, SID_SOFTWARE_F10, SID_SOFTWARE_F11, SID_SOFTWARE_F12, SID_SOFTWARE_F13, SID_SOFTWARE_F14, SID_SOFTWARE_F15
-        if not self.main_script().get_ordered_layout():
-            SID_SOFTWARE_F9, SID_SOFTWARE_F10, SID_SOFTWARE_F11, SID_SOFTWARE_F12, SID_SOFTWARE_F13, SID_SOFTWARE_F14, SID_SOFTWARE_F15 = range(62, 69)
+        return
+        global SID_SOFTWARE_MIDI_TRACKS, SID_SOFTWARE_INPUTS, SID_SOFTWARE_AUDIO_TRACKS, SID_SOFTWARE_AUDIO_INST, SID_SOFTWARE_AUX, SID_SOFTWARE_BUSES, SID_SOFTWARE_OUTPUTS
+        if not self.main_script().get_overlay_layout():
+            SID_SOFTWARE_MIDI_TRACKS, SID_SOFTWARE_INPUTS, SID_SOFTWARE_AUDIO_TRACKS, SID_SOFTWARE_AUDIO_INST, SID_SOFTWARE_AUX, SID_SOFTWARE_BUSES, SID_SOFTWARE_OUTPUTS = range(62, 69)
         else:
-            SID_SOFTWARE_F9, SID_SOFTWARE_F10, SID_SOFTWARE_F11, SID_SOFTWARE_F12, SID_SOFTWARE_F13, SID_SOFTWARE_F14, SID_SOFTWARE_F15 = 66, 62, 67, 63, 64, 68, 65 # New MIDI, Audio and Return Track buttons to the right
-#            SID_SOFTWARE_F9, SID_SOFTWARE_F10, SID_SOFTWARE_F11, SID_SOFTWARE_F12, SID_SOFTWARE_F13, SID_SOFTWARE_F14 = 62, 65, 63, 66, 67, 64, 68 # New MIDI, Audio and Return Track buttons to the left
+            SID_SOFTWARE_MIDI_TRACKS, SID_SOFTWARE_INPUTS, SID_SOFTWARE_AUDIO_TRACKS, SID_SOFTWARE_AUDIO_INST, SID_SOFTWARE_AUX, SID_SOFTWARE_BUSES, SID_SOFTWARE_OUTPUTS = 66, 62, 67, 63, 64, 68, 65 # New MIDI, Audio and Return Track buttons to the right
+#            SID_SOFTWARE_MIDI_TRACKS, SID_SOFTWARE_INPUTS, SID_SOFTWARE_AUDIO_TRACKS, SID_SOFTWARE_AUDIO_INST, SID_SOFTWARE_AUX, SID_SOFTWARE_BUSES = 62, 65, 63, 66, 67, 64, 68 # New MIDI, Audio and Return Track buttons to the left
         self.__update_grey_section_leds()
 

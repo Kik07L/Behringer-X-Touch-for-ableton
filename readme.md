@@ -82,6 +82,9 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - Available modes: MIDI Record Quantization, current track Input Type, current track Input Channel.
 - See Button Mappings for more details.
 
+### Metronome button blinks in time (beta)
+- Metronome button (`CLICK`) blinks in time while song is playing (on by default, can be disabled through settings menu)
+
 ### Other optional features
 - Select track by touching fader (off by default, can be enabled through settings menu).
 - Indicate track muted via solo by flashing `MUTE` button LED (off by default, can be enabled through settings menu).
@@ -119,16 +122,18 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - Parent track of a selected grouped track or chain will blink to indicate where group/chain starts.
 
 ### **Gray Section**
-- `GLOBAL VIEW`: Switch between Session and Arrangement views.
-  - `CONTROL + GLOBAL VIEW`: Store current view (Session/Arrangement, browser, clip/devices).
-  - `SHIFT + GLOBAL VIEW`: Recall stored view (Session/Arrangement, browser, clip/devices).
-- `MIDI TRACKS`: Create a new MIDI track.
-- `INPUTS`: Open/close the browser.
-- `AUDIO TRACKS`: Create a new audio track.
-- `AUDIO INST`: Open/close the details view.
-- `AUX`: Toggle between clip and device views. LED is on in clip view.
-- `BUSES`: Create a new return track.
-- `OUTPUTS`: Select the Master Track. Press again to show Master device chain.
+- `FLIP`: Swap faders and rotary encoders.
+- `GLOBAL VIEW`: Select the Master Track.
+  - Enable Flip Reverse in the global settings menu to swap `FLIP` and `GLOBAL VIEW`, so `FLIP` selects the Master Track (consistent with channel strip `SELECT` buttons) and `GLOBAL VIEW` swaps faders and encoders.
+- `MIDI TRACKS`: Switch between Session and Arrangement views.
+  - `CONTROL + MIDI TRACKS`: Store current view (Session/Arrangement, browser, clip/devices).
+  - `SHIFT + MIDI TRACKS`: Recall stored view (Session/Arrangement, browser, clip/devices).
+- `INPUTS`: Toggle between clip and device views. LED is on in clip view.
+- `AUDIO TRACKS`: Open/close the details view.
+- `AUDIO INST`: Open/close the browser.
+- `AUX`: Create a new MIDI track.
+- `BUSES`: Create a new audio track.
+- `OUTPUTS`: Create a new return track.
 - `USER`: Press and hold to show Macro Mapper.
   - `SHIFT + USER`: Lock Macro Mapper.
 

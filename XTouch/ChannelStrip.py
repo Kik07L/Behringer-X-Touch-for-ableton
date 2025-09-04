@@ -165,7 +165,7 @@ class ChannelStrip(MackieControlComponent):
                         self.__channel_strip_controller.handle_fader_touch(self.__strip_index, self.__stack_offset, touched)
                 if  value == BUTTON_PRESSED and self.main_script().get_touch_fader_to_select():
                     self.__select_track_without_folding()
-        # elif sw_id == SID_FUNC_GROUP:
+        # elif sw_id == SID_AUTOMATION_GROUP:
             # if value == BUTTON_PRESSED:
                 # self.__toggle_group_mode()
 
@@ -422,13 +422,13 @@ class ChannelStrip(MackieControlComponent):
                 self.send_button_led(SID_SELECT_BASE + self.__strip_index, BUTTON_STATE_ON)
             # if self.__assigned_track.is_foldable:
                 # if self.__assigned_track.fold_state:
-                    # self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_ON)
+                    # self.send_button_led(SID_AUTOMATION_GROUP, BUTTON_STATE_ON)
                 # else:
-                    # self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_BLINKING)
+                    # self.send_button_led(SID_AUTOMATION_GROUP, BUTTON_STATE_BLINKING)
             # elif self.__assigned_track.is_grouped:
-                # self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_BLINKING)
+                # self.send_button_led(SID_AUTOMATION_GROUP, BUTTON_STATE_BLINKING)
             # else:
-                # self.send_button_led(SID_FUNC_GROUP, BUTTON_STATE_OFF)
+                # self.send_button_led(SID_AUTOMATION_GROUP, BUTTON_STATE_OFF)
         elif self.song().view.selected_track.group_track and self.song().view.selected_track.group_track == self.__assigned_track:
             self.send_button_led(SID_SELECT_BASE + self.__strip_index, BUTTON_STATE_BLINKING)
         else:

@@ -83,6 +83,9 @@ class ChannelStripController(MackieControlComponent):
         self.__main_display_controller = main_display_controller
         self.__software_controller = software_controller
         self.__meters_enabled = False
+        self.__assign_flip_and_master_button()
+        self.__assign_mutable_buttons()
+        self.__assign_mutable_buttons()
         self.__assignment_mode = CSM_VOLPAN
         self.__previous_assignment_mode = None
         self.__macro_device_installed = False
@@ -149,8 +152,8 @@ class ChannelStripController(MackieControlComponent):
         st = self.__last_attached_selected_track
         if st and st.devices_has_listener(self.__on_selected_device_chain_changed):
             st.remove_devices_listener(self.__on_selected_device_chain_changed)
-        for note in channel_strip_assignment_switch_ids:
-            self.send_button_led(note, BUTTON_STATE_OFF)
+        # for note in channel_strip_assignment_switch_ids:
+            # self.send_button_led(note, BUTTON_STATE_OFF)
 
         for note in channel_strip_control_switch_ids:
             self.send_button_led(note, BUTTON_STATE_OFF)
@@ -195,6 +198,8 @@ class ChannelStripController(MackieControlComponent):
         self.refresh_state()
 
     def refresh_state(self):
+        self.__assign_flip_and_master_button()
+        self.__assign_mutable_buttons()
         self.__update_assignment_mode_leds()
         self.__update_assignment_display()
         self.__check_stored_soloed_tracks_after_track_added_or_deleted()
@@ -202,6 +207,7 @@ class ChannelStripController(MackieControlComponent):
         self.__update_rude_solo_led()
         self.__reassign_channel_strip_offsets()
         self.__on_flip_changed()
+        self.__update_master_button_led()
         self.__update_view_returns_mode()
 
     def request_rebuild_midi_map(self):
@@ -224,11 +230,11 @@ class ChannelStripController(MackieControlComponent):
         self.__apply_meter_mode(meter_state_changed=True)
 
     def handle_assignment_switch_ids(self, switch_id, value):
-        if switch_id == SID_ASSIGNMENT_IO:
+        if switch_id == SID_ASSIGNMENT_TRACK:
             if value == BUTTON_PRESSED:
                 self.__hide_macro_mapper()
                 self.__set_assignment_mode(CSM_IO)
-        elif switch_id == SID_ASSIGNMENT_SENDS:
+        elif switch_id == SID_ASSIGNMENT_SEND:
             if value == BUTTON_PRESSED:
                 self.__hide_macro_mapper()
                 if (self.__assignment_mode == CSM_SENDS or self.__last_attached_selected_track == self.song().master_track) and self.__number_of_sends_to_show() > 0:
@@ -241,7 +247,7 @@ class ChannelStripController(MackieControlComponent):
             if value == BUTTON_PRESSED:
                 self.__hide_macro_mapper()
                 self.__set_assignment_mode(CSM_VOLPAN)
-        elif switch_id == SID_ASSIGNMENT_PLUG_INS:
+        elif switch_id == SID_ASSIGNMENT_PLUG_IN:
             if value == BUTTON_PRESSED:
                 if self.shift_is_pressed() and self.__assignment_mode == CSM_PLUGINS and self.__plugin_mode == PCM_PARAMETERS:
                     self.__toggle_lock_to_plugin()
@@ -251,10 +257,12 @@ class ChannelStripController(MackieControlComponent):
         elif switch_id == SID_ASSIGNMENT_EQ:
             if value == BUTTON_PRESSED:
                 self.__switch_to_prev_page()
-        elif switch_id == SID_ASSIGNMENT_DYNAMIC:
+        elif switch_id == SID_ASSIGNMENT_INST:
             if value == BUTTON_PRESSED:
                 self.__switch_to_next_page()
-        elif switch_id == SID_FADERBANK_PREV_BANK:
+
+    def handle_channel_strip_control_switch_ids(self, switch_id, value):
+        if switch_id == SID_FADERBANK_PREV_BANK:
             if value == BUTTON_PRESSED:
                 if self.shift_is_pressed():
                     self.__set_channel_offset(0)
@@ -281,13 +289,8 @@ class ChannelStripController(MackieControlComponent):
                     self.__set_channel_offset(self.__controlled_num_of_tracks() - len(self.__channel_strips))
                 elif self.__strip_offset() < self.__controlled_num_of_tracks() - len(self.__channel_strips):
                     self.__set_channel_offset(self.__strip_offset() + 1)
-        elif switch_id == SID_FADERBANK_FLIP:
-            if value == BUTTON_PRESSED:
-                if (self.shift_is_pressed() or self.main_script().get_ordered_layout()) and not (self.shift_is_pressed() and self.main_script().get_ordered_layout()):
-                    self.__software_controller._show_master_channel()
-                else:
-                    self.__toggle_flip()
-        elif switch_id == SID_FADERBANK_EDIT:
+
+        elif switch_id == SID_FADERBANK_NAME_VALUE:
             if value == BUTTON_PRESSED:
                 if self.option_is_pressed():
                     self.toggle_meter_mode() # not sure what this does?
@@ -295,7 +298,15 @@ class ChannelStripController(MackieControlComponent):
                     # self.main_script().toggle_color_distance_mode()
                 else:
                     self.__toggle_view_returns()
-        elif switch_id == SID_MARKER_END:
+
+        elif switch_id == self.__flip_button:
+            if value == BUTTON_PRESSED:
+                self.__toggle_flip()
+        elif switch_id == self.__master_button:
+            if value == BUTTON_PRESSED:
+                self.__software_controller._show_master_channel()            
+
+        elif switch_id == self.__global_solo_button:
             if value == BUTTON_PRESSED:
                 if self.shift_is_pressed():
                     self.remove_solos()
@@ -307,13 +318,13 @@ class ChannelStripController(MackieControlComponent):
                         next_boundary = math.ceil(now / beats) * beats
                         self.__pending_quantized_solo = next_boundary
                         # optional LED feedback: blink until executed
-                        # self.send_button_led(SID_MARKER_END, BUTTON_STATE_BLINKING)
+                        # self.send_button_led(self.__global_solo_button, BUTTON_STATE_BLINKING)
                     else:
                         self.__do_global_solo_toggle()
                 else:
                     self.__pending_quantized_solo = None # override any active delayed Global Solo toggle
                     self.__do_global_solo_toggle()
-        elif switch_id == SID_SOFTWARE_F16:
+        elif switch_id == SID_SOFTWARE_USER:
             if value == BUTTON_PRESSED:
                 self.__show_macro_mapper()
             elif value == BUTTON_RELEASED:
@@ -327,7 +338,7 @@ class ChannelStripController(MackieControlComponent):
             self.__lock_to_plugin = True
             if self.__previous_assignment_mode == None:
                 self.__previous_assignment_mode = self.__assignment_mode
-            self.send_button_led(SID_SOFTWARE_F16, BUTTON_STATE_ON)
+            self.send_button_led(SID_SOFTWARE_USER, BUTTON_STATE_ON)
             self.__set_assignment_mode(CSM_PLUGINS)
             if self.__chosen_plugin != None:
                 self.__chosen_plugin.remove_parameters_listener(self.__on_parameter_list_of_chosen_plugin_changed)
@@ -338,12 +349,12 @@ class ChannelStripController(MackieControlComponent):
             self.__plugin_mode_offsets[PCM_PARAMETERS] = 0
             self.__set_plugin_mode(PCM_PARAMETERS)
         else:
-            self.send_button_led(SID_SOFTWARE_F16, BUTTON_STATE_BLINKING)
+            self.send_button_led(SID_SOFTWARE_USER, BUTTON_STATE_BLINKING)
             self.main_script().time_display().show_priority_message("no mapper", 1000)
             self.__macro_device_installed = False
 
     def __hide_macro_mapper(self):
-        self.send_button_led(SID_SOFTWARE_F16, BUTTON_STATE_OFF)
+        self.send_button_led(SID_SOFTWARE_USER, BUTTON_STATE_OFF)
         self.__lock_to_plugin = False
         if self.__previous_assignment_mode != None:
             self.__set_assignment_mode(self.__previous_assignment_mode)
@@ -352,10 +363,10 @@ class ChannelStripController(MackieControlComponent):
     def __toggle_lock_to_plugin(self):
         if self.__lock_to_plugin == False:
             self.__lock_to_plugin = True
-            self.send_button_led(SID_ASSIGNMENT_PLUG_INS, BUTTON_STATE_BLINKING)
+            self.send_button_led(SID_ASSIGNMENT_PLUG_IN, BUTTON_STATE_BLINKING)
         else:
             self.__lock_to_plugin = False
-            self.send_button_led(SID_ASSIGNMENT_PLUG_INS, BUTTON_STATE_ON)
+            self.send_button_led(SID_ASSIGNMENT_PLUG_IN, BUTTON_STATE_ON)
 
     def add_or_remove_stored_solo(self, track):
         sel_track = self.song().view.selected_track
@@ -425,7 +436,7 @@ class ChannelStripController(MackieControlComponent):
                 self.stored_soloed_track_ids.append(t)
                 t.solo = False
         self.can_restore_solos = True
-        self.send_button_led(SID_MARKER_END, BUTTON_STATE_BLINKING)
+        self.send_button_led(self.__global_solo_button, BUTTON_STATE_BLINKING)
         self.song().view.selected_track = sel_track
 
     def remove_solos(self):
@@ -967,23 +978,23 @@ class ChannelStripController(MackieControlComponent):
         u""" Show which assignment mode is currently active """
         activestate = BUTTON_STATE_ON
         if self.__assignment_mode == CSM_IO:
-            sid_on_switch = SID_ASSIGNMENT_IO
+            sid_on_switch = SID_ASSIGNMENT_TRACK
         elif self.__assignment_mode == CSM_SENDS:
-            sid_on_switch = SID_ASSIGNMENT_SENDS
+            sid_on_switch = SID_ASSIGNMENT_SEND
         elif self.__assignment_mode == CSM_SENDS_SINGLE:
-            sid_on_switch = SID_ASSIGNMENT_SENDS
+            sid_on_switch = SID_ASSIGNMENT_SEND
             activestate = BUTTON_STATE_BLINKING
         elif self.__assignment_mode == CSM_VOLPAN:
             sid_on_switch = SID_ASSIGNMENT_PAN
         elif self.__assignment_mode == CSM_PLUGINS:
-            sid_on_switch = SID_ASSIGNMENT_PLUG_INS
+            sid_on_switch = SID_ASSIGNMENT_PLUG_IN
         else:
             assert 0
             sid_on_switch = None
-        for s in (SID_ASSIGNMENT_IO,
-         SID_ASSIGNMENT_SENDS,
+        for s in (SID_ASSIGNMENT_TRACK,
+         SID_ASSIGNMENT_SEND,
          SID_ASSIGNMENT_PAN,
-         SID_ASSIGNMENT_PLUG_INS):
+         SID_ASSIGNMENT_PLUG_IN):
             if s == sid_on_switch:
                 self.send_button_led(s, activestate)
             else:
@@ -1054,13 +1065,13 @@ class ChannelStripController(MackieControlComponent):
                 break
         if self.any_track_soloed:
             self.send_button_led(SELECT_RUDE_SOLO, BUTTON_STATE_ON)
-            self.send_button_led(SID_MARKER_END, BUTTON_STATE_ON)
+            self.send_button_led(self.__global_solo_button, BUTTON_STATE_ON)
         elif self.can_restore_solos and self.stored_soloed_track_ids:
             self.send_button_led(SELECT_RUDE_SOLO, BUTTON_STATE_OFF)
-            self.send_button_led(SID_MARKER_END, BUTTON_STATE_BLINKING)
+            self.send_button_led(self.__global_solo_button, BUTTON_STATE_BLINKING)
         else:
             self.send_button_led(SELECT_RUDE_SOLO, BUTTON_STATE_OFF)
-            self.send_button_led(SID_MARKER_END, BUTTON_STATE_OFF)
+            self.send_button_led(self.__global_solo_button, BUTTON_STATE_OFF)
 
     def __update_page_switch_leds(self):
         u""" visualize if the "prev" an "next" buttons can be pressed """
@@ -1069,17 +1080,37 @@ class ChannelStripController(MackieControlComponent):
         else:
             self.send_button_led(SID_ASSIGNMENT_EQ, BUTTON_STATE_OFF)
         if self.__can_switch_to_next_page():
-            self.send_button_led(SID_ASSIGNMENT_DYNAMIC, BUTTON_STATE_ON)
+            self.send_button_led(SID_ASSIGNMENT_INST, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_ASSIGNMENT_DYNAMIC, BUTTON_STATE_OFF)
+            self.send_button_led(SID_ASSIGNMENT_INST, BUTTON_STATE_OFF)
+
+    def __assign_flip_and_master_button(self):
+        if self.main_script().get_flip_master() or self.main_script().get_overlay_layout():
+            self.__master_button = SID_FADERBANK_FLIP
+            self.__flip_button = SID_GLOBAL_VIEW
+        else:
+            self.__master_button = SID_GLOBAL_VIEW
+            self.__flip_button = SID_FADERBANK_FLIP
+
+    def __assign_mutable_buttons(self):
+        if self.main_script().get_overlay_layout():
+            self.__global_solo_button = SID_FUNC_CANCEL
+        else:
+            self.__global_solo_button = SID_TRANSPORT_SOLO
 
     def __update_flip_led(self):
         if self.__flip and self.__can_flip():
-            self.send_button_led(SID_FADERBANK_FLIP, BUTTON_STATE_BLINKING)
-        elif self.song().view.selected_track == self.song().master_track:
-            self.send_button_led(SID_FADERBANK_FLIP, BUTTON_STATE_ON)
+            # self.send_button_led(self.__flip_button, BUTTON_STATE_BLINKING)
+        # elif self.song().view.selected_track == self.song().master_track:
+            self.send_button_led(self.__flip_button, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_FADERBANK_FLIP, BUTTON_STATE_OFF)
+            self.send_button_led(self.__flip_button, BUTTON_STATE_OFF)
+
+    def __update_master_button_led(self):
+        if self.song().view.selected_track == self.song().master_track:
+            self.send_button_led(self.__master_button, BUTTON_STATE_ON)
+        else:
+            self.send_button_led(self.__master_button, BUTTON_STATE_OFF)
 
     def __update_vpot_leds_in_plugins_device_choose_mode(self):
         u""" To be called in assignment mode CSM_PLUGINS, submode PCM_DEVICES only:
@@ -1143,9 +1174,9 @@ class ChannelStripController(MackieControlComponent):
         u""" Update the control return tracks LED
         """
         if self.__view_returns:
-            self.send_button_led(SID_FADERBANK_EDIT, BUTTON_STATE_ON)
+            self.send_button_led(SID_FADERBANK_NAME_VALUE, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_FADERBANK_EDIT, BUTTON_STATE_OFF)
+            self.send_button_led(SID_FADERBANK_NAME_VALUE, BUTTON_STATE_OFF)
         self.__main_display_controller.set_show_return_track_names(self.__view_returns)
         self.__reassign_channel_strip_offsets()
         self.__reassign_channel_strip_parameters(for_display_only=False)
@@ -1186,7 +1217,7 @@ class ChannelStripController(MackieControlComponent):
             self.__update_assignment_display()
             self.request_rebuild_midi_map()
         self.__update_function_keys_leds()
-        self.__software_controller.update_outputs_button_led()
+        self.__update_master_button_led()
         self.__update_flip_led()
 
     def __on_flip_changed(self):

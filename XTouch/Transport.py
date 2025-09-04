@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from __future__ import division
 from past.utils import old_div
 from .MackieControlComponent import *
+import time
 
 class Transport(MackieControlComponent):
     u"""Representing the transport section of the Mackie Control: """
@@ -24,6 +25,10 @@ class Transport(MackieControlComponent):
         self.__jog_step_count_forward = 0
         self.__jog_step_count_backwards = 0
         self.__last_focussed_clip_play_state = CLIP_STATE_INVALID
+        self.__metronome_led_state = False
+        self._metronome_flash_ticks = 0
+        self._last_beat = None
+
 
         """ Settings menu system """
         self._in_settings_menu = False
@@ -98,6 +103,7 @@ class Transport(MackieControlComponent):
 
     def session_is_visible(self):
         return self.application().view.is_view_visible(u'Session')
+#        return self.application().view.focused_document_view == 'Session'
 
     def selected_clip_slot(self):
         return self.song().view.highlighted_clip_slot
@@ -142,9 +148,11 @@ class Transport(MackieControlComponent):
             self.__update_zoom_led_in_session()
 #        else:
 #            self.__update_scrub_button_led()
+        self.__offline_metronome_tick()
+
 
     def handle_marker_switch_ids(self, switch_id, value):
-        if switch_id == SID_MARKER_FROM_PREV:
+        if switch_id == SID_TRANSPORT_MARKER:
             if value == BUTTON_PRESSED:
                 if self.control_is_pressed():
                     self.song().set_or_delete_cue()
@@ -153,28 +161,28 @@ class Transport(MackieControlComponent):
                         None
                     else:
                         self.__jump_to_prev_cue()
-        elif switch_id == SID_MARKER_FROM_NEXT:
+        elif switch_id == SID_TRANSPORT_NUDGE:
             if value == BUTTON_PRESSED:
                 self.__jump_to_next_cue()
-        elif switch_id == SID_MARKER_LOOP:
+        elif switch_id == SID_TRANSPORT_CYCLE:
             if value == BUTTON_PRESSED:
                 self.__toggle_loop()
-        elif switch_id == SID_MARKER_PI:
+        elif switch_id == SID_TRANSPORT_DROP:
             if value == BUTTON_PRESSED:
                 if self.control_is_pressed():
                     self.__set_loopstart_from_cur_position()
                 else:
                     self.__toggle_punch_in()
-        elif switch_id == SID_MARKER_PO:
+        elif switch_id == SID_TRANSPORT_REPLACE:
             if value == BUTTON_PRESSED:
                 if self.control_is_pressed():
                     self.__set_loopend_from_cur_position()
                 else:
                     self.__toggle_punch_out()
-        elif switch_id == SID_MARKER_HOME:
-            if value == BUTTON_PRESSED:
-                self.__goto_home()
-#        elif switch_id == SID_MARKER_END:
+        # elif switch_id == SID_MARKER_HOME:
+            # if value == BUTTON_PRESSED:
+                # self.__goto_home()
+#        elif switch_id == SID_TRANSPORT_SOLO:
 #            if value == BUTTON_PRESSED:
 #                self.__goto_end()
 
@@ -204,15 +212,18 @@ class Transport(MackieControlComponent):
         elif switch_id == SID_TRANSPORT_RECORD:
             if value == BUTTON_PRESSED:
                 self.__toggle_record()
-        elif switch_id == SID_CLICK:
+
+        elif switch_id == SID_TRANSPORT_CLICK:
             if value == BUTTON_PRESSED:
                 if self.control_is_pressed():
                     self.__on_tap_tempo(    )
                 else:
                     self.__toggle_metronome()
-        elif switch_id == SID_AUTOMATION_TOUCH:
+
+        elif switch_id == SID_AUTOMATION_LATCH:
                 if value == BUTTON_PRESSED:
                     self.__toggle_follow()
+
 
     def handle_jog_wheel_rotation(self, value):
         backwards = value >= 64
@@ -372,7 +383,7 @@ class Transport(MackieControlComponent):
                     if self.shift_is_pressed() and not self._in_settings_menu:
                         # Enter settings menu
                         self._in_settings_menu = True
-                        self._menu_index = 0
+                        #self._menu_index = 0 # edited this out to have position in menu preserved after exiting and re-entering
                         self._show_current_menu_item()
                     elif self.session_is_visible():
                         if self.selected_clip_slot():
@@ -589,49 +600,126 @@ class Transport(MackieControlComponent):
 
     def __update_follow_song_button_led(self):
         if self.song().view.follow_song:
-            self.send_button_led(SID_AUTOMATION_TOUCH, BUTTON_STATE_ON)
+            self.send_button_led(SID_AUTOMATION_LATCH, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_AUTOMATION_TOUCH, BUTTON_STATE_OFF)
+            self.send_button_led(SID_AUTOMATION_LATCH, BUTTON_STATE_OFF)
 
     def __update_prev_cue_button_led(self):
         if self.song().can_jump_to_prev_cue:
-            self.send_button_led(SID_MARKER_FROM_PREV, BUTTON_STATE_ON)
+            self.send_button_led(SID_TRANSPORT_MARKER, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_MARKER_FROM_PREV, BUTTON_STATE_OFF)
+            self.send_button_led(SID_TRANSPORT_MARKER, BUTTON_STATE_OFF)
 
     def __update_next_cue_button_led(self):
         if self.song().can_jump_to_next_cue:
-            self.send_button_led(SID_MARKER_FROM_NEXT, BUTTON_STATE_ON)
+            self.send_button_led(SID_TRANSPORT_NUDGE, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_MARKER_FROM_NEXT, BUTTON_STATE_OFF)
+            self.send_button_led(SID_TRANSPORT_NUDGE, BUTTON_STATE_OFF)
 
     def __update_loop_button_led(self):
         if self.song().loop:
-            self.send_button_led(SID_MARKER_LOOP, BUTTON_STATE_ON)
+            self.send_button_led(SID_TRANSPORT_CYCLE, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_MARKER_LOOP, BUTTON_STATE_OFF)
+            self.send_button_led(SID_TRANSPORT_CYCLE, BUTTON_STATE_OFF)
 
     def __update_punch_in_button_led(self):
         if self.song().punch_in:
-            self.send_button_led(SID_MARKER_PI, BUTTON_STATE_ON)
+            self.send_button_led(SID_TRANSPORT_DROP, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_MARKER_PI, BUTTON_STATE_OFF)
+            self.send_button_led(SID_TRANSPORT_DROP, BUTTON_STATE_OFF)
 
     def __update_punch_out_button_led(self):
         if self.song().punch_out:
-            self.send_button_led(SID_MARKER_PO, BUTTON_STATE_ON)
+            self.send_button_led(SID_TRANSPORT_REPLACE, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_MARKER_PO, BUTTON_STATE_OFF)
+            self.send_button_led(SID_TRANSPORT_REPLACE, BUTTON_STATE_OFF)
 
+    # --- Main update for LED state ---
     def __update_metronome_button_led(self):
-        if self.song().metronome:
-            self.send_button_led(SID_CLICK, BUTTON_STATE_BLINKING)
+        if not self.song().metronome:
+            # Clear LED and stop listeners
+            self.send_button_led(SID_TRANSPORT_CLICK, BUTTON_STATE_OFF)
+            self._last_beat = None
+            self._metronome_flash_ticks = 0
+            self._offline_last_toggle = None
+            self.__remove_metronome_beat_listener()
+            return
+
+        if not self.main_script().get_metronome_blinks_in_time():
+            # Use X-Touch built-in blink
+            self.send_button_led(SID_TRANSPORT_CLICK, BUTTON_STATE_BLINKING)
+            self._last_beat = None
+            self._metronome_flash_ticks = 0
+            self._offline_last_toggle = None
+            self.__remove_metronome_beat_listener()
+            return
+
+        # Drive LED ourselves
+        self.__add_metronome_beat_listener()
+
+        if self.song().is_playing:
+            self.__on_song_time_changed()
         else:
-            self.send_button_led(SID_CLICK, BUTTON_STATE_OFF)
+            # Initialize offline blink state
+            if not hasattr(self, "_offline_led_state"):
+                self._offline_led_state = False
+            if not hasattr(self, "_offline_last_toggle"):
+                self._offline_last_toggle = time.time()
 
+    # --- Listener management ---
+    def __add_metronome_beat_listener(self):
+        if not self.song().current_song_time_has_listener(self.__on_song_time_changed):
+            self.song().add_current_song_time_listener(self.__on_song_time_changed)
 
-    """ Settings menu system """
-    
+    def __remove_metronome_beat_listener(self):
+        if self.song().current_song_time_has_listener(self.__on_song_time_changed):
+            self.song().remove_current_song_time_listener(self.__on_song_time_changed)
+
+    # --- Playing mode: beat-synced flashing ---
+    def __on_song_time_changed(self):
+        if not self.song().metronome or not self.song().is_playing:
+            return
+
+        pos = self.song().get_current_beats_song_time()
+        beats = pos.beats        # 1-based beat in bar
+        ticks = pos.ticks
+
+        # Detect new beat
+        if beats != getattr(self, "_last_beat", None):
+            self._last_beat = beats
+            ppq = 120  # adjust for flash duration
+            flash_length = ppq // 2 if beats == 1 else ppq // 16
+            self.send_button_led(SID_TRANSPORT_CLICK, BUTTON_STATE_ON)
+            self._metronome_flash_ticks = ticks + flash_length
+
+        # Turn off LED after flash interval
+        if getattr(self, "_metronome_flash_ticks", 0) and ticks >= self._metronome_flash_ticks:
+            self.send_button_led(SID_TRANSPORT_CLICK, BUTTON_STATE_OFF)
+            self._metronome_flash_ticks = 0
+
+    # --- Offline blinking when song stopped ---
+    def __offline_metronome_tick(self):
+        if not self.song().metronome or self.song().is_playing or not self.main_script().get_metronome_blinks_in_time():
+            return
+
+        now = time.time()
+        # initialize if first call
+        last_toggle = getattr(self, "_offline_last_toggle", None)
+        if last_toggle is None:
+            self._offline_last_toggle = now
+            last_toggle = now
+
+        beat_interval = 60.0 / self.song().tempo  # seconds per beat
+
+        if now - last_toggle >= beat_interval:
+            self._offline_last_toggle = now
+            self._offline_led_state = not getattr(self, "_offline_led_state", False)
+            self.send_button_led(
+                SID_TRANSPORT_CLICK,
+                BUTTON_STATE_ON if self._offline_led_state else BUTTON_STATE_OFF
+            )
+
+    """ Settings menu system """    
 
     def _next_menu_item(self):
         self._rebuild_menu_items()
