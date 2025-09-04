@@ -168,7 +168,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `CANCEL`: Return to Arrangement view. LED lights up when enabled.
 
 ### **Transport Section**
-- `CLICK`: Toggle metronome. LED blinks when active.
+- `CLICK`: Toggle metronome. LED blinks in time when active.
   - `CONTROL + CLICK`: Tap tempo.
 - `SCRUB`: Play selected clip in Session view.
 - `MARKER`: Jump to the previous marker.
