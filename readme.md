@@ -22,8 +22,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - Scribble strips are lit in a single color (Cyan) for better readability.
 - **Alternative color matching method (beta):**
   - Attempts to improve color matching by prioritizing hue, to avoid light colors automatically mapping to white.
-  - `SHIFT + DISPLAY`: Toggle between default (RGB distance-based) and alternative (hue-based) method. Setting is preserved across sessions.
-  - `SHIFT + UP/DOWN`: Tune white cut-off for hue-based matching (higher = more colors map to white scribble strip).
+  - Off by default, can be enabled through the global settings menu.
 
 ### Level Meter Enhancements
 - **Clipping Indicators:** Channel strip level meters now show clipping when it occurs.
