@@ -157,6 +157,8 @@ class ChannelStripController(MackieControlComponent):
 
         for note in channel_strip_control_switch_ids:
             self.send_button_led(note, BUTTON_STATE_OFF)
+        for note in channel_strip_assignment_switch_ids:
+            self.send_button_led(note, BUTTON_STATE_OFF)
 
         self.send_button_led(SELECT_RUDE_SOLO, BUTTON_STATE_OFF)
         self.send_midi((CC_STATUS, 75, g7_seg_led_conv_table[u' ']))
