@@ -36,7 +36,8 @@ class MackieControl(object):
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
                 "Enable Night Mode (true/false)",
                 lambda v: "true" if v else "false",
-                "might" # m looks like capital n on 7-segment display
+                "might", # m looks like capital n on 7-segment display
+                {False: "0ff", True: "0m"},
             ),
             "COLOR_DISTANCE_MODE": (
                 0,
@@ -76,40 +77,45 @@ class MackieControl(object):
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
                 "Use snappy level meters (true/false)",
                 lambda v: "true" if v else "false",
-                "snppy"
+                "snppy",
+                {False: "0ff", True: "0m"},
             ),
             "SHOW_MUTED_VIA_SOLO": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
                 "Flash Mute LED to indicate tracks muted by active solo (true/false)",
                 lambda v: "true" if v else "false",
-                "muted"
+                "muted",
+                {False: "0ff", True: "0m"},
             ),
             "TOUCH_FADER_TO_SELECT": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
                 "Select track by touching fader (true/false)",
                 lambda v: "true" if v else "false",
-                "touch"
+                "touch",
+                {False: "0ff", True: "0m"},
             ),
             "MASTER_FADER_CONTROLS_CUE_VOLUME_ON_FLIP": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
                 "Master fader controls Preview/Cue volume when channel strips are flipped (true/false)",
                 lambda v: "true" if v else "false",
-                "cue  "
+                "cue  ",
+                {False: "0ff", True: "0m"},
             ),
             "METRONOME_BLINKS_IN_TIME": (
                 True,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
                 "Metronome button blinks in time (true/false)",
                 lambda v: "true" if v else "false",
-                "metro"
+                "metro",
+                {False: "free", True: "tempo"},
             ),
             "OVERLAY_LAYOUT": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Button layout for use with overlay (true/false)\n# Some buttons are swapped to more logical positions\n# Perfect for use with an overlay to hide original button labels",
+                "Button layout for use with overlay (true/false)\n# - Some buttons are swapped to more logical positions\n# - Perfect for use with an overlay to hide original button labels",
                 lambda v: "true" if v else "false",
                 "lyout",
                 {False: "stdrd", True: "ovrly"}

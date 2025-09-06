@@ -379,12 +379,6 @@ class ChannelStrip(MackieControlComponent):
                         self.__assigned_track.view.is_collapsed = not self.__assigned_track.view.is_collapsed
                     #self.__update_track_is_selected_led()
 
-    # def __chainable_device(self, track):
-        # for chain_device in track.devices:
-            # if isinstance(chain_device, Live.RackDevice.RackDevice) and chain_device.can_show_chains:
-                # return chain_device
-        # return None
-
     def __update_arm_led(self):
         track = self.__assigned_track
         if track and isinstance(track, Live.Track.Track) and track.can_be_armed and track.arm:

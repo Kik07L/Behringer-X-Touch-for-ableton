@@ -287,17 +287,12 @@ class SoftwareController(MackieControlComponent):
             self.__back_to_arrangement_button = SID_FUNC_CANCEL
 
     def __toggle_session_arranger_is_visible(self):
-        if self.application().view.is_view_visible(u'Session'):
-            if self.shift_is_pressed():
-                self.application().view.focus_view(u'Session')
-            else:
-                self.application().view.hide_view(u'Session')
+        if self.application().view.is_view_visible(u'Session', True):
+            self.application().view.hide_view(u'Session')
         else:
-            assert self.application().view.is_view_visible(u'Arranger')
-            if self.shift_is_pressed():
-                self.application().view.focus_view(u'Arranger')
-            else:
-                self.application().view.hide_view(u'Arranger')
+            assert self.application().view.is_view_visible(u'Arranger', True)
+            self.application().view.hide_view(u'Arranger')
+        self.__update_session_arranger_button_led()
 
     def __toggle_detail_sub_view(self):
         if self.application().view.is_view_visible(u'Detail/Clip'):
