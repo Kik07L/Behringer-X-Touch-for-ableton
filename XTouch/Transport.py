@@ -29,6 +29,7 @@ class Transport(MackieControlComponent):
         self._metronome_flash_ticks = 0
         self._last_beat = None
 
+        self.__assign_mutable_buttons()
 
         """ Settings menu system """
         self._in_settings_menu = False
@@ -73,6 +74,7 @@ class Transport(MackieControlComponent):
         return self
 
     def refresh_state(self):
+        self.__assign_mutable_buttons()
         self.__update_play_button_led()
         self.__update_record_button_led()
         self.__update_prev_cue_button_led()
@@ -396,7 +398,7 @@ class Transport(MackieControlComponent):
                     else:
                         self.__zoom_button_down = not self.__zoom_button_down
                         self.__update_zoom_button_led()
-            elif switch_id == SID_JOG_SCRUB:
+            elif switch_id == self.__scrub_button:
                 if value == BUTTON_PRESSED:
                     if self.session_is_visible():
                         if self.option_is_pressed():
@@ -421,7 +423,7 @@ class Transport(MackieControlComponent):
                 self.save_preferences_and_exit()
                 self.main_script().time_display().show_priority_message("SAWED", 1000)
                 return True
-            elif switch_id == SID_JOG_SCRUB:
+            elif switch_id == self.__scrub_button:
                 self._reset_current_preference_to_default()
             self._show_current_menu_item()
             return True
@@ -570,18 +572,18 @@ class Transport(MackieControlComponent):
     def __update_scrub_button_led(self):
 #        if self.session_is_visible():
 #            if self.__scrub_button_down:
-#                self.send_button_led(SID_JOG_SCRUB, BUTTON_STATE_ON)
+#                self.send_button_led(self.__scrub_button, BUTTON_STATE_ON)
 #            else:
-#                self.send_button_led(SID_JOG_SCRUB, BUTTON_STATE_OFF)
+#                self.send_button_led(self.__scrub_button, BUTTON_STATE_OFF)
 #        else:
 #            if self.song().back_to_arranger:
-#                self.send_button_led(SID_JOG_SCRUB, BUTTON_STATE_ON)
+#                self.send_button_led(self.__scrub_button, BUTTON_STATE_ON)
 #            else:
-#                self.send_button_led(SID_JOG_SCRUB, BUTTON_STATE_OFF)
+#                self.send_button_led(self.__scrub_button, BUTTON_STATE_OFF)
         if self.__scrub_button_down:
-            self.send_button_led(SID_JOG_SCRUB, BUTTON_STATE_ON)
+            self.send_button_led(self.__scrub_button, BUTTON_STATE_ON)
         else:
-            self.send_button_led(SID_JOG_SCRUB, BUTTON_STATE_OFF)
+            self.send_button_led(self.__scrub_button, BUTTON_STATE_OFF)
 
 
     def __update_play_button_led(self):
@@ -633,6 +635,12 @@ class Transport(MackieControlComponent):
             self.send_button_led(SID_TRANSPORT_REPLACE, BUTTON_STATE_ON)
         else:
             self.send_button_led(SID_TRANSPORT_REPLACE, BUTTON_STATE_OFF)
+
+    def __assign_mutable_buttons(self):
+        if self.main_script().get_debug_parameter_1():
+            self.__scrub_button = SID_TRANSPORT_SOLO
+        else:
+            self.__scrub_button = SID_JOG_SCRUB
 
     # --- Main update for LED state ---
     def __update_metronome_button_led(self):

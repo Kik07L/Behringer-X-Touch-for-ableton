@@ -283,8 +283,6 @@ modify_key_control_switch_ids = (SID_MOD_SHIFT,
 software_controls_switch_ids = (SID_AUTOMATION_READ_OFF,
  SID_AUTOMATION_WRITE,
  SID_AUTOMATION_TOUCH,
-# SID_AUTOMATION_LATCH,
-# SID_GLOBAL_VIEW,
  SID_FUNC_UNDO,
  SID_FUNC_ENTER,
  SID_AUTOMATION_TRIM,
@@ -298,7 +296,8 @@ software_controls_switch_ids = (SID_AUTOMATION_READ_OFF,
  SID_SOFTWARE_AUX,
  SID_SOFTWARE_BUSES,
  SID_SOFTWARE_OUTPUTS,
- SID_TRANSPORT_SOLO) # SID_TRANSPORT_SOLO also in here to allow layout switch by __assign_mutable_buttons()
+ SID_TRANSPORT_SOLO, # SID_TRANSPORT_SOLO also in here to allow layout switch by __assign_mutable_buttons()
+ SID_JOG_SCRUB) # SID_JOG_SCRUB also in here to allow layout switch by __assign_mutable_buttons()
 
 # handled in Transport
 transport_control_switch_ids = (SID_TRANSPORT_CLICK,
@@ -315,3 +314,13 @@ marker_control_switch_ids = (SID_TRANSPORT_MARKER,
  SID_TRANSPORT_CYCLE,
  SID_TRANSPORT_DROP,
  SID_TRANSPORT_REPLACE)
+
+# handled in Transport
+jog_wheel_switch_ids = (SID_JOG_CURSOR_UP,
+ SID_JOG_CURSOR_UP,
+ SID_JOG_CURSOR_DOWN,
+ SID_JOG_CURSOR_LEFT,
+ SID_JOG_CURSOR_RIGHT,
+ SID_JOG_ZOOM,
+ SID_JOG_SCRUB,
+ SID_TRANSPORT_SOLO) # SID_TRANSPORT_SOLO also in here to allow layout switch by __assign_mutable_buttons()

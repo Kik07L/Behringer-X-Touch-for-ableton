@@ -279,18 +279,18 @@ class SoftwareController(MackieControlComponent):
             self.main_script().time_display().show_priority_message("Wieu recal")
 
     def __assign_mutable_buttons(self):
-        if self.main_script().get_overlay_layout():
-            self.__overdub_button = SID_TRANSPORT_SOLO
+        if self.main_script().get_overlay_layout() or self.main_script().get_debug_parameter_1():
+            self.__overdub_button = SID_JOG_SCRUB if self.main_script().get_debug_parameter_1() else SID_TRANSPORT_SOLO
             self.__back_to_arrangement_button = SID_AUTOMATION_TRIM
         else:
             self.__overdub_button = SID_AUTOMATION_TRIM
             self.__back_to_arrangement_button = SID_FUNC_CANCEL
 
     def __toggle_session_arranger_is_visible(self):
-        if self.application().view.is_view_visible(u'Session', True):
+        if self.application().view.is_view_visible(u'Session'):
             self.application().view.hide_view(u'Session')
         else:
-            assert self.application().view.is_view_visible(u'Arranger', True)
+            assert self.application().view.is_view_visible(u'Arranger')
             self.application().view.hide_view(u'Arranger')
         self.__update_session_arranger_button_led()
 

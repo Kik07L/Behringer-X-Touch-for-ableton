@@ -118,16 +118,26 @@ class MackieControl(object):
                 "Button layout for use with overlay (true/false)\n# - Some buttons are swapped to more logical positions\n# - Perfect for use with an overlay to hide original button labels",
                 lambda v: "true" if v else "false",
                 "lyout",
-                {False: "stdrd", True: "ovrly"}
+                {False: "stdrd", True: "ovrly"},
+                lambda script: script.debug_parameter_1 == False  # overridden by debug_parameter_1
             ),
             "FLIP_MASTER": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Swap FLIP and MASTER buttons (true/false",
+                "Swap FLIP and MASTER buttons (true/false)",
                 lambda v: "true" if v else "false",
                 "flip ",
                 {False: "stdrd", True: "rvrse"},
-                lambda script: script.overlay_layout == False  # only visible if not in Overlay Layout
+                lambda script: script.overlay_layout == False and script.debug_parameter_1 == False  # only visible if not in Overlay Layout
+            ),
+            "DEBUG_PARAMETER_1": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "## --- Debugging parameters below, do not change --- ##\n#\n# Debugging parameter 1",
+                lambda v: "true" if v else "false",
+                "dbpm1",
+                {False: "false", True: " true"},
+                lambda script: False  # only visible if not in Overlay Layout
             ),
         }
 
@@ -383,6 +393,9 @@ class MackieControl(object):
 
     def get_metronome_blinks_in_time(self):
         return self.metronome_blinks_in_time
+
+    def get_debug_parameter_1(self):
+        return self.debug_parameter_1
 
     def toggle_color_distance_mode(self):  # no longer called because settings menu has made shortcut redundant, but we'll leave it in in case we need it one day
         # look up spec

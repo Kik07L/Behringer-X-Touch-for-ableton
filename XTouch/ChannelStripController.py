@@ -89,6 +89,7 @@ class ChannelStripController(MackieControlComponent):
         self.__assignment_mode = CSM_VOLPAN
         self.__previous_assignment_mode = None
         self.__macro_device_installed = False
+        self.__check_for_macro_mapper()
         self.__lock_to_plugin = False
         self.__sub_mode_in_io_mode = CSM_IO_FIRST_MODE
         self.__plugin_mode = PCM_DEVICES
@@ -108,6 +109,7 @@ class ChannelStripController(MackieControlComponent):
         self.song().add_visible_tracks_listener(self.__on_tracks_added_or_deleted)
         self.song().view.add_selected_track_listener(self.__on_selected_track_changed)
         self.song().view.add_selected_chain_listener(self.__on_selected_track_changed)
+        self.song().master_track.add_devices_listener(self.__check_for_macro_mapper)
         for t in chain(self.tracks_including_chains(), self.song().return_tracks):
             if not t.solo_has_listener(self.__update_rude_solo_led):
                 t.add_solo_listener(self.__update_rude_solo_led)
@@ -333,8 +335,16 @@ class ChannelStripController(MackieControlComponent):
                 if self.__macro_device_installed == False or not self.shift_is_pressed():
                     self.__hide_macro_mapper()
 
-    def __show_macro_mapper(self):
+    def __check_for_macro_mapper(self):
         if len(self.song().master_track.devices) > 0 and "X-Touch" in self.song().master_track.devices[0].name:
+            self.__macro_device_installed = True
+            self.song().master_track.devices[0].add_variation_count_listener(self.__update_macro_mapper_variations)
+
+    def __update_macro_mapper_variations(self): # working on F1-F8 mode to show and recall available variations in macro mapper
+        return
+
+    def __show_macro_mapper(self):
+        if self.__macro_device_installed == True:
             self.main_script().time_display().show_priority_message("macro mapr", 1000)
             self.__macro_device_installed = True
             self.__lock_to_plugin = True
@@ -353,7 +363,6 @@ class ChannelStripController(MackieControlComponent):
         else:
             self.send_button_led(SID_SOFTWARE_USER, BUTTON_STATE_BLINKING)
             self.main_script().time_display().show_priority_message("no mapper", 1000)
-            self.__macro_device_installed = False
 
     def __hide_macro_mapper(self):
         self.send_button_led(SID_SOFTWARE_USER, BUTTON_STATE_OFF)
@@ -1087,7 +1096,7 @@ class ChannelStripController(MackieControlComponent):
             self.send_button_led(SID_ASSIGNMENT_INST, BUTTON_STATE_OFF)
 
     def __assign_flip_and_master_button(self):
-        if self.main_script().get_flip_master() or self.main_script().get_overlay_layout():
+        if self.main_script().get_flip_master() or self.main_script().get_overlay_layout() or self.main_script().get_debug_parameter_1():
             self.__master_button = SID_FADERBANK_FLIP
             self.__flip_button = SID_GLOBAL_VIEW
         else:
