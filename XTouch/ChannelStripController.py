@@ -88,7 +88,8 @@ class ChannelStripController(MackieControlComponent):
         self.__assign_mutable_buttons()
         self.__assignment_mode = CSM_VOLPAN
         self.__previous_assignment_mode = None
-        self.__macro_device_installed = False
+        self._macro_mapper_installed = False
+        self._macro_mapper = None
         self.__check_for_macro_mapper()
         self.__lock_to_plugin = False
         self.__sub_mode_in_io_mode = CSM_IO_FIRST_MODE
@@ -332,31 +333,44 @@ class ChannelStripController(MackieControlComponent):
             if value == BUTTON_PRESSED:
                 self.__show_macro_mapper()
             elif value == BUTTON_RELEASED:
-                if self.__macro_device_installed == False or not self.shift_is_pressed():
+                if self._macro_mapper_installed == False or not self.shift_is_pressed():
                     self.__hide_macro_mapper()
 
     def __check_for_macro_mapper(self):
         if len(self.song().master_track.devices) > 0 and "X-Touch" in self.song().master_track.devices[0].name:
-            self.__macro_device_installed = True
-            self.song().master_track.devices[0].add_variation_count_listener(self.__update_macro_mapper_variations)
+            self._macro_mapper_installed = True
+            self._macro_mapper = self.song().master_track.devices[0]
+            self._macro_mapper.add_variation_count_listener(self.__on_macro_mapper_variation_count_changed)
+            for param in self._macro_mapper.parameters:
+                if not param.name_has_listener(self.__on_macro_parameter_changed):
+                    param.add_name_listener(self.__on_macro_parameter_changed)
+        else:
+            self._macro_mapper_installed = False
+            self._macro_mapper = None
+            self.__update_function_keys_leds()
 
-    def __update_macro_mapper_variations(self): # working on F1-F8 mode to show and recall available variations in macro mapper
-        return
+    def __on_macro_mapper_variation_count_changed(self):
+        self.__software_controller.__selected_macro_variation = None
+        self.__update_function_keys_leds()        
+
+    def __on_macro_parameter_changed(self):
+        self.__software_controller.__selected_macro_variation = None
+        self.__on_parameter_list_of_chosen_plugin_changed()
 
     def __show_macro_mapper(self):
-        if self.__macro_device_installed == True:
+        if self._macro_mapper_installed == True:
             self.main_script().time_display().show_priority_message("macro mapr", 1000)
-            self.__macro_device_installed = True
+            self._macro_mapper_installed = True
             self.__lock_to_plugin = True
             if self.__previous_assignment_mode == None:
                 self.__previous_assignment_mode = self.__assignment_mode
             self.send_button_led(SID_SOFTWARE_USER, BUTTON_STATE_ON)
             self.__set_assignment_mode(CSM_PLUGINS)
             if self.__chosen_plugin != None:
-                self.__chosen_plugin.remove_parameters_listener(self.__on_parameter_list_of_chosen_plugin_changed)
+                self.__chosen_plugin.remove_parameters_listener(self.__on_macro_parameter_changed)
             self.__chosen_plugin = self.song().master_track.devices[0]
             if self.__chosen_plugin != None:
-                self.__chosen_plugin.add_parameters_listener(self.__on_parameter_list_of_chosen_plugin_changed)
+                self.__chosen_plugin.add_parameters_listener(self.__on_macro_parameter_changed)
             self.__reorder_parameters()
             self.__plugin_mode_offsets[PCM_PARAMETERS] = 0
             self.__set_plugin_mode(PCM_PARAMETERS)
