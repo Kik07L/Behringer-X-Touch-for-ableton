@@ -428,11 +428,6 @@ class Transport(MackieControlComponent):
             self._show_current_menu_item()
             return True
 
-
-
-
-
-
     def __on_cursor_up_pressed(self):
         nav = Live.Application.Application.View.NavDirection
         if self.__zoom_button_down:

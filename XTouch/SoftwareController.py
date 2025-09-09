@@ -16,6 +16,7 @@ class SoftwareController(MackieControlComponent):
         #self.night_mode_on = False
         self.__assign_mutable_buttons()
         self.__leds_flashing = False
+        self.__last_active_cue = None
         av.add_is_view_visible_listener(u'Session', self.__update_session_arranger_button_led)
         av.add_is_view_visible_listener(u'Detail/Clip', self.__update_detail_sub_view_button_led)
         av.add_is_view_visible_listener(u'Detail/DeviceChain', self.__update_detail_sub_view_button_led)
@@ -28,6 +29,8 @@ class SoftwareController(MackieControlComponent):
         self.song().add_re_enable_automation_enabled_listener(self.__update_re_enable_automation_enabled_button_led)
         self.song().add_arrangement_overdub_listener(self.__update_arrangement_overdub_button_led)
         self.song().add_midi_recording_quantization_listener(self._update_function_keys_leds)
+        self.song().add_cue_points_listener(self.__on_cues_changed)
+        self.song().add_current_song_time_listener(self.__on_playhead_moved)
         self.__update_automation_record_button_led()
         #self.update_outputs_button_led()
 #        self.__quantization_strings = ("quant:  0ff", "1'4", "1'8", "1'8T", "1'8 1'8T", "1'16", "1'16T", "1'16 1'16T", "1'32")
@@ -48,6 +51,8 @@ class SoftwareController(MackieControlComponent):
         self.song().remove_can_capture_midi_listener(self.__update_capture_midi_button_led)
         self.song().remove_arrangement_overdub_listener(self.__update_arrangement_overdub_button_led)
         self.song().remove_midi_recording_quantization_listener(self._update_function_keys_leds)
+        self.song().remove_cue_points_listener(self.__on_cues_changed)
+        self.song().remove_current_song_time_listener(self.__on_playhead_moved)
         for note in software_controls_switch_ids:
             self.send_button_led(note, BUTTON_STATE_OFF)
 
@@ -78,7 +83,7 @@ class SoftwareController(MackieControlComponent):
                     self.main_script().save_preferences()
                     label = choices_or_limits[selector]
                     self.main_script().time_display().show_priority_message(
-                        f"{short_name[:5]}.{label}", 2000
+                        f"{short_name[:5]}.{label:>5}", 2000
                     )
                 self._update_function_keys_leds(False)
                 return
@@ -91,6 +96,26 @@ class SoftwareController(MackieControlComponent):
                     self.song().midi_recording_quantization = switch_id - SID_SOFTWARE_F1 + 1
                 self.main_script().time_display().show_priority_message(self.__quantization_strings[self.song().midi_recording_quantization], 1000)
                 return
+
+            elif self.main_script().use_function_buttons == 6 and not self.option_is_pressed() and not self.control_is_pressed():  # cue mode, lets unused modifiers through for quick (modeless) input selection
+                selector = switch_id - SID_SOFTWARE_F1 + (8 if self.alt_is_pressed() else 0)
+                cue_points = sorted(self.song().cue_points, key=lambda cp: cp.time)
+                if selector < len(cue_points):
+                    if self.song().current_song_time == cue_points[selector].time:
+                        self.song().set_or_delete_cue()
+                        self.main_script().time_display().show_priority_message(f"Cue:deleted", 1000)
+                    else:
+                        cp = cue_points[selector]
+                        cp.jump()
+                    # shortname = cp.name.replace(" ", "")[:5] or "Cue"
+                    # self.main_script().time_display().show_priority_message(
+                        # f"Cuept:{shortname}", 1000
+                    # )
+                elif not self.song().is_cue_point_selected():
+                    self.song().set_or_delete_cue()
+                self._update_function_keys_leds()
+                return
+
 
             if self.main_script().use_function_buttons == 7 and not  self.control_is_pressed() and not self.alt_is_pressed(): # macro mapper variations mode, lets unused modifiers through for quick (modeless) input selection
                 if self.__channel_strip_controller._macro_mapper == None:
@@ -250,6 +275,7 @@ class SoftwareController(MackieControlComponent):
         elif switch_id == SID_FUNC_SAVE: #
             if value == BUTTON_PRESSED: #
                 self.__capture_midi() #
+                # Live.Licensing.PythonLicensingBridge.save_current_set()
         elif switch_id == self.__back_to_arrangement_button:
             if value == BUTTON_PRESSED:
                 self.__toggle_back_to_arranger()
@@ -506,6 +532,15 @@ class SoftwareController(MackieControlComponent):
             else:
                 self.send_button_led(SID_AUTOMATION_GROUP, BUTTON_STATE_OFF)
 
+    def __on_cues_changed(self):
+        if self.main_script().use_function_buttons == 6:
+            self._update_function_keys_leds(False)
+
+    def __on_playhead_moved(self):
+        if self.main_script().use_function_buttons == 6:
+            self._update_function_keys_leds()
+
+
     def _update_function_keys_leds(self, verbose=True):
         if self.main_script().use_function_buttons == 1:
             current_quantization = SID_SOFTWARE_F1 + self.song().midi_recording_quantization - 1
@@ -516,6 +551,7 @@ class SoftwareController(MackieControlComponent):
                     self.send_button_led(key, BUTTON_STATE_OFF)
             if verbose:
                 self.main_script().time_display().show_priority_message(self.__quantization_strings[self.song().midi_recording_quantization], 1000)
+
         elif self.main_script().use_function_buttons == 2 and self.song().view.selected_track != self.song().master_track:
             led_index = SID_SOFTWARE_F1 + self.get_input_type_index(self.song().view.selected_track)
             if self.song().view.selected_track.has_midi_input:
@@ -529,6 +565,7 @@ class SoftwareController(MackieControlComponent):
                     self.send_button_led(key, BUTTON_STATE_OFF)
             if verbose:
                 self.main_script().time_display().show_priority_message(self.song().view.selected_track.input_routing_type.display_name, 1000)
+
         elif self.main_script().use_function_buttons == 3 and self.song().view.selected_track != self.song().master_track:
             led_index = SID_SOFTWARE_F1 + self.get_input_channel_index(self.song().view.selected_track)
             if self.song().view.selected_track.has_midi_input:
@@ -542,6 +579,51 @@ class SoftwareController(MackieControlComponent):
                     self.send_button_led(key, BUTTON_STATE_OFF)
             if verbose:
                 self.main_script().time_display().show_priority_message(self.song().view.selected_track.input_routing_channel.display_name, 1000)
+
+        elif self.main_script().use_function_buttons == 6:  # Cue Mode
+            cue_points = sorted(self.song().cue_points, key=lambda cp: cp.time)
+            playhead = self.song().current_song_time
+            active_cue = None
+
+            # --- LED feedback (only for first 8 cues) ---
+            for i, key in enumerate(function_key_control_switch_ids):
+                if i < len(cue_points):
+                    cp = cue_points[i]
+
+                    # find region: from this cue to the next (or end of song)
+                    start = cp.time
+                    end = cue_points[i + 1].time if i + 1 < len(cue_points) else float('inf')
+
+                    if start <= playhead < end:
+                        # playhead currently between this cue and the next
+                        active_cue = cp
+                        self.send_button_led(key, BUTTON_STATE_BLINKING)
+                    else:
+                        self.send_button_led(key, BUTTON_STATE_ON)
+                else:
+                    self.send_button_led(key, BUTTON_STATE_OFF)
+
+            # --- Section detection (all cues, not just first 8) ---
+            for i, cp in enumerate(cue_points):
+                start = cp.time
+                end = cue_points[i + 1].time if i + 1 < len(cue_points) else float('inf')
+                if start <= playhead < end:
+                    active_cue = cp
+                    break
+
+            # --- Display update ---
+            if verbose and active_cue is not None and active_cue != self.__last_active_cue and (self.__last_active_cue in cue_points or self.__last_active_cue is None):
+                shortname = active_cue.name.replace(" ", "")[:5] or "Cue"
+                if (not self.song().is_playing) and abs(self.song().current_song_time - active_cue.time) < 1e-2:
+                # if abs(self.song().current_song_time - active_cue.time) < 1e-2:
+                    smpte = self.song().get_current_smpte_song_time(2)
+                    minsec = f"{smpte.minutes:02}:{smpte.seconds:02}"
+                    self.main_script().time_display().show_priority_message(f"{minsec:>6}:{shortname:>5}", 500)
+                else:
+                    self.main_script().time_display().show_priority_message(f"Cue  :{shortname:>5}", 500)
+            self.__last_active_cue = active_cue
+
+
         elif self.main_script().use_function_buttons == 7 and self.__channel_strip_controller._macro_mapper != None: # macro mapper variations mode
             number_of_variations = self.__channel_strip_controller._macro_mapper.variation_count
             for key in function_key_control_switch_ids:
@@ -551,6 +633,7 @@ class SoftwareController(MackieControlComponent):
                     self.send_button_led(key, BUTTON_STATE_ON)
                 else:
                     self.send_button_led(key, BUTTON_STATE_OFF)
+
         else:
             for key in function_key_control_switch_ids:
                 self.send_button_led(key, BUTTON_STATE_OFF)
@@ -610,19 +693,18 @@ class SoftwareController(MackieControlComponent):
         button_index: int 0–7
         """
         available = track.available_input_routing_channels
-        if button_index + 1 < len(available):
-            if midi:
-                if track.input_routing_channel == available[button_index + 1]:
-                    track.input_routing_channel = available[0]
-                else:
-                    track.input_routing_channel = available[button_index + 1]
+        if midi and button_index + 1 < len(available):
+            if track.input_routing_channel == available[button_index + 1]:
+                track.input_routing_channel = available[0]
             else:
-                target = available[button_index]
-                track.input_routing_channel = target
-            chan = track.input_routing_channel
-            if chan is not None:
-                name = chan.display_name.replace(" ","")[:10]
-            self.main_script().time_display().show_priority_message(name, 1000)
+                track.input_routing_channel = available[button_index + 1]
+        elif button_index + 1 <= len(available):
+            target = available[button_index]
+            track.input_routing_channel = target
+        chan = track.input_routing_channel
+        if chan is not None:
+            name = chan.display_name.replace(" ","")[:10]
+        self.main_script().time_display().show_priority_message(name, 1000)
         
 
     def set_input_type(self, track, button_index, midi=False):
@@ -631,19 +713,18 @@ class SoftwareController(MackieControlComponent):
         button_index: int 0–7
         """
         available = track.available_input_routing_types
-        if button_index + 1 < len(available):
-            if midi:
-                if track.input_routing_type == available[button_index + 1]:
-                    track.input_routing_type = available[0]
-                else:
-                    track.input_routing_type = available[button_index + 1]
+        if midi and button_index + 1 < len(available):
+            if track.input_routing_type == available[button_index + 1]:
+                track.input_routing_type = available[0]
             else:
-                target = available[button_index]
-                track.input_routing_type = target
-            typ = track.input_routing_type
-            if typ is not None:
-                name = typ.display_name.replace(" ","")[:10]
-            self.main_script().time_display().show_priority_message(name, 1000)
+                track.input_routing_type = available[button_index + 1]
+        elif button_index + 1 <= len(available):
+            target = available[button_index]
+            track.input_routing_type = target
+        typ = track.input_routing_type
+        if typ is not None:
+            name = typ.display_name.replace(" ","")[:10]
+        self.main_script().time_display().show_priority_message(name, 1000)
 
     def __toggle_user_button_mapping(self): # toggles an alternative Gray Section layout where view buttons and new track buttons are grouped
         return
