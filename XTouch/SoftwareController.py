@@ -97,19 +97,16 @@ class SoftwareController(MackieControlComponent):
                 self.main_script().time_display().show_priority_message(self.__quantization_strings[self.song().midi_recording_quantization], 1000)
                 return
 
-            elif self.main_script().use_function_buttons == 6 and not self.option_is_pressed() and not self.control_is_pressed():  # cue mode, lets unused modifiers through for quick (modeless) input selection
+            elif self.main_script().use_function_buttons == 6 and not self.option_is_pressed() and not self.control_is_pressed():  # locator mode, lets unused modifiers through for quick (modeless) input selection
                 selector = switch_id - SID_SOFTWARE_F1 + (8 if self.alt_is_pressed() else 0)
                 cue_points = sorted(self.song().cue_points, key=lambda cp: cp.time)
                 if selector < len(cue_points):
                     if self.song().current_song_time == cue_points[selector].time:
                         self.song().set_or_delete_cue()
-                        self.main_script().time_display().show_priority_message(f"Cue:deleted", 1000)
+                        self.main_script().time_display().show_priority_message(f"Lctr:deletd", 1000)
                     else:
                         cp = cue_points[selector]
                         cp.jump()
-                    # shortname = cp.name.replace(" ", "")[:5] or "Cue"
-                    # self.main_script().time_display().show_priority_message(
-                        # f"Cuept:{shortname}", 1000
                     # )
                 elif not self.song().is_cue_point_selected():
                     self.song().set_or_delete_cue()
@@ -585,25 +582,54 @@ class SoftwareController(MackieControlComponent):
             playhead = self.song().current_song_time
             active_cue = None
 
-            # --- LED feedback (only for first 8 cues) ---
-            for i, key in enumerate(function_key_control_switch_ids):
-                if i < len(cue_points):
-                    cp = cue_points[i]
+            total_cues = min(len(cue_points), 16)  # only map 16 cues max
 
-                    # find region: from this cue to the next (or end of song)
-                    start = cp.time
-                    end = cue_points[i + 1].time if i + 1 < len(cue_points) else float('inf')
+            # Find which cue slot is active (0–15), or None if outside range
+            active_slot = None
+            for i in range(total_cues):
+                start = cue_points[i].time
+                end = cue_points[i + 1].time if i + 1 < len(cue_points) else float('inf')
+                if start <= playhead < end:
+                    active_cue = cue_points[i]
+                    active_slot = i
+                    break
 
-                    if start <= playhead < end:
-                        # playhead currently between this cue and the next
-                        active_cue = cp
-                        self.send_button_led(key, BUTTON_STATE_BLINKING)
-                    else:
-                        self.send_button_led(key, BUTTON_STATE_ON)
+            # LED feedback
+            for i, key in enumerate(function_key_control_switch_ids):  # 8 buttons
+                led_state = BUTTON_STATE_OFF
+
+                if active_slot is not None:
+                    # --- Normal case: playhead inside mapped cue range ---
+                    if active_slot < 8:  # slot 0–7 active
+                        if active_slot == i:
+                            led_state = BUTTON_STATE_BLINKING
+                        elif i < total_cues:
+                            led_state = BUTTON_STATE_ON
+                    else:  # slot 8–15 active
+                        if active_slot == i + 8:
+                            led_state = BUTTON_STATE_ON
+                        elif i + 8 < total_cues:
+                            led_state = BUTTON_STATE_BLINKING
                 else:
-                    self.send_button_led(key, BUTTON_STATE_OFF)
+                    # --- Fallbacks ---
+                    if playhead < (cue_points[0].time if cue_points else 0):
+                        # Before first cue -> light up only as many buttons as cue slots exist
+                        if i < min(total_cues, 8):
+                            led_state = BUTTON_STATE_ON
+                        elif i + 8 < total_cues:
+                            led_state = BUTTON_STATE_ON
+                        else:
+                            led_state = BUTTON_STATE_OFF
+                    elif total_cues > 0 and playhead >= cue_points[total_cues - 1].time:
+                        # Beyond last mapped cue -> all BLINK
+                        led_state = BUTTON_STATE_BLINKING
 
-            # --- Section detection (all cues, not just first 8) ---
+                self.send_button_led(key, led_state)
+
+            # active_cue is still set for display etc.
+
+
+            # --- Section detection (all cues, not just first 16) ---
             for i, cp in enumerate(cue_points):
                 start = cp.time
                 end = cue_points[i + 1].time if i + 1 < len(cue_points) else float('inf')
@@ -613,14 +639,20 @@ class SoftwareController(MackieControlComponent):
 
             # --- Display update ---
             if verbose and active_cue is not None and active_cue != self.__last_active_cue and (self.__last_active_cue in cue_points or self.__last_active_cue is None):
-                shortname = active_cue.name.replace(" ", "")[:5] or "Cue"
-                if (not self.song().is_playing) and abs(self.song().current_song_time - active_cue.time) < 1e-2:
-                # if abs(self.song().current_song_time - active_cue.time) < 1e-2:
-                    smpte = self.song().get_current_smpte_song_time(2)
-                    minsec = f"{smpte.minutes:02}:{smpte.seconds:02}"
-                    self.main_script().time_display().show_priority_message(f"{minsec:>6}:{shortname:>5}", 500)
+                # if (not self.song().is_playing) and abs(self.song().current_song_time - active_cue.time) < 1e-2:
+                    # shortname = self.__generate_5_char_string(active_cue.name) or "Cue"
+                    # smpte = self.song().get_current_smpte_song_time(2)
+                    # minsec = f"{smpte.minutes:02}:{smpte.seconds:02}"
+                    # self.main_script().time_display().show_priority_message(f"{minsec:>6}:{shortname:>5}", 500)
+                # else:
+                cuename = None
+                name = active_cue.name.strip()
+                if name.isdigit():
+                    cuename = f"Locator {int(name):>2}".rjust(10)
                 else:
-                    self.main_script().time_display().show_priority_message(f"Cue  :{shortname:>5}", 500)
+                    cuename = name
+                shortname = self.__generate_10_char_string(cuename) or "Locator"
+                self.main_script().time_display().show_priority_message(f"{shortname:>10}", 500)
             self.__last_active_cue = active_cue
 
 
@@ -637,6 +669,58 @@ class SoftwareController(MackieControlComponent):
         else:
             for key in function_key_control_switch_ids:
                 self.send_button_led(key, BUTTON_STATE_OFF)
+
+    def __generate_10_char_string(self, display_string):
+        if not display_string:
+            return u'          '
+        if len(display_string.strip()) > 10 and display_string.endswith(u'dB') and display_string.find(u'.') != -1:
+            display_string = display_string[:-2]
+        if len(display_string) > 10:
+            for um in [u'-',
+             u' ',
+             u'i',
+             u'o',
+             u'u',
+             u'e',
+             u'a']:
+                while len(display_string) > 10 and display_string.rfind(um, 1) != -1:
+                    um_pos = display_string.rfind(um, 1)
+                    display_string = display_string[:um_pos] + display_string[um_pos + 1:]
+
+        else:
+            display_string = display_string.center(10)
+        ret = u''
+        for i in range(10):
+            ret += display_string[i]
+
+        assert len(ret) == 10
+        return ret
+
+    def __generate_5_char_string(self, display_string):
+        if not display_string:
+            return u'     '
+        if len(display_string.strip()) > 5 and display_string.endswith(u'dB') and display_string.find(u'.') != -1:
+            display_string = display_string[:-2]
+        if len(display_string) > 5:
+            for um in [u'-',
+             u' ',
+             u'i',
+             u'o',
+             u'u',
+             u'e',
+             u'a']:
+                while len(display_string) > 5 and display_string.rfind(um, 1) != -1:
+                    um_pos = display_string.rfind(um, 1)
+                    display_string = display_string[:um_pos] + display_string[um_pos + 1:]
+
+        else:
+            display_string = display_string.center(5)
+        ret = u''
+        for i in range(5):
+            ret += display_string[i]
+
+        assert len(ret) == 5
+        return ret
 
     def get_input_type_index(self, track):
         selected = track.input_routing_type

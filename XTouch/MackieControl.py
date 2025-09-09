@@ -59,10 +59,10 @@ class MackieControl(object):
             "USE_FUNCTION_BUTTONS": (
                 0,
                 lambda v: self._parse_use_function_buttons(v),
-                "Use Function buttons (0=disabled, 1=set MIDI Record Quantization, 2=set Input Type, 3=set Input Channel, 6=jump to Cue Points, 7=manage Macro Mapper Variations)",
+                "Use Function buttons (0=disabled, 1=set MIDI Record Quantization, 2=set Input Type, 3=set Input Channel, 6=jump to Locators, 7=manage Macro Mapper Variations)",
                 str,
                 "funct",
-                {0: "0ff", 1: "quant", 2: "intyp", 3: "incha", 6: "cue", 7: "macro"}   # raw value → display string
+                {0: "0ff", 1: "quant", 2: "intyp", 3: "incha", 6: "lctr", 7: "macro"}   # raw value → display string
             ),
             "SHOW_CLOCK": (
                 0,
@@ -663,7 +663,7 @@ class MackieControl(object):
             return 2
         if v in ("3", "channel", "input channel"):
             return 3
-        if v in ("6", "cue", "cuepoints"):
+        if v in ("6", "lctr", "locator"):
             return 6
         if v in ("7", "macro", "macro mapper"):
             return 7
