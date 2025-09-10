@@ -1,6 +1,7 @@
 #Embedded file name: /Users/versonator/Jenkins/live/output/Live/mac_64_static/Release/python-bundle/MIDI Remote Scripts/MackieControl/SoftwareController.py
 from __future__ import absolute_import, print_function, unicode_literals
 from .MackieControlComponent import *
+import time
 
 class SoftwareController(MackieControlComponent):
     u"""Representing the buttons above the transport, including the basic: """
@@ -17,6 +18,7 @@ class SoftwareController(MackieControlComponent):
         self.__assign_mutable_buttons()
         self.__leds_flashing = False
         self.__last_active_cue = None
+        self.__pending_delete = {"cue_index": None, "cue_time": None, "expire_time": None}
         av.add_is_view_visible_listener(u'Session', self.__update_session_arranger_button_led)
         av.add_is_view_visible_listener(u'Detail/Clip', self.__update_detail_sub_view_button_led)
         av.add_is_view_visible_listener(u'Detail/DeviceChain', self.__update_detail_sub_view_button_led)
@@ -97,22 +99,58 @@ class SoftwareController(MackieControlComponent):
                 self.main_script().time_display().show_priority_message(self.__quantization_strings[self.song().midi_recording_quantization], 1000)
                 return
 
-            elif self.main_script().use_function_buttons == 6 and not self.option_is_pressed() and not self.control_is_pressed():  # locator mode, lets unused modifiers through for quick (modeless) input selection
+            if self.main_script().use_function_buttons == 6 and not self.option_is_pressed() and not self.control_is_pressed():  # locator mode
                 selector = switch_id - SID_SOFTWARE_F1 + (8 if self.alt_is_pressed() else 0)
                 cue_points = sorted(self.song().cue_points, key=lambda cp: cp.time)
+                delete_expire_time = 4000
+
                 if selector < len(cue_points):
-                    if self.song().current_song_time == cue_points[selector].time:
-                        self.song().set_or_delete_cue()
-                        self.main_script().time_display().show_priority_message(f"Lctr:deletd", 1000)
+                    cp = cue_points[selector]
+                    current_time = self.song().current_song_time
+                    cuename = cp.name
+                    if cuename.isdigit():
+                        cuename = f"Ltr{int(cuename):>2}".rjust(5)
+                    shortname = self.__generate_5_char_string(cuename)
+
+                    # Only allow delete if playhead is near the cue and song is stopped
+                    if abs(current_time - cp.time) < 1e-3 and not self.song().is_playing:
+                        # First press → show confirmation
+                        if self.__pending_delete["cue_index"] != selector:
+                            self.__pending_delete = {"cue_index": selector, "cue_time": current_time, "expire_time": time.time() + (delete_expire_time / 1000.0)}
+                            self.main_script().time_display().show_priority_message(f"dlte .{shortname:>5}", delete_expire_time)
+                            return
+
+                        # Second press → delete cue
+                        if self.__pending_delete["cue_index"] == selector:
+                            self.song().set_or_delete_cue()
+                            self.main_script().time_display().show_priority_message(f"dltd .{shortname:>5}", 1000)
+                            self.__pending_delete = {"cue_index": None, "cue_time": None, "expire_time": None}
+                            return
+
                     else:
-                        cp = cue_points[selector]
+                        # Not deleting → jump to cue
                         cp.jump()
-                    # )
+
                 elif not self.song().is_cue_point_selected():
                     self.song().set_or_delete_cue()
+
                 self._update_function_keys_leds()
                 return
 
+            # elif self.main_script().use_function_buttons == 6 and not self.option_is_pressed() and not self.control_is_pressed():  # locator mode, lets unused modifiers through for quick (modeless) input selection
+                # selector = switch_id - SID_SOFTWARE_F1 + (8 if self.alt_is_pressed() else 0)
+                # cue_points = sorted(self.song().cue_points, key=lambda cp: cp.time)
+                # if selector < len(cue_points):
+                    # if self.song().current_song_time == cue_points[selector].time:
+                        # self.song().set_or_delete_cue()
+                        # self.main_script().time_display().show_priority_message(f"Lctr:deletd", 1000)
+                    # else:
+                        # cp = cue_points[selector]
+                        # cp.jump()
+                # elif not self.song().is_cue_point_selected():
+                    # self.song().set_or_delete_cue()
+                # self._update_function_keys_leds()
+                # return
 
             if self.main_script().use_function_buttons == 7 and not  self.control_is_pressed() and not self.alt_is_pressed(): # macro mapper variations mode, lets unused modifiers through for quick (modeless) input selection
                 if self.__channel_strip_controller._macro_mapper == None:
@@ -153,6 +191,15 @@ class SoftwareController(MackieControlComponent):
                 self.set_input_channel(self.song().view.selected_track, selector, self.song().view.selected_track.has_midi_input)
                 self._update_function_keys_leds(False)
                 return
+
+    def __cancel_delete_locator(self, check_time=False):
+        if self.__pending_delete["cue_index"] is not None:
+            if not check_time:
+                self.__pending_delete = {"cue_index": None, "cue_time": None, "expire_time": None}
+                self.main_script().time_display().show_priority_message("", 0)
+            elif time.time() > self.__pending_delete["expire_time"]:
+                self.__pending_delete = {"cue_index": None, "cue_time": None, "expire_time": None}
+        return
 
     def handle_modify_key_switch_ids(self, switch_id, value):
         if switch_id == SID_MOD_SHIFT:
@@ -308,6 +355,7 @@ class SoftwareController(MackieControlComponent):
 
     def on_update_display_timer(self):
         self.__update_group_mode_button_led() #have to include here since we can't add a listener for this
+        self.__cancel_delete_locator(True)
         if self.__last_can_undo_state != self.song().can_undo:
             self.__last_can_undo_state = self.song().can_undo
             self.__update_undo_button_led()
@@ -531,12 +579,13 @@ class SoftwareController(MackieControlComponent):
 
     def __on_cues_changed(self):
         if self.main_script().use_function_buttons == 6:
+            self.__cancel_delete_locator()
             self._update_function_keys_leds(False)
 
     def __on_playhead_moved(self):
         if self.main_script().use_function_buttons == 6:
+            self.__cancel_delete_locator()
             self._update_function_keys_leds()
-
 
     def _update_function_keys_leds(self, verbose=True):
         if self.main_script().use_function_buttons == 1:
