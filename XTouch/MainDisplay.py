@@ -12,14 +12,17 @@ class MainDisplay(MackieControlComponent):
         self.__stack_offset = 0
         self.__last_send_messages = [[], []]
         self.__last_send_colors = []
-
+        
     def destroy(self):
         NUM_CHARS_PER_DISPLAY_LINE = 56
         upper_message = u'Ableton Live '.center(NUM_CHARS_PER_DISPLAY_LINE)
         self.send_display_string(upper_message, 0, 0)
         lower_message = u' Offline'.center(NUM_CHARS_PER_DISPLAY_LINE)
         self.send_display_string(lower_message, 1, 0)
-        self.send_colors((0, 0, 0, 6, 6, 0, 0, 0))
+        if self.main_script().get_color_distance_mode() == 2: # color not turned off
+            self.send_colors((7, 7, 7, 7, 7, 7, 7, 7))
+        else:
+            self.send_colors((0, 0, 0, 6, 6, 0, 0, 0))
         MackieControlComponent.destroy(self)
 
     def stack_offset(self):

@@ -93,6 +93,9 @@ class MackieControlXT(object):
             result = self._mackie_control_main.get_snappy_meters()
         return result
 
+    def get_color_distance_mode(self):
+        return self._mackie_control_main.get_color_distance_mode()
+
     def get_show_muted_via_solo(self):
         result = False
         if hasattr(self, '_mackie_control_main') and self._mackie_control_main != None:

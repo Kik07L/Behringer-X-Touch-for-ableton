@@ -143,7 +143,15 @@ class MainDisplayController(MackieControlComponent):
                 upper_string = u''
                 lower_string = u''
                 color_list = []
-                assignment_mode_colors = (7, 6, 7, 3, 4)  # fallback in case channel colors are unavailable
+                if self.main_script.get_color_distance_mode() == 2:
+                    assignment_mode_colors = (7, 7, 7, 7, 7)
+                    if self.main_script.color_off_mode_hide_inactive_channel_strips == False:
+                        empty_color = 7
+                    else:
+                        empty_color = 0
+                else:
+                    assignment_mode_colors = (7, 6, 7, 3, 4)  # fallback in case channel colors are unavailable
+                    empty_color = 0
                 track_index_range = range(
                     self.__bank_channel_offset + display.stack_offset(),
                     self.__bank_channel_offset + display.stack_offset() + NUM_CHANNEL_STRIPS
@@ -181,14 +189,14 @@ class MainDisplayController(MackieControlComponent):
                                 curr_color = self._get_cached_color(display_index, t, raw_color)
                         else:
                             upper_string += self.__generate_6_char_string(u'')
-                            curr_color = 0
+                            curr_color = empty_color
 
                     elif t < len(tracks):
                         upper_string += self.__generate_6_char_string(tracks[t].name)
                         raw_color = tracks[t].color
                         curr_color = self._get_cached_color(display_index, t, raw_color)
                     else:
-                        curr_color = 0
+                        curr_color = empty_color
                         upper_string += self.__generate_6_char_string(u'')
 
                     color_list.append(curr_color)
@@ -318,6 +326,8 @@ class MainDisplayController(MackieControlComponent):
             # return ((color1[0] - color2[0]) ** 2) + ((color1[1] - color2[1]) ** 2) + ((color1[2] - color2[2]) ** 2)
 
     def match_color(self, trackRGBint):
+        if self.main_script.get_color_distance_mode() == 2:  # color off
+            return 7
         track_R = (trackRGBint >> 16) & 255
         track_G = (trackRGBint >> 8) & 255
         track_B = trackRGBint & 255

@@ -42,10 +42,10 @@ class MackieControl(object):
             "COLOR_DISTANCE_MODE": (
                 0,
                 lambda v: self._parse_color_distance_mode(v),
-                "Use alternative color matching method (0 = match by RGB distance, 1 = match primarily by hue)",
+                "Color matching method for scribble strips (0 = match by RGB distance, 1 = match primarily by hue, 2 = off)",
                 str,
                 "color",
-                {0: "rgb", 1: "hue"}
+                {0: "rgb", 1: "hue", 2: "0ff"}
             ),
             "HUE_COLOR_DISTANCE_MODE_WHITE_CUTOFF": (
                 0.19,
@@ -55,6 +55,15 @@ class MackieControl(object):
                 "white",
                 (0.00, 1.00),  # min/max tuple
                 lambda script: script.color_distance_mode == 1  # only visible if hue mode
+            ),
+            "COLOR_OFF_MODE_HIDE_INACTIVE_CHANNEL_STRIPS": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "If color mode is off, still turn inactive channel strips black (true) or show all channel strips as white (false)",
+                lambda v: "true" if v else "false",
+                "strbl",
+                {False: "false", True: " true"},
+                lambda script: False  # not visible in settings menu
             ),
             "USE_FUNCTION_BUTTONS": (
                 0,
@@ -137,7 +146,7 @@ class MackieControl(object):
                 lambda v: "true" if v else "false",
                 "dbpm1",
                 {False: "false", True: " true"},
-                lambda script: False  # only visible if not in Overlay Layout
+                lambda script: False  # not visible in settings menu
             ),
         }
 
@@ -381,10 +390,7 @@ class MackieControl(object):
         self.__alt_is_pressed = pressed
 
     def get_color_distance_mode(self):
-        result = False
-        if self.color_distance_mode == 1:
-            result = True
-        return result
+        return self.color_distance_mode
 
     def get_overlay_layout(self):
         return self.overlay_layout
@@ -671,8 +677,10 @@ class MackieControl(object):
         
     def _parse_color_distance_mode(self, v):
         v = v.strip().lower()
-        if v in ("0", "off", "rgb", "false", "no"):
+        if v in ("0", "rgb", "default", "true"):
             return 0
-        if v in ("1", "on", "hue", "true"):
+        if v in ("1", "hue"):
             return 1
+        if v in ("2", "off", "none", "false"):
+            return 2
         return 0
