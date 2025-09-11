@@ -63,7 +63,7 @@ class MackieControl(object):
                 lambda v: "true" if v else "false",
                 "strbl",
                 {False: "false", True: " true"},
-                lambda script: False  # not visible in settings menu
+                lambda script: script.color_distance_mode == 2  # only visible if color is off
             ),
             "USE_FUNCTION_BUTTONS": (
                 0,
