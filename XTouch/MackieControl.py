@@ -31,14 +31,6 @@ class MackieControl(object):
         # -------------------------------------------------------------------
         # key -> (default_value, parser, comment, formatter, short_name, choices_or_limits)
         self._preferences_spec = {
-            "NIGHT_MODE_ON": (
-                False,
-                lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Enable Night Mode (true/false)",
-                lambda v: "true" if v else "false",
-                "might", # m looks like capital n on 7-segment display
-                {False: "0ff", True: "0m"},
-            ),
             "COLOR_DISTANCE_MODE": (
                 0,
                 lambda v: self._parse_color_distance_mode(v),
@@ -65,6 +57,23 @@ class MackieControl(object):
                 {False: "false", True: " true"},
                 lambda script: script.color_distance_mode == 2  # only visible if color is off
             ),
+            "FADERS_ZERO": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Set faders to 0dB (true/false)",
+                lambda v: "true" if v else "false",
+                "fzero",
+                {False: "0ff", True: "0m"},
+            ),
+            "FADERS_ZERO_CALIBRATE": (
+                0,                                    # default
+                lambda v: self._parse_int_in_range(v, -40, 40),
+                "Calibrate faders to 0dB (−40 … +40)",
+                self._format_calibration,                  # formatter → string
+                "0 cal",                              # short name for display
+                (-40, 40),                            # min/max tuple
+                lambda script: script.faders_zero == True    # only visible if faders at zero is enabled
+            ),
             "USE_FUNCTION_BUTTONS": (
                 0,
                 lambda v: self._parse_use_function_buttons(v),
@@ -73,21 +82,13 @@ class MackieControl(object):
                 "funct",
                 {0: "0ff", 1: "quant", 2: "intyp", 3: "incha", 6: "lctr", 7: "macro"}   # raw value → display string
             ),
-            "SHOW_CLOCK": (
-                0,
-                lambda v: self._parse_show_clock(v),
-                "Show current time instead of song time/beats (0=off, 1=on with seconds, 2=on without seconds)",
-                str,
-                "clock",
-                {0: "0ff", 1: "0m", 2: "short"}   # raw value → display string
-            ),
-            "SNAPPY_METERS": (
+            "METRONOME_BLINKS_IN_TIME": (
                 True,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Use snappy level meters (true/false)",
+                "Metronome button blinks in time (true/false)",
                 lambda v: "true" if v else "false",
-                "snppy",
-                {False: "0ff", True: "0m"},
+                "metro",
+                {False: "free", True: "tempo"},
             ),
             "SHOW_MUTED_VIA_SOLO": (
                 False,
@@ -110,16 +111,32 @@ class MackieControl(object):
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
                 "Master fader controls Preview/Cue volume when channel strips are flipped (true/false)",
                 lambda v: "true" if v else "false",
-                "cue  ",
+                "cue w",
                 {False: "0ff", True: "0m"},
             ),
-            "METRONOME_BLINKS_IN_TIME": (
+            "SHOW_CLOCK": (
+                0,
+                lambda v: self._parse_show_clock(v),
+                "Show current time instead of song time/beats (0=off, 1=on with seconds, 2=on without seconds)",
+                str,
+                "clock",
+                {0: "0ff", 1: "0m", 2: "short"}   # raw value → display string
+            ),
+            "NIGHT_MODE_ON": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Enable Night Mode (true/false)",
+                lambda v: "true" if v else "false",
+                "might", # m looks like capital n on 7-segment display
+                {False: "0ff", True: "0m"},
+            ),
+            "SNAPPY_METERS": (
                 True,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Metronome button blinks in time (true/false)",
+                "Use snappy level meters (true/false)",
                 lambda v: "true" if v else "false",
-                "metro",
-                {False: "free", True: "tempo"},
+                "snppy",
+                {False: "0ff", True: "0m"},
             ),
             "OVERLAY_LAYOUT": (
                 False,
@@ -138,23 +155,6 @@ class MackieControl(object):
                 "flip ",
                 {False: "stdrd", True: "rvrse"},
                 lambda script: script.overlay_layout == False and script.debug_parameter_1 == False  # only visible if not in Overlay Layout
-            ),
-            "FADERS_ZERO": (
-                False,
-                lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Set faders to 0dB (true/false)",
-                lambda v: "true" if v else "false",
-                "fzero",
-                {False: "0ff", True: "0m"},
-            ),
-            "FADERS_ZERO_CALIBRATE": (
-                0,                                    # default
-                lambda v: self._parse_int_in_range(v, -40, 40),
-                "Calibrate faders to 0dB (−40 … +40)",
-                self._format_calibration,                  # formatter → string
-                "0 cal",                              # short name for display
-                (-40, 40),                            # min/max tuple
-                lambda script: script.faders_zero == True    # only visible if faders at zero is enabled
             ),
             "DEBUG_PARAMETER_1": (
                 False,
