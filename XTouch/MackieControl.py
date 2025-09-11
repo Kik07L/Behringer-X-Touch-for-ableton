@@ -61,7 +61,7 @@ class MackieControl(object):
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
                 "If color mode is off, still turn inactive channel strips black (true) or show all channel strips as white (false)",
                 lambda v: "true" if v else "false",
-                "strbl",
+                "black ",
                 {False: "false", True: " true"},
                 lambda script: script.color_distance_mode == 2  # only visible if color is off
             ),
