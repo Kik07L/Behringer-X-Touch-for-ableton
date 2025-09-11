@@ -5,7 +5,79 @@ from .MackieControlComponent import *
 from itertools import chain
 from math import log as _log
 
-class ChannelStrip(MackieControlComponent):
+class FaderZeroMappingMixin:
+    """
+    Provides two-way mapping between hardware fader values and Live parameter values
+    with an adjustable 0dB breakpoint. Used fot "Faders calibrated to 0dB" setting.
+    """
+
+    # Shared constants for all channels
+    # FADER_ZERO = 12700       # hardware fader value corresponding to 0 dB
+    LIVE_ZERO = 13925        # Live's value corresponding to 0 dB
+    MAX_VALUE = 16383        # maximum hardware/Live value
+
+
+    # @property
+    # def _fader_zero(self):
+        # return self.FADER_ZERO
+
+    @property
+    def _fader_zero(self):
+        """
+        Ask the main script what the calibration value is, dynamically.
+        """
+        calibrate = 0
+        if hasattr(self, "main_script") and callable(self.main_script):
+            ms = self.main_script()
+            if ms and hasattr(ms, "get_faders_zero_calibrate"):
+                value = ms.get_faders_zero_calibrate()
+                if value is not None:
+                    calibrate = value
+        return 12700 + calibrate * 10
+
+    @property
+    def _live_zero(self):
+        return self.LIVE_ZERO
+
+    @property
+    def _max_value(self):
+        return self.MAX_VALUE
+
+    def build_fader_map(self):
+        """Return a 128-point feedback map with breakpoint at zero dB."""
+        pairs = []
+        ratio_14_to_7_bit = self.MAX_VALUE / 127
+        live_zero_7_bit = int(round(self._live_zero / self._max_value * 127))
+        fader_zero_7_bit = int(round(self._fader_zero / self._max_value * 127))
+
+        # Zone 1: (0,0) → (fader_zero, live_zero)
+        for i in range(live_zero_7_bit + 1):
+            i_14_bit = i * ratio_14_to_7_bit
+            fader_val = int(round(i_14_bit * self._fader_zero / self._live_zero / ratio_14_to_7_bit))
+            pairs.append((fader_val, i))
+
+        # Zone 2: (fader_zero, live_zero) → (127,127)
+        for i in range(live_zero_7_bit + 1, 128):
+            i_14_bit = i * ratio_14_to_7_bit
+            fader_val = int(round(
+                (self._fader_zero + (i_14_bit - self._live_zero) * ((self._max_value - self._fader_zero) / (self._max_value - self._live_zero))) / ratio_14_to_7_bit
+            ))
+            if fader_val > 127:
+                fader_val = 127
+            pairs.append((fader_val, i))
+
+        return tuple(pairs)
+
+    def fader_to_live(self, fader_val):
+        """Convert hardware fader → Live value."""
+        if fader_val <= self._fader_zero:
+            live_val = fader_val * (self._live_zero / self._fader_zero)
+        else:
+            live_val = self._live_zero + (fader_val - self._fader_zero) * ((self._max_value - self._live_zero) / (self._max_value - self._fader_zero))
+        return int(round(live_val))
+
+
+class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
     u"""Represets a Channel Strip of the Mackie Control, which consists out of the"""
 
     def __init__(self, main_script, strip_index):
@@ -219,11 +291,20 @@ class ChannelStrip(MackieControlComponent):
     def build_midi_map(self, midi_map_handle):
         needs_takeover = False
         if self.__fader_parameter:
-            feeback_rule = Live.MidiMap.PitchBendFeedbackRule()
-            feeback_rule.channel = self.__strip_index
-            feeback_rule.value_pair_map = tuple()
-            feeback_rule.delay_in_ms = 200.0
-            Live.MidiMap.map_midi_pitchbend_with_feedback_map(midi_map_handle, self.__fader_parameter, self.__strip_index, feeback_rule, not needs_takeover)
+
+            feedback_rule = Live.MidiMap.PitchBendFeedbackRule()
+            feedback_rule.channel = self.__strip_index
+            feedback_rule.delay_in_ms = 200.0
+
+            if self.main_script().get_faders_zero() and not self.main_script().get_flip():
+                Live.MidiMap.forward_midi_pitchbend(
+                    self.script_handle(), midi_map_handle, self.__strip_index
+                )
+                feedback_rule.value_pair_map = self.build_fader_map()
+            else:
+                feedback_rule.value_pair_map = tuple()
+
+            Live.MidiMap.map_midi_pitchbend_with_feedback_map(midi_map_handle, self.__fader_parameter, self.__strip_index, feedback_rule, not needs_takeover)
             Live.MidiMap.send_feedback_for_parameter(midi_map_handle, self.__fader_parameter)
         else:
             channel = self.__strip_index
@@ -233,17 +314,22 @@ class ChannelStrip(MackieControlComponent):
                 range_end = 7
             else:
                 range_end = 12
-            feeback_rule = Live.MidiMap.CCFeedbackRule()
-            feeback_rule.channel = 0
-            feeback_rule.cc_no = 48 + self.__strip_index
-            feeback_rule.cc_value_map = tuple([ self.__v_pot_display_mode * 16 + x for x in range(1, range_end) ])
-            feeback_rule.delay_in_ms = -1.0
-            Live.MidiMap.map_midi_cc_with_feedback_map(midi_map_handle, self.__v_pot_parameter, 0, FID_PANNING_BASE + self.__strip_index, Live.MidiMap.MapMode.relative_signed_bit, feeback_rule, needs_takeover)
+            feedback_rule = Live.MidiMap.CCFeedbackRule()
+            feedback_rule.channel = 0
+            feedback_rule.cc_no = 48 + self.__strip_index
+            feedback_rule.cc_value_map = tuple([ self.__v_pot_display_mode * 16 + x for x in range(1, range_end) ])
+            feedback_rule.delay_in_ms = -1.0
+            Live.MidiMap.map_midi_cc_with_feedback_map(midi_map_handle, self.__v_pot_parameter, 0, FID_PANNING_BASE + self.__strip_index, Live.MidiMap.MapMode.relative_signed_bit, feedback_rule, needs_takeover)
             Live.MidiMap.send_feedback_for_parameter(midi_map_handle, self.__v_pot_parameter)
         else:
             channel = 0
             cc_no = FID_PANNING_BASE + self.__strip_index
             Live.MidiMap.forward_midi_cc(self.script_handle(), midi_map_handle, channel, cc_no)
+
+    def handle_fader_movement(self, value14):
+        # here apply your remapping: hardware→Live
+        remapped = self.fader_to_live(value14)
+        self.__assigned_track.mixer_device.volume.value = remapped / 16383
 
     def __assigned_track_index(self):
         index = 0
@@ -429,7 +515,7 @@ class ChannelStrip(MackieControlComponent):
             self.send_button_led(SID_SELECT_BASE + self.__strip_index, BUTTON_STATE_OFF)
 
 
-class MasterChannelStrip(MackieControlComponent):
+class MasterChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
 
     def __init__(self, main_script):
         MackieControlComponent.__init__(self, main_script)
@@ -461,13 +547,34 @@ class MasterChannelStrip(MackieControlComponent):
     def build_midi_map(self, midi_map_handle):
         if self.__assigned_track:
             needs_takeover = False
+
             if self.main_script().get_flip() and self.main_script().master_fader_controls_cue_volume_on_flip:
                 volume = self.__assigned_track.mixer_device.cue_volume
             else:
                 volume = self.__assigned_track.mixer_device.volume
-            feeback_rule = Live.MidiMap.PitchBendFeedbackRule()
-            feeback_rule.channel = self.__strip_index
-            feeback_rule.value_pair_map = tuple()
-            feeback_rule.delay_in_ms = 200.0
-            Live.MidiMap.map_midi_pitchbend_with_feedback_map(midi_map_handle, volume, self.__strip_index, feeback_rule, not needs_takeover)
+
+            feedback_rule = Live.MidiMap.PitchBendFeedbackRule()
+            feedback_rule.channel = self.__strip_index
+            feedback_rule.delay_in_ms = 200.0
+            
+            if self.main_script().get_faders_zero():
+                Live.MidiMap.forward_midi_pitchbend(
+                    self.script_handle(), midi_map_handle, self.__strip_index
+                )
+                feedback_rule.value_pair_map = self.build_fader_map()
+            else:
+                feedback_rule.value_pair_map = tuple()
+            
+            Live.MidiMap.map_midi_pitchbend_with_feedback_map(midi_map_handle, volume, self.__strip_index, feedback_rule, not needs_takeover)
             Live.MidiMap.send_feedback_for_parameter(midi_map_handle, volume)
+
+    def handle_fader_movement(self, value14):
+        # here apply your remapping: hardware→Live
+        remapped = self.fader_to_live(value14)
+
+        # Scale remapped → 0.0–1.0 parameter range
+        if self.main_script().get_flip() and self.main_script().master_fader_controls_cue_volume_on_flip:
+            volume = self.__assigned_track.mixer_device.cue_volume
+        else:
+            volume = self.__assigned_track.mixer_device.volume
+        volume.value = remapped / 16383

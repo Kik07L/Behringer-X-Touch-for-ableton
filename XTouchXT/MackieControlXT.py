@@ -108,6 +108,24 @@ class MackieControlXT(object):
             result = self._mackie_control_main.get_touch_fader_to_select()
         return result
 
+    def get_faders_zero(self):
+        result = False
+        if hasattr(self, '_mackie_control_main') and self._mackie_control_main != None:
+            result = self._mackie_control_main.get_faders_zero()
+        return result
+
+    def get_faders_zero_calibrate(self):
+        result = None
+        if hasattr(self, '_mackie_control_main') and self._mackie_control_main != None:
+            result = self._mackie_control_main.get_faders_zero_calibrate()
+        return result
+
+    def get_flip(self):
+        result = False
+        if hasattr(self, '_mackie_control_main') and self._mackie_control_main != None:
+            result = self._mackie_control_main.get_flip()
+        return result
+
     def application(self):
         return Live.Application.get_application()
 
@@ -173,6 +191,16 @@ class MackieControlXT(object):
             major_version = version_bytes[1]
             self.is_pro_version = major_version > 50
             self._received_firmware_version = True
+
+        elif self.get_faders_zero() and midi_bytes[0] & 0xF0 == 0xE0:  # pitchbend
+            channel = midi_bytes[0] & 0x0F
+            lsb = midi_bytes[1]
+            msb = midi_bytes[2]
+            value14 = (msb << 7) | lsb
+
+            # route to the correct channel strip
+            if channel < len(self.__channel_strips):
+                self.__channel_strips[channel].handle_fader_movement(value14)
 
     def can_lock_to_devices(self):
         return False

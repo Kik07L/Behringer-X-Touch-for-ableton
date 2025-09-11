@@ -139,6 +139,23 @@ class MackieControl(object):
                 {False: "stdrd", True: "rvrse"},
                 lambda script: script.overlay_layout == False and script.debug_parameter_1 == False  # only visible if not in Overlay Layout
             ),
+            "FADERS_ZERO": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Set faders to 0dB (true/false)",
+                lambda v: "true" if v else "false",
+                "fzero",
+                {False: "0ff", True: "0m"},
+            ),
+            "FADERS_ZERO_CALIBRATE": (
+                0,                                    # default
+                lambda v: self._parse_int_in_range(v, -40, 40),
+                "Calibrate faders to 0dB (−40 … +40)",
+                self._format_calibration,                  # formatter → string
+                "0 cal",                              # short name for display
+                (-40, 40),                            # min/max tuple
+                lambda script: script.faders_zero == True    # only visible if faders at zero is enabled
+            ),
             "DEBUG_PARAMETER_1": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
@@ -350,6 +367,19 @@ class MackieControl(object):
             self.is_pro_version = major_version > 50
             self._received_firmware_version = True
 
+        elif self.get_faders_zero() and midi_bytes[0] & 0xF0 == 0xE0:  # pitchbend
+            channel = midi_bytes[0] & 0x0F
+            lsb = midi_bytes[1]
+            msb = midi_bytes[2]
+            value14 = (msb << 7) | lsb
+
+            # route to the correct channel strip
+            if channel == MASTER_CHANNEL_STRIP_INDEX:
+                self.__master_strip.handle_fader_movement(value14)
+            elif channel < len(self.__channel_strips):
+                self.__channel_strips[channel].handle_fader_movement(value14)
+
+
     def can_lock_to_devices(self):
         return False
 
@@ -401,6 +431,12 @@ class MackieControl(object):
     def get_metronome_blinks_in_time(self):
         return self.metronome_blinks_in_time
 
+    def get_faders_zero(self):
+        return self.faders_zero
+
+    def get_faders_zero_calibrate(self):
+        return self.faders_zero_calibrate
+        
     def get_debug_parameter_1(self):
         return self.debug_parameter_1
 
@@ -684,3 +720,18 @@ class MackieControl(object):
         if v in ("2", "off", "none", "false"):
             return 2
         return 0
+
+    def _parse_int_in_range(self, v, min_val, max_val):
+        try:
+            i = int(v)
+        except (ValueError, TypeError):
+            return 0
+        return max(min_val, min(max_val, i))
+
+    def _format_calibration(self, v: int) -> str:
+        if v == 0:
+            return "0"
+        elif v > 0:
+            return "'" + str(v)   # prefix with apostrophe for +
+        else:
+            return "," + str(abs(v))  # prefix with comma for -
