@@ -156,6 +156,15 @@ class MackieControl(object):
                 {False: "stdrd", True: "rvrse"},
                 lambda script: script.overlay_layout == False and script.debug_parameter_1 == False  # only visible if not in Overlay Layout
             ),
+            "DOUBLE_TAP_THRESHOLD": (
+                0.2,
+                lambda v: float(v) if v else 0.2,
+                "Double tap threshold for some button interactions (0.0...1.0)",
+                lambda v: f"{v:.1f}",  # fixed to 1 decimal
+                "dt th",
+                (0.0, 1.0),  # min/max tuple
+                lambda script: False  # not visible in settings menu
+            ),
             "DEBUG_PARAMETER_1": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
@@ -501,6 +510,12 @@ class MackieControl(object):
         if self.__channel_strip_controller  != None:
             result = self.__channel_strip_controller.flip()
         return result
+
+    def get_double_tap_threshold(self):
+        result = 0.2
+        if hasattr(self, 'double_tap_threshold'):
+            result = self.double_tap_threshold
+        return result        
 
     def visible_tracks_including_chains(self):
         """

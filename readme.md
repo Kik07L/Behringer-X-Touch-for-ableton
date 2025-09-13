@@ -20,9 +20,15 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - **Inactive Channels:** Tracks beyond your active channels are marked with black scribble strips to indicate inactivity.
 - **Plug-In Mode:**
   - Scribble strips are lit in a single color (Cyan) for better readability.
-- **Alternative color matching method (beta):**
-  - Attempts to improve color matching by prioritizing hue, to avoid light colors automatically mapping to white.
-  - Off by default, can be enabled through the global settings menu.
+- **Color matching method:** Selected through the new global settings menu.
+  - RGB (default) calculates the closest color in RGB space. 
+  - Hue attempts to improve color matching by prioritizing hue (light colors will map to their corresponding primary scribble strip color instead of white).
+  - Off: no colors (all white).
+
+### Faders correctly show 0dB
+- Physical faders recalibrated to be at the zero mark when track volume is 0dB in Live.
+- Off by default, enabled through the new global settings menu.
+- Once enabled, faders zero point can be finely calibrated if needed.
 
 ### Level Meter Enhancements
 - **Clipping Indicators:** Channel strip level meters now show clipping when it occurs.
@@ -30,46 +36,31 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 
 ### Global Solo
 - When one or more tracks are soloed, `SOLO` button in Transport Section toggles their solo state on and off simultaneously.
+- `CONTROL + SOLO` to toggle in time with track (follows global launch quantization).
 
-### Macro Mapper (beta)
-- Quick access to 16 multi-mappable macros via the rotary encoders.
-- Place the supplied "XTouch/Macro Mapper/X-Touch Macro Mapper" device on the Master track as the first (leftmost) device in the chain.
-- Map the Max4Live devices in the rack to any function in the project and rename the 16 macro knobs to suit.
-- Press and hold `USER` to bring up mappings on rotary encoders temporarily, or `SHIFT + USER` to lock.
-  - Quick access through the `USER` button will work with any device that is first in the chain on the Master channel and has "X-Touch" in its name.
+### Chains behave as groups
+- Press `SELECT` twice on a track that contains a Rack to expand its chains in the Mixer (same behavior as with track groups).
+- This way, chain elements like individual drum sounds can be mixed along with the rest of the set.
+- Rack chains react just like normal tracks to faders, `MUTE` and `SOLO` buttons and encoders (in Pan and Sends mode).
+  - If volume or panning for a device chain is macro mapped, the fader/rotary encoder for that chain will have no effect.
+- Limitations: audio metering and audio routing are currently unavailable for chains in Live's API.
 
-### Single Send Mode (beta)
-- Default Sends mode (`SEND`) shows send levels for all return tracks/return chains on the current track/chain.
-- New Single Send mode shows send levels for a single return track/return chain across all tracks/chains.
+### Metronome button blinks in time
+- Visual indication of tempo when metronome is enabled.
+- On by default, can be disabled through global settings menu.
+
+### Single Send Mode
+- Default Sends mode (`SEND`) shows send levels **for all return tracks/return chains on the current track/chain**.
+- New Single Send mode (`SEND` x 2) shows send levels **for a single return track/return chain across all tracks/chains**.
 - In default Sends mode, either press `SEND` again or `SHIFT + Press rotary encoder` to select the corresponding return track for Single Send mode.
 - Press `EQ` or `INST` to move control to the previous/next return track/return chain send levels.
 - Scribble strips will turn black for unavailable sends (if the number of global return tracks differs from the number of return chains in a device with chains visible in the mixer).
 
-### Device Control Lock (beta)
-- With the rotary encoders assigned to device parameters (`PLUG-IN` > `Press rotary encoder` to select device), press `SHIFT + PLUG-IN` to lock current assignment.
-- Device assignment will no longer be canceled by selecting, soloing, muting or arming other tracks.
-
-### Night Mode (beta)
-- Press all four `MODIFY` buttons (`SHIFT`, `OPTION`, `CONTROL` and `ALT`) simultaneously to toggle Night Mode.
-- `MODIFY` section LEDs are permanently lit for enhanced visibility.
-- Press any `MODIFY` button to temporarily light up all buttons.
-- Night Mode setting is remembered across sessions.
-
-### Chains behave as groups (beta)
-- Press `SELECT` twice on a track that contains a Rack to expand its chains in the Mixer (same behaviour as with track groups).
-- Rack chains react just like normal tracks to faders, `MUTE` and `SOLO` buttons and encoders (in Pan and Sends mode).
-- Chain colors appear in scribble strips and can be modified just like track colors (press `TRACK` x5 for color mode).
-- Note: if volume or panning for a device chain is macro mapped, the fader/rotary encoder for that chain will have no effect.
-- Limitations: chains audio metering and audio routing are currently unavailable in Live's API.
-
-### Feedback messages (beta)
-- Short messages on Time Display provide feedback on various actions.
-
-### Persistent settings (beta)
-- Global settings (Night Mode, show clock...) are now preserved across sessions.
+### Persistent settings
+- Global settings are now preserved across sessions.
 - Settings can be edited through built-in global settings menu and are saved in options.txt.
 
-### Global settings menu (beta)
+### Global settings menu
 - `SHIFT + ZOOM`: Open settings menu.
 - `UP`, `DOWN`: Browse settings.
 - `LEFT`, `RIGHT`: Change setting.
@@ -77,17 +68,72 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `SCRUB`: Reset setting to default.
 - `ZOOM`: Save and exit.
 
-### Function Section modes (beta)
-- Available modes: MIDI Record Quantization, current track Input Type, current track Input Channel.
-- See Button Mappings for more details.
+### Options in global settings menu
+- **Color matching method** (RGB, Hue or off, default: RGB).
+  - In Hue mode: **white cut-off** (higher = more white scribble strips, default: 0.19).
+  - When color matching is off: **turn inactive channels black** (off by default).
+- **Faders at zero** (off by default)
+  - When enabled: **calibrate zero point** (-40...+40)
+- **Function Buttons mode** (see Function Buttons).
+- **Metronome blinks in time** (on by default).
+- **Indicate tracks muted via solo** by flashing `MUTE` button (off by default).
+- **Select track by touching fader** (off by default).
+- **Master fader controls Cue/headphones volume** when faders are flipped (off by default).
+- **Clock** (Off, On or Short, off by default).
+- **Night mode** (off by default).
+- **Snappy meters** (on by default).
+- **Button layout:** Standard or Overlay (default: Standard).
+  - In Standard layout: swap `FLIP` and `GLOBAL VIEW` (select Master channel) buttons (off by default).
 
-### Metronome button blinks in time (beta)
-- Metronome button (`CLICK`) blinks in time with the song (on by default, can be disabled through settings menu)
+### Night Mode
+- Press all four `MODIFY` buttons (`SHIFT`, `OPTION`, `CONTROL` and `ALT`) simultaneously to toggle Night Mode (or activate in settings menu).
+- `MODIFY` section LEDs are permanently lit for enhanced visibility.
+- Press any `MODIFY` button to temporarily light up all buttons.
 
-### Other optional features
-- Select track by touching fader (off by default, can be enabled through settings menu).
-- Indicate track muted via solo by flashing `MUTE` button LED (off by default, can be enabled through settings menu).
-- When faders are flipped, master fader controls Cue volume (off by default, can be enabled through settings menu).
+### Macro Mapper
+- Quick access to 16 multi-mappable macros via the rotary encoders.
+- Place the supplied "X-Touch Macro Mapper" device (in "XTouch/Macro Mapper/" folder) on the Master track as the first (leftmost) device in the chain.
+- Map the Max4Live devices in the rack to any function in the project and rename the 16 macro knobs to suit.
+- Press and hold `USER` to bring up mappings on rotary encoders temporarily, or `SHIFT + USER` to lock.
+  - Quick access through the `USER` button will work with any device that is first in the chain on the Master channel and has "X-Touch" in its name.
+
+### Function Buttons modes
+- `SHIFT + F1-F8`: Select mode.
+- `SHIFT + F1`: **Off** (leave Functions buttons available for MIDI mapping).
+- `SHIFT + F2`: **Record Quantization mode.**
+  - `F1-F8` to set quantization (1/4, 1/8, etc.).
+  - Press lit button again for no quantization.
+- `SHIFT + F3`: **Input Type mode.**
+  - `F1-F8` to select current track input type.
+  - `ALT + F1-F8` for 9-16.
+  - On MIDI track, press lit button again for All Ins.
+- `SHIFT + F4`: **Input Channel mode.**
+  - `F1-F8` to select current track input channel.
+  - `ALT + F1-F8` for 9-16.
+  - On MIDI track, press lit button again for All Channels.
+- `SHIFT + F7`: **Locator Mode.**
+  - Lit `F1-F8` buttons represent locators in Arrangement.
+  - Blinking `F1-F8` button shows current playhead location.
+  - For locators 9-16, lit/blinking logic is reversed.
+  - Press lit button to jump to locator.
+  - Press lit button again to delete locator.
+  - Press unlit button to add locator.
+  - `ALT + F1-F8` for 9-16.
+  - Locator name for current section is briefly displayed as playhead moves.
+- `SHIFT + F8`: **Macro Mapper Variations mode.**
+  - `F1-F8` to store/recall variations on the Macro Mapper device.
+  - `OPTION + F1-F8` to delete variation.
+
+### Device Control Lock
+- With the rotary encoders assigned to device parameters (`PLUG-IN` > `Press rotary encoder` to select device), press `SHIFT + PLUG-IN` to lock current assignment.
+- Once locked, device assignment will no longer be canceled by selecting, soloing, muting or arming other tracks.
+
+### Other improvements and optional features
+- **Select track by touching fader** (off by default, can be enabled through settings menu).
+- **Indicate track muted via solo** by flashing `MUTE` button (off by default, can be enabled through settings menu).
+- **Master fader controls Cue/headphones volume** when faders are flipped (off by default, can be enabled through settings menu).
+- Short **messages on Time Display** provide feedback on various actions.
+- Double tap track `SELECT` button to reset fader to default value.
 
 ## Button Mappings
 ### **Encoder Assign Section**

@@ -126,6 +126,12 @@ class MackieControlXT(object):
             result = self._mackie_control_main.get_flip()
         return result
 
+    def get_double_tap_threshold(self):
+        result = 0.2
+        if hasattr(self, '_mackie_control_main') and self._mackie_control_main != None:
+            result = self._mackie_control_main.get_double_tap_threshold()
+        return result        
+
     def application(self):
         return Live.Application.get_application()
 

@@ -4,6 +4,7 @@ from builtins import range
 from .MackieControlComponent import *
 from itertools import chain
 from math import log as _log
+import time
 
 class FaderZeroMappingMixin:
     """
@@ -97,6 +98,7 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
         self.__within_track_added_or_deleted = False
         self.__within_destroy = False
         self.set_bank_and_channel_offset(offset=0, show_return_tracks=False, within_track_added_or_deleted=False)
+        self.__last_press_time = 0
 
     def destroy(self):
         self.__within_destroy = True
@@ -189,6 +191,9 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
     def show_full_enlighted_poti(self):
         self.send_midi((CC_STATUS + 0, 48 + self.__strip_index, VPOT_DISPLAY_WRAP * 16 + 11))
 
+    def reset_parameter_to_default(self, param):
+        param.value = param.default_value
+
     def handle_channel_strip_switch_ids(self, sw_id, value):
         if sw_id in range(SID_RECORD_ARM_BASE, SID_RECORD_ARM_BASE + NUM_CHANNEL_STRIPS):
             if sw_id - SID_RECORD_ARM_BASE is self.__strip_index:
@@ -222,8 +227,16 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
                     self.__toggle_mute_track()
         elif sw_id in range(SID_SELECT_BASE, SID_SELECT_BASE + NUM_CHANNEL_STRIPS):
             if sw_id - SID_SELECT_BASE is self.__strip_index:
-                if value == BUTTON_PRESSED:
-                    self.__select_track()
+                if value == BUTTON_PRESSED: #
+                    now = time.time()
+                    if (now - self.__last_press_time) <= self.main_script().get_double_tap_threshold():
+                        # second press within threshold -> double tap
+                        if self.__fader_parameter:
+                            self.reset_parameter_to_default(self.__fader_parameter)
+                    else:
+                        # single tap -> select track
+                        self.__select_track()
+                    self.__last_press_time = now
         elif sw_id in range(SID_VPOD_PUSH_BASE, SID_VPOD_PUSH_BASE + NUM_CHANNEL_STRIPS):
             if sw_id - SID_VPOD_PUSH_BASE is self.__strip_index:
                 if value == BUTTON_PRESSED and self.__channel_strip_controller != None:
@@ -547,11 +560,12 @@ class MasterChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
     def build_midi_map(self, midi_map_handle):
         if self.__assigned_track:
             needs_takeover = False
-
-            if self.main_script().get_flip() and self.main_script().master_fader_controls_cue_volume_on_flip:
-                volume = self.__assigned_track.mixer_device.cue_volume
-            else:
-                volume = self.__assigned_track.mixer_device.volume
+            
+            volume = self.master_fader_destination()
+            # if self.main_script().get_flip() and self.main_script().master_fader_controls_cue_volume_on_flip:
+                # volume = self.__assigned_track.mixer_device.cue_volume
+            # else:
+                # volume = self.__assigned_track.mixer_device.volume
 
             feedback_rule = Live.MidiMap.PitchBendFeedbackRule()
             feedback_rule.channel = self.__strip_index
@@ -573,8 +587,19 @@ class MasterChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
         remapped = self.fader_to_live(value14)
 
         # Scale remapped → 0.0–1.0 parameter range
+        volume = self.master_fader_destination()
+        # if self.main_script().get_flip() and self.main_script().master_fader_controls_cue_volume_on_flip:
+            # volume = self.__assigned_track.mixer_device.cue_volume
+        # else:
+            # volume = self.__assigned_track.mixer_device.volume
+        volume.value = remapped / 16383
+        
+    def master_fader_destination(self):
         if self.main_script().get_flip() and self.main_script().master_fader_controls_cue_volume_on_flip:
             volume = self.__assigned_track.mixer_device.cue_volume
         else:
             volume = self.__assigned_track.mixer_device.volume
-        volume.value = remapped / 16383
+        return volume
+
+    def reset_parameter_to_default(self, param):
+        param.value = param.default_value

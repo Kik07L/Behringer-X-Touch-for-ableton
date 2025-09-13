@@ -9,6 +9,7 @@ from _Generic.Devices import *
 from itertools import chain
 import math
 import Live
+import time
 #flatten_target = lambda routing_target: routing_target.display_name
 flatten_target = lambda routing_target: (
     routing_target.display_name if hasattr(routing_target, 'display_name') else routing_target["display_name"]
@@ -85,7 +86,7 @@ class ChannelStripController(MackieControlComponent):
         self.__meters_enabled = False
         self.__assign_flip_and_master_button()
         self.__assign_mutable_buttons()
-        self.__assign_mutable_buttons()
+        self.__last_press_time = 0
         self.__assignment_mode = CSM_VOLPAN
         self.__previous_assignment_mode = None
         self._macro_mapper_installed = False
@@ -309,7 +310,17 @@ class ChannelStripController(MackieControlComponent):
                 self.__toggle_flip()
         elif switch_id == self.__master_button:
             if value == BUTTON_PRESSED:
-                self.__software_controller._show_master_channel()            
+                now = time.time()
+                if (now - self.__last_press_time) <= self.main_script().get_double_tap_threshold():
+                    # second press within threshold -> double tap
+                    self.__master_strip.reset_parameter_to_default(self.__master_strip.master_fader_destination())
+                else:
+                    # single tap -> select track
+                    self.__software_controller._show_master_channel()
+                self.__last_press_time = now
+
+
+
 
         elif switch_id == self.__global_solo_button:
             if value == BUTTON_PRESSED:
