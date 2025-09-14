@@ -16,6 +16,8 @@ class FaderZeroMappingMixin:
     # FADER_ZERO = 12700       # hardware fader value corresponding to 0 dB
     LIVE_ZERO = 13925        # Live's value corresponding to 0 dB
     MAX_VALUE = 16383        # maximum hardware/Live value
+    FEEDBACK_INTERVAL = 0.02  # seconds (50 Hz max update rate)
+    FEEDBACK_WAIT = 0.2  # seconds
 
 
     # @property
@@ -44,7 +46,10 @@ class FaderZeroMappingMixin:
     def _max_value(self):
         return self.MAX_VALUE
 
-    def build_fader_map(self):
+
+    def build_fader_map(self, faders_at_zero=True):
+        if not faders_at_zero:
+            return tuple()
         """Return a 128-point feedback map with breakpoint at zero dB."""
         pairs = []
         ratio_14_to_7_bit = self.MAX_VALUE / 127
@@ -69,7 +74,9 @@ class FaderZeroMappingMixin:
 
         return tuple(pairs)
 
-    def fader_to_live(self, fader_val):
+    def fader_to_live(self, fader_val, faders_at_zero=True):
+        if not faders_at_zero:
+            return fader_val
         """Convert hardware fader → Live value."""
         if fader_val <= self._fader_zero:
             live_val = fader_val * (self._live_zero / self._fader_zero)
@@ -77,14 +84,30 @@ class FaderZeroMappingMixin:
             live_val = self._live_zero + (fader_val - self._fader_zero) * ((self._max_value - self._live_zero) / (self._max_value - self._fader_zero))
         return int(round(live_val))
 
+    def live_to_fader(self, live_val, faders_at_zero=True):
+        if not faders_at_zero:
+            return live_val
+        """Convert hardware live → fader value."""
+        if live_val <= self._live_zero:
+            fader_val = live_val * (self._fader_zero / self._live_zero)
+        else:
+            fader_val = self._fader_zero + (live_val - self._live_zero) * ((self._max_value - self._fader_zero) / (self._max_value - self._live_zero))
+        return int(round(fader_val))
+
 
 class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
     u"""Represets a Channel Strip of the Mackie Control, which consists out of the"""
-
+    
     def __init__(self, main_script, strip_index):
         MackieControlComponent.__init__(self, main_script)
         self.__channel_strip_controller = None
         self.__is_touched = False
+        self.__last_feedback_time = 0
+        self.__last_fader_val = None
+        self.__last_fader_moved_time = 0
+        self.__fader_move_pending = False
+        self.__faders_at_zero = False
+        self.__touch_to_move = False
         self.__strip_index = strip_index
         self.__stack_offset = 0
         self.__bank_and_channel_offset = 0
@@ -250,6 +273,8 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
                         self.__channel_strip_controller.handle_fader_touch(self.__strip_index, self.__stack_offset, touched)
                 if  value == BUTTON_PRESSED and self.main_script().get_touch_fader_to_select():
                     self.__select_track_without_folding()
+                elif value == BUTTON_RELEASED and self.__faders_at_zero and not self.main_script().get_flip():
+                    self._on_volume_changed()
         # elif sw_id == SID_AUTOMATION_GROUP:
             # if value == BUTTON_PRESSED:
                 # self.__toggle_group_mode()
@@ -272,6 +297,8 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
             self.unlight_vpot_leds()
 
     def on_update_display_timer(self):
+        if self.__fader_move_pending :
+            self._on_volume_changed()
         if not self.main_script().is_pro_version or self.__meters_enabled and self.__channel_strip_controller.assignment_mode() == CSM_VOLPAN:
             if self.__assigned_track and isinstance(self.__assigned_track, Live.Track.Track) and self.__assigned_track.has_audio_output:
                 if self.__assigned_track.can_be_armed and self.__assigned_track.arm:
@@ -303,22 +330,29 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
 
     def build_midi_map(self, midi_map_handle):
         needs_takeover = False
+        self.__faders_at_zero = self.main_script().get_faders_zero()
+        self.__touch_to_move = self.main_script().get_touch_fader_to_move()
+
         if self.__fader_parameter:
-
-            feedback_rule = Live.MidiMap.PitchBendFeedbackRule()
-            feedback_rule.channel = self.__strip_index
-            feedback_rule.delay_in_ms = 200.0
-
-            if self.main_script().get_faders_zero() and not self.main_script().get_flip():
+            
+            if self.__faders_at_zero and not self.main_script().get_flip(): # we handle the faders (control + feedback)
                 Live.MidiMap.forward_midi_pitchbend(
                     self.script_handle(), midi_map_handle, self.__strip_index
                 )
-                feedback_rule.value_pair_map = self.build_fader_map()
-            else:
+                if not self.__assigned_track.mixer_device.volume.value_has_listener(self._on_volume_changed):
+                    self.__assigned_track.mixer_device.volume.add_value_listener(self._on_volume_changed)
+                self._on_volume_changed()
+            else: # let Live handle the faders both ways
+                if self.__assigned_track.mixer_device.volume.value_has_listener(self._on_volume_changed):
+                    self.__assigned_track.mixer_device.volume.remove_value_listener(self._on_volume_changed)
+                feedback_rule = Live.MidiMap.PitchBendFeedbackRule()
+                feedback_rule.channel = self.__strip_index
+                feedback_rule.delay_in_ms = 200.0
                 feedback_rule.value_pair_map = tuple()
+                # feedback_rule.value_pair_map = self.build_fader_map(self.__faders_at_zero)            
+                Live.MidiMap.map_midi_pitchbend_with_feedback_map(midi_map_handle, self.__fader_parameter, self.__strip_index, feedback_rule, not needs_takeover)
+                Live.MidiMap.send_feedback_for_parameter(midi_map_handle, self.__fader_parameter)
 
-            Live.MidiMap.map_midi_pitchbend_with_feedback_map(midi_map_handle, self.__fader_parameter, self.__strip_index, feedback_rule, not needs_takeover)
-            Live.MidiMap.send_feedback_for_parameter(midi_map_handle, self.__fader_parameter)
         else:
             channel = self.__strip_index
             Live.MidiMap.forward_midi_pitchbend(self.script_handle(), midi_map_handle, channel)
@@ -340,9 +374,28 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
             Live.MidiMap.forward_midi_cc(self.script_handle(), midi_map_handle, channel, cc_no)
 
     def handle_fader_movement(self, value14):
-        # here apply your remapping: hardware→Live
-        remapped = self.fader_to_live(value14)
-        self.__assigned_track.mixer_device.volume.value = remapped / 16383
+        if (self.__is_touched and self.__touch_to_move) or not self.__touch_to_move:
+            remapped = self.fader_to_live(value14, self.__faders_at_zero)
+            self.__assigned_track.mixer_device.volume.value = remapped / 16383
+        self.__last_fader_moved_time = time.time()
+
+    def _on_volume_changed(self):
+        """Live → Hardware feedback (only if not touching)"""
+        now = time.time()
+        if (now - self.__last_fader_moved_time) < self.FEEDBACK_WAIT:
+            self.__fader_move_pending = True
+        elif not self.__is_touched and self.__fader_parameter:
+            live_val = int(round(self.__fader_parameter.value * self.MAX_VALUE))
+            fader_val = self.live_to_fader(live_val, self.__faders_at_zero)
+
+            now = time.time()
+            if (now - self.__last_feedback_time) >= self.FEEDBACK_INTERVAL:
+                lsb = fader_val & 0x7F
+                msb = (fader_val >> 7) & 0x7F
+                self.send_midi((PB_STATUS + self.__strip_index, lsb, msb))
+                self.__last_feedback_time = now
+                self.__last_fader_val = fader_val
+                self.__fader_move_pending = False
 
     def __assigned_track_index(self):
         index = 0
@@ -530,17 +583,27 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
 
 class MasterChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
 
-    def __init__(self, main_script):
+    def __init__(self, main_script, software_controller=None):
         MackieControlComponent.__init__(self, main_script)
         self.__strip_index = MASTER_CHANNEL_STRIP_INDEX
         self.__assigned_track = self.song().master_track
+        self.__channel_strip_controller = None
+        self.__software_controller = software_controller
+        self.__is_touched = False
+        self.__volume = None
+        self.__last_feedback_time = 0
+        self.__last_fader_val = None
+        self.__last_fader_moved_time = 0
+        self.__fader_move_pending = False
+        self.__faders_at_zero = False
+        self.__touch_to_move = False
 
     def destroy(self):
         self.reset_fader()
         MackieControlComponent.destroy(self)
 
     def set_channel_strip_controller(self, channel_strip_controller):
-        pass
+        self.__channel_strip_controller = channel_strip_controller
 
     def handle_channel_strip_switch_ids(self, sw_id, value):
         pass
@@ -549,7 +612,8 @@ class MasterChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
         pass
 
     def on_update_display_timer(self):
-        pass
+        if self.__fader_move_pending:
+            self._on_volume_changed()
 
     def enable_meter_mode(self, Enabled):
         pass
@@ -557,44 +621,80 @@ class MasterChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
     def reset_fader(self):
         self.send_midi((PB_STATUS + self.__strip_index, 0, 0))
 
+    def handle_touch_master_fader(self, switch_id, value):
+        if self.__assigned_track:
+            if value == BUTTON_PRESSED or value == BUTTON_RELEASED:
+                touched = value == BUTTON_PRESSED
+                self.set_is_touched(touched)
+                # self.__channel_strip_controller.handle_fader_touch(self.__strip_index, 0, touched)
+            if value == BUTTON_PRESSED and self.main_script().touch_fader_to_select:
+                self.__software_controller._select_master_channel(collapse=False)
+            elif value == BUTTON_RELEASED and self.__faders_at_zero:
+                self._on_volume_changed()
+
+    def is_touched(self):
+        return self.__is_touched
+
+    def set_is_touched(self, touched):
+        self.__is_touched = touched
+
     def build_midi_map(self, midi_map_handle):
         if self.__assigned_track:
             needs_takeover = False
             
-            volume = self.master_fader_destination()
-            # if self.main_script().get_flip() and self.main_script().master_fader_controls_cue_volume_on_flip:
-                # volume = self.__assigned_track.mixer_device.cue_volume
-            # else:
-                # volume = self.__assigned_track.mixer_device.volume
-
-            feedback_rule = Live.MidiMap.PitchBendFeedbackRule()
-            feedback_rule.channel = self.__strip_index
-            feedback_rule.delay_in_ms = 200.0
+            self.__faders_at_zero = self.main_script().get_faders_zero()
+            self.__touch_to_move = self.main_script().get_touch_fader_to_move()
             
-            if self.main_script().get_faders_zero():
+            if self.__faders_at_zero: # we handle the faders (control + feedback)
                 Live.MidiMap.forward_midi_pitchbend(
                     self.script_handle(), midi_map_handle, self.__strip_index
                 )
-                feedback_rule.value_pair_map = self.build_fader_map()
-            else:
+                if self.__volume != self.master_fader_destination():
+                    if self.__volume and self.__volume.value_has_listener(self._on_volume_changed):
+                        self.__volume.remove_value_listener(self._on_volume_changed)
+                self.__volume = self.master_fader_destination()
+                if not self.__volume.value_has_listener(self._on_volume_changed):
+                    self.__volume.add_value_listener(self._on_volume_changed)
+                self._on_volume_changed()
+            else: # let Live handle the faders both ways
+                self.__volume = self.master_fader_destination()
+                if self.__volume and self.__volume.value_has_listener(self._on_volume_changed):
+                    self.__volume.remove_value_listener(self._on_volume_changed)
+                feedback_rule = Live.MidiMap.PitchBendFeedbackRule()
+                feedback_rule.channel = self.__strip_index
+                feedback_rule.delay_in_ms = 200.0
                 feedback_rule.value_pair_map = tuple()
-            
-            Live.MidiMap.map_midi_pitchbend_with_feedback_map(midi_map_handle, volume, self.__strip_index, feedback_rule, not needs_takeover)
-            Live.MidiMap.send_feedback_for_parameter(midi_map_handle, volume)
+                # feedback_rule.value_pair_map = self.build_fader_map(self.__faders_at_zero)
+                Live.MidiMap.map_midi_pitchbend_with_feedback_map(midi_map_handle, self.__volume, self.__strip_index, feedback_rule, not needs_takeover)
+                Live.MidiMap.send_feedback_for_parameter(midi_map_handle, self.__volume)
 
     def handle_fader_movement(self, value14):
-        # here apply your remapping: hardware→Live
-        remapped = self.fader_to_live(value14)
+        if (self.__is_touched and self.__touch_to_move) or not self.__touch_to_move:
+            remapped = self.fader_to_live(value14, self.__faders_at_zero)
+            # Scale remapped → 0.0–1.0 parameter range
+            self.__volume = self.master_fader_destination()
+            self.__volume.value = remapped / 16383
+        self.__last_fader_moved_time = time.time()
 
-        # Scale remapped → 0.0–1.0 parameter range
-        volume = self.master_fader_destination()
-        # if self.main_script().get_flip() and self.main_script().master_fader_controls_cue_volume_on_flip:
-            # volume = self.__assigned_track.mixer_device.cue_volume
-        # else:
-            # volume = self.__assigned_track.mixer_device.volume
-        volume.value = remapped / 16383
-        
+    def _on_volume_changed(self):
+        """Live → Hardware feedback (only if not touching)"""
+        now = time.time()
+        if (now - self.__last_fader_moved_time) < self.FEEDBACK_WAIT:
+            self.__fader_move_pending = True
+        elif not self.__is_touched and self.__volume:
+            live_val = int(round(self.__volume.value * self.MAX_VALUE))
+            fader_val = self.live_to_fader(live_val, self.__faders_at_zero)
+
+            if (now - self.__last_feedback_time) >= self.FEEDBACK_INTERVAL:
+                lsb = fader_val & 0x7F
+                msb = (fader_val >> 7) & 0x7F
+                self.send_midi((PB_STATUS + self.__strip_index, lsb, msb))
+                self.__last_feedback_time = now
+                self.__last_fader_val = fader_val
+                self.__fader_move_pending = False
+
     def master_fader_destination(self):
+        volume = None
         if self.main_script().get_flip() and self.main_script().master_fader_controls_cue_volume_on_flip:
             volume = self.__assigned_track.mixer_device.cue_volume
         else:

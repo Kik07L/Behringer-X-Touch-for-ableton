@@ -234,10 +234,6 @@ class SoftwareController(MackieControlComponent):
         for note in range(SID_MOD_SHIFT, SID_MOD_ALT + 1):
             self.send_button_led(note, led_state)
 
-    def handle_touch_master_fader(self, switch_id, value):
-        if value == BUTTON_PRESSED and self.main_script().touch_fader_to_select:
-            self._show_master_channel(show_detail=False)
-
     def __flash_leds(self, onOff):
         leds_to_flash = list(transport_control_switch_ids + function_key_control_switch_ids + marker_control_switch_ids + software_controls_switch_ids + channel_strip_control_switch_ids + tuple(jog_wheel_switch_ids))
         leds_to_flash.sort()
@@ -296,9 +292,7 @@ class SoftwareController(MackieControlComponent):
                 self.song().create_return_track()
                 self.send_button_led(switch_id, BUTTON_STATE_ON)
             elif value == BUTTON_RELEASED:
-                self.send_button_led(switch_id, BUTTON_STATE_OFF)                
-            # if value == BUTTON_PRESSED:
-                # self._show_master_channel()
+                self.send_button_led(switch_id, BUTTON_STATE_OFF)
 
         elif switch_id == SID_AUTOMATION_READ_OFF:
             if value == BUTTON_PRESSED:
@@ -363,10 +357,10 @@ class SoftwareController(MackieControlComponent):
             self.__last_can_redo_state = self.song().can_redo
             self.__update_redo_button_led()
 
-    def _show_master_channel(self, show_detail=True):
+    def _select_master_channel(self, collapse=True):
         if self.song().view.selected_track != self.song().master_track:
             self.song().view.selected_track = self.song().master_track
-        elif show_detail:
+        elif collapse:
             self.song().master_track.view.is_collapsed = not self.song().master_track.view.is_collapsed
             #self.__toggle_detail_is_visible(focus=False)
 

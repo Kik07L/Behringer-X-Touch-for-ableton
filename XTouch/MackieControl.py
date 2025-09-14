@@ -57,23 +57,6 @@ class MackieControl(object):
                 {False: "false", True: " true"},
                 lambda script: script.color_distance_mode == 2  # only visible if color is off
             ),
-            "FADERS_ZERO": (
-                False,
-                lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Set faders to 0dB (true/false)",
-                lambda v: "true" if v else "false",
-                "fzero",
-                {False: "0ff", True: "0m"},
-            ),
-            "FADERS_ZERO_CALIBRATE": (
-                0,                                    # default
-                lambda v: self._parse_int_in_range(v, -40, 40),
-                "Calibrate faders to 0dB (−40 … +40)",
-                self._format_calibration,                  # formatter → string
-                "0 cal",                              # short name for display
-                (-40, 40),                            # min/max tuple
-                lambda script: script.faders_zero == True    # only visible if faders at zero is enabled
-            ),
             "USE_FUNCTION_BUTTONS": (
                 0,
                 lambda v: self._parse_use_function_buttons(v),
@@ -98,12 +81,38 @@ class MackieControl(object):
                 "muted",
                 {False: "0ff", True: "0m"},
             ),
+            "FADERS_ZERO": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Set faders to 0dB (true/false)",
+                lambda v: "true" if v else "false",
+                "fzero",
+                {False: "0ff", True: "0m"},
+            ),
+            "FADERS_ZERO_CALIBRATE": (
+                0,                                    # default
+                lambda v: self._parse_int_in_range(v, -40, 40),
+                "Calibrate faders to 0dB (−40 … +40)",
+                self._format_calibration,                  # formatter → string
+                "fzero",                              # short name for display
+                (-40, 40),                            # min/max tuple
+                lambda script: script.faders_zero == True    # only visible if faders at zero is enabled
+            ),
+            "TOUCH_FADER_TO_MOVE": (
+                True,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Moving fader only changes value when touched (true/false)",
+                lambda v: "true" if v else "false",
+                "touch",
+                {False: "any", True: "fingr"},
+                lambda script: script.faders_zero == True    # only visible if faders at zero is enabled
+            ),
             "TOUCH_FADER_TO_SELECT": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
                 "Select track by touching fader (true/false)",
                 lambda v: "true" if v else "false",
-                "touch",
+                "tslct",
                 {False: "0ff", True: "0m"},
             ),
             "MASTER_FADER_CONTROLS_CUE_VOLUME_ON_FLIP": (
@@ -199,7 +208,7 @@ class MackieControl(object):
         for s in self.__channel_strips:
             self.__components.append(s)
             
-        self.__master_strip = MasterChannelStrip(self)
+        self.__master_strip = MasterChannelStrip(self, self.__software_controller)
         self.__components.append(self.__master_strip)
         self.__channel_strip_controller = ChannelStripController(self, self.__channel_strips, self.__master_strip, self.__main_display_controller, self.__software_controller)
         self.__software_controller.set_channel_strip_controller(self.__channel_strip_controller)
@@ -350,7 +359,7 @@ class MackieControl(object):
                 if note in modify_key_control_switch_ids:
                     self.__software_controller.handle_modify_key_switch_ids(note, value)
                 if note == SID_FADER_TOUCH_SENSE_MASTER:
-                    self.__software_controller.handle_touch_master_fader(note, value)
+                    self.__master_strip.handle_touch_master_fader(note, value)
                 if note in function_key_control_switch_ids:
                     self.__software_controller.handle_function_key_switch_ids(note, value)
                 if note in software_controls_switch_ids:
@@ -445,7 +454,10 @@ class MackieControl(object):
 
     def get_faders_zero_calibrate(self):
         return self.faders_zero_calibrate
-        
+
+    def get_touch_fader_to_move(self):
+        return self.touch_fader_to_move
+
     def get_debug_parameter_1(self):
         return self.debug_parameter_1
 

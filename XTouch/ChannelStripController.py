@@ -128,6 +128,7 @@ class ChannelStripController(MackieControlComponent):
         self.__on_selected_track_changed()
         for s in self.__own_channel_strips:
             s.set_channel_strip_controller(self)
+        self.__master_strip.set_channel_strip_controller(self)
 
         self.__reassign_channel_strip_offsets()
         self.__reassign_channel_strip_parameters(for_display_only=False)
@@ -316,7 +317,7 @@ class ChannelStripController(MackieControlComponent):
                     self.__master_strip.reset_parameter_to_default(self.__master_strip.master_fader_destination())
                 else:
                     # single tap -> select track
-                    self.__software_controller._show_master_channel()
+                    self.__software_controller._select_master_channel()
                 self.__last_press_time = now
 
 

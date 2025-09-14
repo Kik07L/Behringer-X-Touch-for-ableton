@@ -72,11 +72,12 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - **Color matching method** (RGB, Hue or off, default: RGB).
   - In Hue mode: **white cut-off** (higher = more white scribble strips, default: 0.19).
   - When color matching is off: **turn inactive channels black** (off by default).
-- **Faders at zero** (off by default)
-  - When enabled: **calibrate zero point** (-40...+40)
 - **Function Buttons mode** (see Function Buttons).
 - **Metronome blinks in time** (on by default).
 - **Indicate tracks muted via solo** by flashing `MUTE` button (off by default).
+- **Faders at zero** (off by default)
+  - When enabled: **calibrate zero point** (-40...+40)
+  - When enabled: **fader control requires finger touch** (on by default)
 - **Select track by touching fader** (off by default).
 - **Master fader controls Cue/headphones volume** when faders are flipped (off by default).
 - **Clock** (Off, On or Short, off by default).

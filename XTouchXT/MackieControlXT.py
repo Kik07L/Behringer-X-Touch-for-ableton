@@ -120,6 +120,12 @@ class MackieControlXT(object):
             result = self._mackie_control_main.get_faders_zero_calibrate()
         return result
 
+    def get_touch_fader_to_move(self):
+        result = False
+        if hasattr(self, '_mackie_control_main') and self._mackie_control_main != None:
+            result = self._mackie_control_main.get_touch_fader_to_move()
+        return result
+
     def get_flip(self):
         result = False
         if hasattr(self, '_mackie_control_main') and self._mackie_control_main != None:
