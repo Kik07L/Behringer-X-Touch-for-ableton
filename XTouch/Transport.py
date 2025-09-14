@@ -757,6 +757,11 @@ class Transport(MackieControlComponent):
                 label = choices_or_limits.get(value, str(value))
 
         display_val = label if label else formatter(value)
+
+        # Apply display-safe substitutions for negative numbers
+        if isinstance(value, int) and not label and value < 0:
+            display_val = "," + str(abs(value))  # comma for -
+
         msg = f"{short_name[:5]}.{display_val:>5}"
         self.main_script().time_display().show_permanent_message(msg)
 
@@ -773,6 +778,7 @@ class Transport(MackieControlComponent):
         default, parser, desc, formatter, short_name, *rest = spec
 
         setattr(self.main_script(), key.lower(), default)
+        self.main_script().save_preferences()
         self.main_script().refresh_state()
         self._rebuild_menu_items()
 

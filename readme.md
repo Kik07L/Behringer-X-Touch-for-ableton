@@ -27,8 +27,8 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 
 ### Faders correctly show 0dB
 - Physical faders recalibrated to be at the zero mark when track volume is 0dB in Live.
-- Off by default, enabled through the new global settings menu.
-- Once enabled, faders zero point can be finely calibrated if needed.
+- Faders zero point can be finely calibrated if needed.
+- Can be disabled (back to original operation) in global settings menu.
 
 ### Level Meter Enhancements
 - **Clipping Indicators:** Channel strip level meters now show clipping when it occurs.
@@ -75,7 +75,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - **Function Buttons mode** (see Function Buttons).
 - **Metronome blinks in time** (on by default).
 - **Indicate tracks muted via solo** by flashing `MUTE` button (off by default).
-- **Faders at zero** (off by default)
+- **Faders at zero** (on by default)
   - When enabled: **calibrate zero point** (-40...+40)
   - When enabled: **fader control requires finger touch** (on by default)
 - **Select track by touching fader** (off by default).
@@ -135,6 +135,9 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - **Master fader controls Cue/headphones volume** when faders are flipped (off by default, can be enabled through settings menu).
 - Short **messages on Time Display** provide feedback on various actions.
 - Double tap track `SELECT` button to reset fader to default value.
+- Changing volume by moving fader **requires finger/capacitive touch**.
+  - Only available with **Faders at zero** enabled.
+  - Can be disabled through global settings menu.
 
 ## Button Mappings
 ### **Encoder Assign Section**

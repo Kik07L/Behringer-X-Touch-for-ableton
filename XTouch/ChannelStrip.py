@@ -36,7 +36,7 @@ class FaderZeroMappingMixin:
                 value = ms.get_faders_zero_calibrate()
                 if value is not None:
                     calibrate = value
-        return 12700 + calibrate * 10
+        return 12700 + calibrate * 20 # step size
 
     @property
     def _live_zero(self):

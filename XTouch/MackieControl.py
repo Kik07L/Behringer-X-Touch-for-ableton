@@ -82,7 +82,7 @@ class MackieControl(object):
                 {False: "0ff", True: "0m"},
             ),
             "FADERS_ZERO": (
-                False,
+                True,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
                 "Set faders to 0dB (true/false)",
                 lambda v: "true" if v else "false",
@@ -93,7 +93,7 @@ class MackieControl(object):
                 0,                                    # default
                 lambda v: self._parse_int_in_range(v, -40, 40),
                 "Calibrate faders to 0dB (−40 … +40)",
-                self._format_calibration,                  # formatter → string
+                str,
                 "fzero",                              # short name for display
                 (-40, 40),                            # min/max tuple
                 lambda script: script.faders_zero == True    # only visible if faders at zero is enabled
@@ -101,7 +101,7 @@ class MackieControl(object):
             "TOUCH_FADER_TO_MOVE": (
                 True,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Moving fader only changes value when touched (true/false)",
+                "Moving fader only changes value when touched (true/false)\n# - FADERS_ZERO must be enabled",
                 lambda v: "true" if v else "false",
                 "touch",
                 {False: "any", True: "fingr"},
