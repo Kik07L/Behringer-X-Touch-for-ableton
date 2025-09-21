@@ -165,6 +165,14 @@ class MackieControl(object):
                 {False: "stdrd", True: "rvrse"},
                 lambda script: script.overlay_layout == False and script.debug_parameter_1 == False  # only visible if not in Overlay Layout
             ),
+            "AUTO_BANKING": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "X-Touch fader banks follow selected track (true/false)",
+                lambda v: "true" if v else "false",
+                "bank",
+                {False: "0ff", True: "0m"},
+            ),
             "DOUBLE_TAP_THRESHOLD": (
                 0.2,
                 lambda v: float(v) if v else 0.2,
@@ -182,6 +190,15 @@ class MackieControl(object):
                 "dbpm1",
                 {False: "false", True: " true"},
                 lambda script: False  # not visible in settings menu
+            ),
+            "DEBUG_PARAMETER_2": (
+                38,
+                lambda v: self._parse_int_in_range(v, 0, 100),
+                "Debugging parameter 2",
+                str,
+                "dbpm2",
+                (0, 100),
+                # lambda script: False  # not visible in settings menu
             ),
         }
 
@@ -212,6 +229,7 @@ class MackieControl(object):
         self.__components.append(self.__master_strip)
         self.__channel_strip_controller = ChannelStripController(self, self.__channel_strips, self.__master_strip, self.__main_display_controller, self.__software_controller)
         self.__software_controller.set_channel_strip_controller(self.__channel_strip_controller)
+        self.__software_controller.set_main_display_controller(self.__main_display_controller)
         self.__components.append(self.__channel_strip_controller)
         self.__shift_is_pressed = False
         self.__option_is_pressed = False
@@ -528,6 +546,11 @@ class MackieControl(object):
         if hasattr(self, 'double_tap_threshold'):
             result = self.double_tap_threshold
         return result        
+
+    def _set_session_highlight(self, track_offset, scene_offset, width, height, include_return_tracks):
+        if list((track_offset, scene_offset, width, height)).count(-1) != 4:
+            pass
+        self.__c_instance.set_session_highlight(track_offset, scene_offset, width, height, include_return_tracks)
 
     def visible_tracks_including_chains(self):
         """

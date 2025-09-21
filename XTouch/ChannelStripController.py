@@ -108,6 +108,7 @@ class ChannelStripController(MackieControlComponent):
         self.__bank_cha_offset_returns = 0
         self.__within_track_added_or_deleted = False
         self.__pending_quantized_solo = None
+        self.__delayed_session_highlight_update_requested = None
         self.song().add_visible_tracks_listener(self.__on_tracks_added_or_deleted)
         self.song().view.add_selected_track_listener(self.__on_selected_track_changed)
         self.song().view.add_selected_chain_listener(self.__on_selected_track_changed)
@@ -216,6 +217,7 @@ class ChannelStripController(MackieControlComponent):
         self.__on_flip_changed()
         self.__update_master_button_led()
         self.__update_view_returns_mode()
+        self._set_session_highlight()
 
     def request_rebuild_midi_map(self):
         u""" Overridden to call also the extensions request_rebuild_midi_map"""
@@ -230,6 +232,11 @@ class ChannelStripController(MackieControlComponent):
             if self.song().current_song_time >= self.__pending_quantized_solo:
                 self.__do_global_solo_toggle()
                 self.__pending_quantized_solo = None
+        if self.__delayed_session_highlight_update_requested is not None:
+            now = time.time()
+            if (now - self.__delayed_session_highlight_update_requested) > 2:
+                self.__delayed_session_highlight_update_requested = None                
+                self._set_session_highlight()
 
     def toggle_meter_mode(self):
         u""" called from the main script when the display toggle button was pressed """
@@ -301,8 +308,6 @@ class ChannelStripController(MackieControlComponent):
             if value == BUTTON_PRESSED:
                 if self.option_is_pressed():
                     self.toggle_meter_mode() # not sure what this does?
-                # elif self.shift_is_pressed():   # shortcut to toggle color matching method, redundant thanks to settings menu
-                    # self.main_script().toggle_color_distance_mode()
                 else:
                     self.__toggle_view_returns()
 
@@ -765,7 +770,7 @@ class ChannelStripController(MackieControlComponent):
                 return None
 #                assert 0
 
-    def __set_channel_offset(self, new_offset):
+    def __set_channel_offset(self, new_offset, move_highlight=True):
         u""" Set and validate a new channel_strip offset, which shifts all available channel
             strips within all the available tracks or reutrn tracks
         """
@@ -782,6 +787,16 @@ class ChannelStripController(MackieControlComponent):
         self.__reassign_channel_strip_parameters(for_display_only=False)
         self.__update_channel_strip_strings()
         self.request_rebuild_midi_map()
+        if move_highlight:
+            self._set_session_highlight()
+
+    def _set_session_highlight(self):
+        offset = self.__strip_offset()
+        bank_size = len(self.__channel_strips)
+        if self.main_script().auto_banking:
+            self.main_script()._set_session_highlight(offset, 0, bank_size, 1, False)
+        else:
+            self.main_script()._set_session_highlight(-1, -1, -1, -1, False)
 
     def __set_assignment_mode(self, mode):
         for plugin in self.__displayed_plugins:
@@ -1256,6 +1271,56 @@ class ChannelStripController(MackieControlComponent):
         self.__update_function_keys_leds()
         self.__update_master_button_led()
         self.__update_flip_led()
+
+        u""" Auto banking system
+        """
+        if not self.main_script().auto_banking:
+            return
+            
+        if self.song().view.selected_chain:
+            sel = self.song().view.selected_chain
+        else:
+            sel = self.song().view.selected_track
+        if not sel:
+            return
+
+        # ---- Normal tracks ----
+        if sel in self.visible_tracks_including_chains():
+            if self.__view_returns:   # we’re in returns view but user clicked a normal track
+                self.__view_returns = False
+                self.__update_view_returns_mode()
+
+            try:
+                index = list(self.visible_tracks_including_chains()).index(sel)
+            except ValueError:
+                return
+            self.__maybe_rebank(index, len(self.visible_tracks_including_chains()))
+
+        # ---- Return tracks ----
+        elif sel in self.song().return_tracks:
+            if not self.__view_returns:   # we’re in normal view but user clicked a return
+                self.__view_returns = True
+                self.__update_view_returns_mode()
+
+            try:
+                index = list(self.song().return_tracks).index(sel)
+            except ValueError:
+                return
+            self.__maybe_rebank(index, len(self.song().return_tracks))
+
+        # ---- Master track ----
+        elif sel == self.song().master_track:
+            pass
+
+    def __maybe_rebank(self, index, num_tracks):
+        offset = self.__strip_offset()
+        bank_size = len(self.__channel_strips)
+
+        if index < offset or index >= offset + bank_size:
+            new_offset = (index // bank_size) * bank_size
+            new_offset = min(new_offset, max(0, num_tracks - bank_size))
+            self.__set_channel_offset(new_offset, move_highlight=False)
+            self.__delayed_session_highlight_update_requested = time.time() # make sure we're not moving the session highlight box (and thus scrollign Live's session tracks window) while user is still clicking on track
 
     def __on_flip_changed(self):
         u""" Update the flip button LED when the flip mode changed

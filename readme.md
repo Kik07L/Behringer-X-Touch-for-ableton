@@ -85,6 +85,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - **Snappy meters** (on by default).
 - **Button layout:** Standard or Overlay (default: Standard).
   - In Standard layout: swap `FLIP` and `GLOBAL VIEW` (select Master channel) buttons (off by default).
+- **Auto banking:** X-Touch fader banks follow selected track (off by default).
 
 ### Night Mode
 - Press all four `MODIFY` buttons (`SHIFT`, `OPTION`, `CONTROL` and `ALT`) simultaneously to toggle Night Mode (or activate in settings menu).

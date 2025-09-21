@@ -1,6 +1,9 @@
 #Embedded file name: /Users/versonator/Jenkins/live/output/Live/mac_64_static/Release/python-bundle/MIDI Remote Scripts/MackieControl/consts.py
 from __future__ import absolute_import, print_function, unicode_literals
 from builtins import range
+from collections import namedtuple
+import colorsys
+
 NOTE_OFF_STATUS = 128
 NOTE_ON_STATUS = 144
 CC_STATUS = 176
@@ -154,7 +157,6 @@ channel_strip_switch_ids = list(range(SID_RECORD_ARM_BASE, SID_VPOD_PUSH_CH8 + 1
 """
 switch_id names reflect button labels on the X-Touch, regardless of function in the script
 """
-
 
 SID_ASSIGNMENT_TRACK = 40
 SID_ASSIGNMENT_SEND = 41
@@ -317,10 +319,130 @@ marker_control_switch_ids = (SID_TRANSPORT_MARKER,
 
 # handled in Transport
 jog_wheel_switch_ids = (SID_JOG_CURSOR_UP,
- SID_JOG_CURSOR_UP,
  SID_JOG_CURSOR_DOWN,
  SID_JOG_CURSOR_LEFT,
  SID_JOG_CURSOR_RIGHT,
  SID_JOG_ZOOM,
  SID_JOG_SCRUB,
  SID_TRANSPORT_SOLO) # SID_TRANSPORT_SOLO also in here to allow layout switch by __assign_mutable_buttons()
+
+"""
+color definitions for the reworked color matching system
+"""
+
+# Define our structure
+XTouchColor = namedtuple("XTouchColor", "name rgb hsv mix")
+
+def rgb_to_hsv_tuple(rgb):
+    """Convert (r,g,b) 0–255 to HSV (h,s,v) with floats 0–1."""
+    r, g, b = [c / 255.0 for c in rgb]
+    return colorsys.rgb_to_hsv(r, g, b)
+
+# === Extended X-Touch Palette (46 entries) ===
+# Basics first, then 2-way mixes, then 3-way mixes.
+# In normal operation, only basics are used.
+
+PALETTE_EXTENDED = [
+    # --- Basics (indices 0–7) ---
+    XTouchColor("black",   (0,0,0),       rgb_to_hsv_tuple((0,0,0)),       (0,)),
+    XTouchColor("red",     (255,0,0),     rgb_to_hsv_tuple((255,0,0)),     (1,)),
+    XTouchColor("green",   (0,255,0),     rgb_to_hsv_tuple((0,255,0)),     (2,)),
+    XTouchColor("yellow",  (255,255,0),   rgb_to_hsv_tuple((255,255,0)),   (3,)),
+    XTouchColor("blue",    (0,0,255),     rgb_to_hsv_tuple((0,0,255)),     (4,)),
+    XTouchColor("magenta", (255,0,255),   rgb_to_hsv_tuple((255,0,255)),   (5,)),
+    XTouchColor("cyan",    (0,255,255),   rgb_to_hsv_tuple((0,255,255)),   (6,)),
+    XTouchColor("white",   (255,255,255), rgb_to_hsv_tuple((255,255,255)), (7,)),
+
+    # --- 2-way mixes (indices 8–26) ---
+    XTouchColor("dark red",         (127,0,0),     rgb_to_hsv_tuple((127,0,0)),     (0,1)),
+    XTouchColor("dark green",       (0,127,0),     rgb_to_hsv_tuple((0,127,0)),     (0,2)),
+    XTouchColor("dark blue",        (0,0,127),     rgb_to_hsv_tuple((0,0,127)),     (0,4)),
+    XTouchColor("teal",             (0,127,127),   rgb_to_hsv_tuple((0,127,127)),   (2,4)),  # optimal
+    XTouchColor("olive",            (127,127,0),   rgb_to_hsv_tuple((127,127,0)),   (1,2)),  # optimal
+    XTouchColor("purple",           (127,0,127),   rgb_to_hsv_tuple((127,0,127)),   (1,4)),  # optimal
+    XTouchColor("sky blue",         (0,127,255),   rgb_to_hsv_tuple((0,127,255)),   (4,6)),
+    XTouchColor("spring green",     (0,255,127),   rgb_to_hsv_tuple((0,255,127)),   (2,6)),
+    XTouchColor("chartreuse",       (127,255,0),   rgb_to_hsv_tuple((127,255,0)),   (2,3)),
+    XTouchColor("violet",           (127,0,255),   rgb_to_hsv_tuple((127,0,255)),   (4,5)),
+    XTouchColor("pink",             (255,0,127),   rgb_to_hsv_tuple((255,0,127)),   (1,5)),
+    XTouchColor("orange",           (255,127,0),   rgb_to_hsv_tuple((255,127,0)),   (1,3)),
+    XTouchColor("light red",        (255,127,127), rgb_to_hsv_tuple((255,127,127)), (3,5)),  # optimal
+    XTouchColor("pale green",       (127,255,127), rgb_to_hsv_tuple((127,255,127)), (3,6)),  # optimal
+    XTouchColor("pale blue",        (127,127,255), rgb_to_hsv_tuple((127,127,255)), (5,6)),  # optimal
+    XTouchColor("light cyan",       (127,255,255), rgb_to_hsv_tuple((127,255,255)), (6,7)),
+    XTouchColor("light magenta",    (255,127,255), rgb_to_hsv_tuple((255,127,255)), (5,7)),
+    XTouchColor("light yellow",     (255,255,127), rgb_to_hsv_tuple((255,255,127)), (3,7)),
+    XTouchColor("neutral gray",     (127,127,127), rgb_to_hsv_tuple((127,127,127)), (2,5)),  # optimal
+
+    # --- 3-way mixes ---
+    XTouchColor("mix_0_0_4",        (0,0,85),      rgb_to_hsv_tuple((0,0,85)),      (0,0,4)),
+    XTouchColor("mix_0_4_4",        (0,0,170),     rgb_to_hsv_tuple((0,0,170)),     (0,4,4)),
+    XTouchColor("mix_0_0_2",        (0,85,0),      rgb_to_hsv_tuple((0,85,0)),      (0,0,2)),
+    XTouchColor("mix_0_2_4",        (0,85,85),     rgb_to_hsv_tuple((0,85,85)),     (0,2,4)),
+    XTouchColor("teal blue",        (0,85,170),    rgb_to_hsv_tuple((0,85,170)),    (0,4,6)),
+    XTouchColor("mix_4_4_6",        (0,85,255),    rgb_to_hsv_tuple((0,85,255)),    (4,4,6)),
+    XTouchColor("mix_0_2_2",        (0,170,0),     rgb_to_hsv_tuple((0,170,0)),     (0,2,2)),
+    XTouchColor("sea green",        (0,170,85),    rgb_to_hsv_tuple((0,170,85)),    (0,2,6)),
+    XTouchColor("mix_2_4_6",        (0,170,170),   rgb_to_hsv_tuple((0,170,170)),   (2,4,6)),
+    XTouchColor("mix_4_6_6",        (0,170,255),   rgb_to_hsv_tuple((0,170,255)),   (4,6,6)),
+    XTouchColor("mix_2_2_6",        (0,255,85),    rgb_to_hsv_tuple((0,255,85)),    (2,2,6)),
+    XTouchColor("mix_2_6_6",        (0,255,170),   rgb_to_hsv_tuple((0,255,170)),   (2,6,6)),
+    XTouchColor("mix_0_0_1",        (85,0,0),      rgb_to_hsv_tuple((85,0,0)),      (0,0,1)),
+    XTouchColor("mix_0_1_4",        (85,0,85),     rgb_to_hsv_tuple((85,0,85)),     (0,1,4)),
+    XTouchColor("indigo",           (85,0,170),    rgb_to_hsv_tuple((85,0,170)),    (0,4,5)),
+    XTouchColor("mix_4_4_5",        (85,0,255),    rgb_to_hsv_tuple((85,0,255)),    (4,4,5)),
+    XTouchColor("mix_0_1_2",        (85,85,0),     rgb_to_hsv_tuple((85,85,0)),     (0,1,2)),
+    XTouchColor("dark gray",        (85,85,85),    rgb_to_hsv_tuple((85,85,85)),    (0,1,6)),
+    XTouchColor("aqua blue",        (85,85,170),   rgb_to_hsv_tuple((85,85,170)),   (0,4,7)),
+    XTouchColor("mix_4_5_6",        (85,85,255),   rgb_to_hsv_tuple((85,85,255)),   (4,5,6)),
+    XTouchColor("olive green",      (85,170,0),    rgb_to_hsv_tuple((85,170,0)),    (0,2,3)),
+    XTouchColor("forest",           (85,170,85),   rgb_to_hsv_tuple((85,170,85)),   (0,2,7)),
+    XTouchColor("mix_0_6_7",        (85,170,170),  rgb_to_hsv_tuple((85,170,170)),  (0,6,7)),
+    XTouchColor("azure",            (85,170,255),  rgb_to_hsv_tuple((85,170,255)),  (4,6,7)),
+    XTouchColor("mix_2_2_3",        (85,255,0),    rgb_to_hsv_tuple((85,255,0)),    (2,2,3)),
+    XTouchColor("spring green",     (85,255,85),   rgb_to_hsv_tuple((85,255,85)),   (2,3,6)),
+    XTouchColor("sky cyan",         (85,255,170),  rgb_to_hsv_tuple((85,255,170)),  (2,6,7)),
+    XTouchColor("mix_6_6_7",        (85,255,255),  rgb_to_hsv_tuple((85,255,255)),  (6,6,7)),
+    XTouchColor("mix_0_1_1",        (170,0,0),     rgb_to_hsv_tuple((170,0,0)),     (0,1,1)),
+    XTouchColor("crimson",          (170,0,85),    rgb_to_hsv_tuple((170,0,85)),    (0,1,5)),
+    XTouchColor("mix_1_4_5",        (170,0,170),   rgb_to_hsv_tuple((170,0,170)),   (1,4,5)),
+    XTouchColor("mix_4_5_5",        (170,0,255),   rgb_to_hsv_tuple((170,0,255)),   (4,5,5)),
+    XTouchColor("brown",            (170,85,0),    rgb_to_hsv_tuple((170,85,0)),    (0,1,3)),
+    XTouchColor("rose",             (170,85,85),   rgb_to_hsv_tuple((170,85,85)),   (0,1,7)),
+    XTouchColor("violet",           (170,85,170),  rgb_to_hsv_tuple((170,85,170)),  (0,5,7)),
+    XTouchColor("lavender",         (170,85,255),  rgb_to_hsv_tuple((170,85,255)),  (4,5,7)),
+    XTouchColor("mix_1_2_3",        (170,170,0),   rgb_to_hsv_tuple((170,170,0)),   (1,2,3)),
+    XTouchColor("light olive",      (170,170,85),  rgb_to_hsv_tuple((170,170,85)),  (0,3,7)),
+    XTouchColor("silver gray",      (170,170,170), rgb_to_hsv_tuple((170,170,170)), (1,6,7)),
+    XTouchColor("pastel blue",      (170,170,255), rgb_to_hsv_tuple((170,170,255)), (5,6,7)),
+    XTouchColor("mix_2_3_3",        (170,255,0),   rgb_to_hsv_tuple((170,255,0)),   (2,3,3)),
+    XTouchColor("mix_2_3_7",        (170,255,85),  rgb_to_hsv_tuple((170,255,85)),  (2,3,7)),
+    XTouchColor("mix_3_6_7",        (170,255,170), rgb_to_hsv_tuple((170,255,170)), (3,6,7)),
+    XTouchColor("pastel cyan",      (170,255,255), rgb_to_hsv_tuple((170,255,255)), (6,7,7)),
+    XTouchColor("mix_1_1_5",        (255,0,85),    rgb_to_hsv_tuple((255,0,85)),    (1,1,5)),
+    XTouchColor("mix_1_5_5",        (255,0,170),   rgb_to_hsv_tuple((255,0,170)),   (1,5,5)),
+    XTouchColor("mix_1_1_3",        (255,85,0),    rgb_to_hsv_tuple((255,85,0)),    (1,1,3)),
+    XTouchColor("mix_1_3_5",        (255,85,85),   rgb_to_hsv_tuple((255,85,85)),   (1,3,5)),
+    XTouchColor("pink",             (255,85,170),  rgb_to_hsv_tuple((255,85,170)),  (1,5,7)),
+    XTouchColor("mix_5_5_7",        (255,85,255),  rgb_to_hsv_tuple((255,85,255)),  (5,5,7)),
+    XTouchColor("orange-yellow",    (255,170,0),   rgb_to_hsv_tuple((255,170,0)),   (1,3,3)),
+    XTouchColor("peach",            (255,170,85),  rgb_to_hsv_tuple((255,170,85)),  (1,3,7)),
+    XTouchColor("mix_3_5_7",        (255,170,170), rgb_to_hsv_tuple((255,170,170)), (3,5,7)),
+    XTouchColor("pastel magenta",   (255,170,255), rgb_to_hsv_tuple((255,170,255)), (5,7,7)),
+    XTouchColor("mix_3_3_7",        (255,255,85),  rgb_to_hsv_tuple((255,255,85)),  (3,3,7)),
+    XTouchColor("pastel yellow",    (255,255,170), rgb_to_hsv_tuple((255,255,170)), (3,7,7)),
+]
+
+# Convenience slices
+PALETTE_8 = PALETTE_EXTENDED[:8] # X-Touch basics only
+PALETTE_6 = PALETTE_EXTENDED[1:7] # X-Touch basics without black and white
+PALETTE_27 = PALETTE_EXTENDED[:27] # X-Touch basics and 2-way mixes only
+
+RGB_BLACK   = (0,   0,   0)
+RGB_WHITE   = (255, 255, 255)
+RGB_RED     = (255, 0,   0)
+RGB_GREEN   = (0,   255, 0)
+RGB_BLUE    = (0,   0,   255)
+RGB_YELLOW  = (255, 255, 0)
+RGB_MAGENTA = (255, 0,   255)
+RGB_CYAN    = (0,   255, 255)

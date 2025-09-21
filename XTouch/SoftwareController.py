@@ -73,6 +73,10 @@ class SoftwareController(MackieControlComponent):
     def set_channel_strip_controller(self, csc):
         self.__channel_strip_controller = csc
 
+    def set_main_display_controller(self, csc):
+        self.__main_display_controller = csc
+
+
     def handle_function_key_switch_ids(self, switch_id, value):
         if value == BUTTON_PRESSED:
             if self.shift_is_pressed(): # select function keys mode
@@ -296,7 +300,10 @@ class SoftwareController(MackieControlComponent):
 
         elif switch_id == SID_AUTOMATION_READ_OFF:
             if value == BUTTON_PRESSED:
-                self.song().re_enable_automation()
+                if self.option_is_pressed():
+                    self.__do_party_trick()
+                else:
+                    self.song().re_enable_automation()
         elif switch_id == SID_AUTOMATION_WRITE:
             if value == BUTTON_PRESSED:
                 self.__toggle_automation_record()
@@ -323,7 +330,6 @@ class SoftwareController(MackieControlComponent):
         elif switch_id == SID_FUNC_ENTER:
             if value == BUTTON_PRESSED:
                 self.song().redo()
-
 
     def refresh_state(self):
         self.main_script().set_shift_is_pressed(False)
@@ -363,6 +369,10 @@ class SoftwareController(MackieControlComponent):
         elif collapse:
             self.song().master_track.view.is_collapsed = not self.song().master_track.view.is_collapsed
             #self.__toggle_detail_is_visible(focus=False)
+
+    def __do_party_trick(self):
+        self.main_script().time_display().show_priority_message("COLOR. MIX")
+        self.__main_display_controller._party_trick()
 
     def __save_current_view(self, verbose=True):
         self.__saved_view_session_arranger = self.application().view.focused_document_view
@@ -682,12 +692,6 @@ class SoftwareController(MackieControlComponent):
 
             # --- Display update ---
             if verbose and active_cue is not None and active_cue != self.__last_active_cue and (self.__last_active_cue in cue_points or self.__last_active_cue is None):
-                # if (not self.song().is_playing) and abs(self.song().current_song_time - active_cue.time) < 1e-2:
-                    # shortname = self.__generate_5_char_string(active_cue.name) or "Cue"
-                    # smpte = self.song().get_current_smpte_song_time(2)
-                    # minsec = f"{smpte.minutes:02}:{smpte.seconds:02}"
-                    # self.main_script().time_display().show_priority_message(f"{minsec:>6}:{shortname:>5}", 500)
-                # else:
                 cuename = None
                 name = active_cue.name.strip()
                 if name.isdigit():
@@ -695,7 +699,7 @@ class SoftwareController(MackieControlComponent):
                 else:
                     cuename = name
                 shortname = self.__generate_10_char_string(cuename) or "Locator"
-                self.main_script().time_display().show_priority_message(f"{shortname:>10}", 500)
+                self.main_script().time_display().show_priority_message(f"{shortname:>10}", 1000)
             self.__last_active_cue = active_cue
 
 

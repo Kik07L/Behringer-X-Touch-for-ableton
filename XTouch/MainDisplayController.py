@@ -5,6 +5,37 @@ from builtins import range
 from .MackieControlComponent import *
 import math
 import colorsys
+import time
+
+class ColorAlternator(object):
+    def __init__(self):
+        self._frame_index = 0
+        self._last_update_time = 0
+        self._last_mix_tuple = None
+
+    def next_frame(self, mix_tuple):
+        """
+        mix_tuple: tuple of 8 mixes (each a tuple of 1,2,3 indices).
+        Returns a single 8-tuple of indices for this frame.
+        """
+        # reset frame index if input has changed
+        # if mix_tuple != self._last_mix_tuple:
+            # self._frame_index = 0
+            # self._last_mix_tuple = mix_tuple
+
+        frame = []
+        now = time.time()
+        if (now - self._last_update_time) > 0.02:
+            for mix in mix_tuple:
+                if not mix:
+                    frame.append(7)  # fallback: white
+                else:
+                    frame.append(mix[self._frame_index % len(mix)])
+            self._frame_index += 1
+            self._last_update_time = now
+            return tuple(frame)
+        else:
+            return None
 
 class MainDisplayController(MackieControlComponent):
     u""" Controlling all available main displays (the display above the channel strips),
@@ -29,11 +60,10 @@ class MainDisplayController(MackieControlComponent):
         self.__channel_strip_strings = [ u'' for x in range(NUM_CHANNEL_STRIPS) ]
         self.__channel_strip_mode = True
         self.__show_parameter_names = False
-        #self.__chosen_send_color = None
         self.__bank_channel_offset = 0
         self.__meters_enabled = False
         self.__show_return_tracks = False
-        self.__last_color_inputs = {}
+        self._alternator = ColorAlternator()
 #
         super().__init__(main_script)
         self.main_script = main_script  # Save reference
@@ -107,51 +137,17 @@ class MainDisplayController(MackieControlComponent):
         for d in self.__displays:
             d.refresh_state()
 
-    def _get_cached_color(self, display_index, t, raw_color):
-        """Return cached match_color() result if raw_color hasn't changed
-        and color distance mode is the same."""
-        current_mode = self.main_script.get_color_distance_mode()
-        current_white_cutoff = self.main_script.get_hue_color_distance_mode_white_cutoff()
-
-        # if mode changed, invalidate cache
-        if getattr(self, "_last_color_mode", None) != current_mode:
-            self.__last_color_inputs.clear()
-            self._last_color_mode = current_mode
-
-        # if white cutoff changed, invalidate cache
-        if getattr(self, "_last_white_cutoff", None) != current_white_cutoff:
-            self.__last_color_inputs.clear()
-            self._last_white_cutoff = current_mode
-
-        key = (display_index, t)
-        last = self.__last_color_inputs.get(key)
-        if last and last[0] == raw_color:
-            return last[1]
-        else:
-            matched = self.match_color(raw_color)
-            self.__last_color_inputs[key] = (raw_color, matched)
-            return matched
-
     def on_update_display_timer(self):
         channel_strip_controller = self.main_script.get_channel_strip_controller()
         assignment_mode = channel_strip_controller.assignment_mode()
         strip_index = 0
-        valid_keys = set()   # collect all (display_index, t) used this run
 
         for display_index, display in enumerate(self.__displays):
             if self.__channel_strip_mode:
                 upper_string = u''
                 lower_string = u''
                 color_list = []
-                if self.main_script.get_color_distance_mode() == 2:
-                    assignment_mode_colors = (7, 7, 7, 7, 7)
-                    if self.main_script.color_off_mode_hide_inactive_channel_strips == False:
-                        empty_color = 7
-                    else:
-                        empty_color = 0
-                else:
-                    assignment_mode_colors = (7, 6, 7, 3, 4)  # fallback in case channel colors are unavailable
-                    empty_color = 0
+                assignment_mode_colors = (RGB_WHITE, RGB_CYAN, RGB_WHITE, RGB_YELLOW, RGB_BLUE)  # fallback in case channel colors are unavailable
                 track_index_range = range(
                     self.__bank_channel_offset + display.stack_offset(),
                     self.__bank_channel_offset + display.stack_offset() + NUM_CHANNEL_STRIPS
@@ -164,8 +160,6 @@ class MainDisplayController(MackieControlComponent):
 
                 for t in track_index_range:
                     raw_color = None
-                    key = (display_index, t)
-                    valid_keys.add(key)   # mark as used this run
 
                     if self.__parameters and self.__show_parameter_names:
                         if self.__parameters[strip_index][1]:
@@ -186,17 +180,17 @@ class MainDisplayController(MackieControlComponent):
                             else:
                                 curr_color = assignment_mode_colors[assignment_mode]
                             if raw_color is not None:
-                                curr_color = self._get_cached_color(display_index, t, raw_color)
+                                curr_color = self.int_to_rgb(raw_color)
                         else:
                             upper_string += self.__generate_6_char_string(u'')
-                            curr_color = empty_color
+                            curr_color = None
 
                     elif t < len(tracks):
                         upper_string += self.__generate_6_char_string(tracks[t].name)
                         raw_color = tracks[t].color
-                        curr_color = self._get_cached_color(display_index, t, raw_color)
+                        curr_color = self.int_to_rgb(raw_color)
                     else:
-                        curr_color = empty_color
+                        curr_color = None
                         upper_string += self.__generate_6_char_string(u'')
 
                     color_list.append(curr_color)
@@ -219,7 +213,9 @@ class MainDisplayController(MackieControlComponent):
                     display.send_display_string(lower_string, 1, 0)
 
                 color_tuple = tuple(color_list)
-                display.send_colors(color_tuple)
+                display._last_color_tuple = color_tuple
+                matched_tuple = self._match_colors(color_tuple)
+                display.send_colors(matched_tuple)
 
             else:
                 ascii_message = u'< _1234 guck ma #!?:;_ >'
@@ -229,10 +225,6 @@ class MainDisplayController(MackieControlComponent):
                 if self.__test > NUM_CHARS_PER_DISPLAY_LINE - len(ascii_message):
                     self.__test = 0
                 self.send_display_string(ascii_message, 0, self.__test)
-
-        self.__last_color_inputs = {
-            k: v for k, v in self.__last_color_inputs.items() if k in valid_keys
-        }
 
     def __generate_6_char_string(self, display_string):
         if not display_string:
@@ -259,92 +251,152 @@ class MainDisplayController(MackieControlComponent):
         assert len(ret) == 6
         return ret
 
-    def map_to_xtouch_color(self, rgb):
-        r, g, b = [x/255.0 for x in rgb]
-        h, s, v = colorsys.rgb_to_hsv(r, g, b)  # h in [0..1], s/v in [0..1]
-        h_deg = h * 360
+    def int_to_rgb(self, color_int):
+        """Convert Ableton Live's 0xRRGGBB color int to (r,g,b)."""
+        r = (color_int >> 16) & 0xFF
+        g = (color_int >> 8) & 0xFF
+        b = color_int & 0xFF
+        return (r, g, b)
 
-        # thresholds (tweakable)
-        if v < 0.2:
-            return "black"
-        if s < self.main_script.get_hue_color_distance_mode_white_cutoff():
-            return "white"
+    def _match_colors(self, rgb_tuple, with_mixes=False):
+        """
+        Map a tuple of 8 (r,g,b) colors to X-Touch indices.
+        Normal mode: flat 8-tuple of ints.
+        Inspection mode (with_mixes=True): 8-tuple of mixes (tuples of 1–3 ints).
+        """
+        results = []
+        mode = self.main_script.get_color_distance_mode()
+        black_strips = self.main_script.color_off_mode_hide_inactive_channel_strips
 
-        # get boundary offsets, could be made user-adjustable
-        red_yellow_offset = 0
-        blue_magenta_offset = 0
-
-        # nearest hue among 6 primaries, applying offsets where desired
-        hue_map = {
-            "red": (0 + red_yellow_offset) % 360,
-            "yellow": (60 + red_yellow_offset) % 360,
-            "green": 120,
-            "cyan": 180,
-            "blue": (240 + blue_magenta_offset) % 360,
-            "magenta": (300 + blue_magenta_offset) % 360
-        }
-
-        nearest = min(hue_map.items(), key=lambda kv: min(abs(h_deg - kv[1]), 360 - abs(h_deg - kv[1])))
-        return nearest[0]
-
-    def hsv_distance(self, c1, c2):
-        # convert RGB (0-255) to HSV
-        r1, g1, b1 = [x/255.0 for x in c1]
-        r2, g2, b2 = [x/255.0 for x in c2]
-        h1, s1, v1 = colorsys.rgb_to_hsv(r1, g1, b1)
-        h2, s2, v2 = colorsys.rgb_to_hsv(r2, g2, b2)
-
-        # hues are 0..1, map to degrees
-        h1, h2 = h1 * 360, h2 * 360
-
-        # shortest angular distance
-        dh = min(abs(h1 - h2), 360 - abs(h1 - h2))
-
-        # weigh hue most strongly, sat/value lightly
-        return (dh / 180.0) ** 2 + (s1 - s2) ** 2 + (v1 - v2) ** 2
-
-    def color_distance(self, color1, color2):
-        if self.main_script.get_color_distance_mode() == 1:  # hue-first mode
-            # hue-first perceptual distance
-#            return self.hsv_distance(color1, color2)
-            # categorical: return 0 if same bin, 1 if different
-            return 0 if self.map_to_xtouch_color(color1) == self.map_to_xtouch_color(color2) else 1
+        # Palette & metric by mode
+        if with_mixes:
+            # palette = PALETTE_27
+            palette = PALETTE_EXTENDED
+            metric = "hue"
+            black_cutoff = 0.3
+            white_cutoff = 0
+            inactive_color = 0
+        elif mode == 0:  # RGB
+            palette = PALETTE_8
+            metric = "rgb"
+            black_cutoff = 0.3
+            white_cutoff = 0
+            inactive_color = 0
+        elif mode == 1:  # Hue
+            palette = PALETTE_6
+            metric = "hue"
+            black_cutoff = 0.3
+            white_cutoff = self.main_script.get_hue_color_distance_mode_white_cutoff()
+            inactive_color = 0
+        elif mode == 2:  # Off
+            black_cutoff = 0
+            white_cutoff = 1
+            inactive_color = 0 if black_strips else 7
         else:
-            # fast RGB squared distance
-            return ((color1[0] - color2[0]) ** 2) + \
-                   ((color1[1] - color2[1]) ** 2) + \
-                   ((color1[2] - color2[2]) ** 2)
+            palette = PALETTE_8
+            metric = "rgb"
+            black_cutoff = 0.3
+            white_cutoff = 0
+            inactive_color = 0
 
-    # def color_distance(self, color1, color2):
-        # if self.main_script().alternative_color_distance_mode(): #activated by SHIFT + DISPLAY/NAME/VALUE; however, only two colors (Vista Blue and Pomelo Green) yield a different result, so not worth the extra compute
-            # r_mean = (color1[0] + color2[0]) / 2
-            # r_diff = (color1[0] - color2[0])
-            # g_diff = (color1[1] - color2[1])
-            # b_diff = (color1[2] - color2[2])
-            # return math.sqrt(((2 + (r_mean / 256)) * (r_diff ** 2)) + (4 * (g_diff ** 2)) + ((2 + ((255 - r_mean) / 256)) * (b_diff ** 2)))
-        # else:
-            # return ((color1[0] - color2[0]) ** 2) + ((color1[1] - color2[1]) ** 2) + ((color1[2] - color2[2]) ** 2)
+        for idx, rgb in enumerate(rgb_tuple):
+            if rgb == None:
+                matched = (inactive_color,) if with_mixes else inactive_color
+                results.append(matched)
+                continue
+            cached = self._get_cached_color(rgb, mode, white_cutoff, with_mixes)
+            if cached is not None:
+                results.append(cached)
+                continue
 
-    def match_color(self, trackRGBint):
-        if self.main_script.get_color_distance_mode() == 2:  # color off
-            return 7
-        track_R = (trackRGBint >> 16) & 255
-        track_G = (trackRGBint >> 8) & 255
-        track_B = trackRGBint & 255
-        if (track_R <= 60 and track_G <= 60 and track_B <= 60): #Ableton Live's black swatch or darker
+            # Convert to HSV
+            r, g, b = [c/255.0 for c in rgb]
+            h, s, v = colorsys.rgb_to_hsv(r, g, b)
+
+            # Black / White cutoffs
+            if v < black_cutoff:
+                matched = (0,) if with_mixes else 0
+            elif s <= white_cutoff:
+                matched = (7,) if with_mixes else 7
+            else:
+                # Saturation boost in party trick mode
+                if with_mixes:
+
+                    bias = self.main_script.debug_parameter_2 / 100.0
+                    v = v + (1.0 - v) * bias  # bias value upwards for party trick color mix mode
+                    s = s + (1.0 - s) * bias  # bias saturation upwards for party trick color mix mode
+
+                    # factor = 1.0 + self.main_script.debug_parameter_2 / 100.0 # bias saturation upwards for party trick color mix mode
+                    # s = min(1.0, s * factor)  # clamp to [0..1]
+                    # back-convert to RGB so downstream still sees (r,g,b) ints
+                    rgb = tuple(int(x*255) for x in colorsys.hsv_to_rgb(h, s, v))
+
+                matched = self._map_palette(rgb, palette, with_mixes, metric)
+
+            # Store in cache
+            self._set_cached_color(rgb, mode, white_cutoff, with_mixes, matched)
+            results.append(matched)
+
+        return tuple(results)
+
+    def _map_palette(self, rgb, palette, with_mixes, metric="rgb"):
+        best_entry = min(palette, key=lambda entry: self._distance(rgb, entry, metric))
+        return best_entry.mix if with_mixes else best_entry.mix[0]
+
+    def _distance(self, rgb, entry, metric="rgb"):
+        if metric == "rgb":
+            # fast squared Euclidean in RGB
+            er, eg, eb = entry.rgb
+            return ((rgb[0] - er) ** 2 +
+                    (rgb[1] - eg) ** 2 +
+                    (rgb[2] - eb) ** 2)
+        elif metric == "hue":
+            # your old hsv_distance (perceptual)
+            r, g, b = [x/255.0 for x in rgb]
+            h1, s1, v1 = colorsys.rgb_to_hsv(r, g, b)
+            h2, s2, v2 = entry.hsv
+            h1, h2 = h1 * 360, h2 * 360
+            dh = min(abs(h1 - h2), 360 - abs(h1 - h2))
+            return (dh / 180.0) ** 2 + (s1 - s2) ** 2 + (v1 - v2) ** 2
+        else:
             return 0
-        elif (track_R == track_G and track_G == track_B): #grayscale defaults to white
-            return 7
-        trackRGB = (track_R, track_G, track_B)
-#        colors_compare_list = []
-        colors_compare_list = [195075] #exclude black by setting first value to highest possible
-#        colors_compare_list.append(self.color_distance(trackRGB, scribble_black)) #exclude black from comparison (only true black should get a black scribble script)
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_red))
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_green))
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_yellow))
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_blue))
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_magenta))
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_cyan))
-        colors_compare_list.append(self.color_distance(trackRGB, scribble_white))
-        closest = min(colors_compare_list)
-        return colors_compare_list.index(closest)
+
+    def _get_cached_color(self, raw_rgb, mode, white_cutoff, with_mixes):
+        """
+        Return cached result if input hasn't changed.
+        Cache key includes mode, white cutoff, and with_mixes flag.
+        """
+        key = (raw_rgb, mode, white_cutoff, with_mixes)
+        last = getattr(self, "_last_color_inputs", None)
+        if last is None:
+            self._last_color_inputs = {}
+            return None
+
+        return self._last_color_inputs.get(key)
+
+
+    def _set_cached_color(self, raw_rgb, mode, white_cutoff, with_mixes, matched):
+        """
+        Store match result in cache.
+        """
+        if not hasattr(self, "_last_color_inputs"):
+            self._last_color_inputs = {}
+
+        key = (raw_rgb, mode, white_cutoff, with_mixes)
+        self._last_color_inputs[key] = matched
+
+    def _party_trick(self):
+        color_tuple = tuple(
+            rgb for display in self.__displays
+            for rgb in display._last_color_tuple
+        )
+        matched_tuple = self._match_colors(color_tuple, with_mixes=True)
+                
+        for i in range(100):
+            frame = self._alternator.next_frame(matched_tuple)
+            for display_index, display in enumerate(self.__displays):
+                now = time.time()
+                start = display_index * 8
+                end = display_index * 8 + 8
+                display.send_colors(frame[start:end])
+            time.sleep(0.02)
