@@ -319,17 +319,19 @@ class MainDisplayController(MackieControlComponent):
             elif s <= white_cutoff:
                 matched = (7,) if with_mixes else 7
             else:
+                """ Saturation boost turned off for now (helped against colors being fairly light, but also reduced number of different colors)
                 # Saturation boost in party trick mode
                 if with_mixes:
 
                     bias = self.main_script.debug_parameter_2 / 100.0
-                    v = v + (1.0 - v) * bias  # bias value upwards for party trick color mix mode
-                    s = s + (1.0 - s) * bias  # bias saturation upwards for party trick color mix mode
+                    v = max(v, bias) # straight bottom cap
+                    s = max(s, bias) # straight bottom cap
+                    # v = v + (1.0 - v) * bias  # bias value upwards for party trick color mix mode
+                    # s = s + (1.0 - s) * bias  # bias saturation upwards for party trick color mix mode
 
-                    # factor = 1.0 + self.main_script.debug_parameter_2 / 100.0 # bias saturation upwards for party trick color mix mode
-                    # s = min(1.0, s * factor)  # clamp to [0..1]
                     # back-convert to RGB so downstream still sees (r,g,b) ints
                     rgb = tuple(int(x*255) for x in colorsys.hsv_to_rgb(h, s, v))
+                    """
 
                 matched = self._map_palette(rgb, palette, with_mixes, metric)
 
@@ -399,4 +401,4 @@ class MainDisplayController(MackieControlComponent):
                 start = display_index * 8
                 end = display_index * 8 + 8
                 display.send_colors(frame[start:end])
-            time.sleep(0.02)
+            time.sleep(self.main_script.debug_parameter_3) # delay time to respect MIDI hardware limitations (default: 0.02)
