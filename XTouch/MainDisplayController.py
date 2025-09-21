@@ -187,6 +187,7 @@ class MainDisplayController(MackieControlComponent):
 
                     elif t < len(tracks):
                         upper_string += self.__generate_6_char_string(tracks[t].name)
+                        # upper_string += self.color_int_to_hex(tracks[t].color)
                         raw_color = tracks[t].color
                         curr_color = self.int_to_rgb(raw_color)
                     else:
@@ -258,6 +259,10 @@ class MainDisplayController(MackieControlComponent):
         b = color_int & 0xFF
         return (r, g, b)
 
+    def color_int_to_hex(self, color_int):
+        """Convert Ableton Live's track.color int (0x00RRGGBB) to 'RRGGBB' hex."""
+        return f"{color_int:06X}"
+
     def _match_colors(self, rgb_tuple, with_mixes=False):
         """
         Map a tuple of 8 (r,g,b) colors to X-Touch indices.
@@ -309,6 +314,12 @@ class MainDisplayController(MackieControlComponent):
                 results.append(cached)
                 continue
 
+            # Convert to hex for quick override check
+            hexval = f"{(rgb[0]<<16 | rgb[1]<<8 | rgb[2]):06X}"
+            if with_mixes and hexval in OVERRIDE_MAP:
+                results.append(OVERRIDE_MAP[hexval])
+                continue
+
             # Convert to HSV
             r, g, b = [c/255.0 for c in rgb]
             h, s, v = colorsys.rgb_to_hsv(r, g, b)
@@ -319,19 +330,18 @@ class MainDisplayController(MackieControlComponent):
             elif s <= white_cutoff:
                 matched = (7,) if with_mixes else 7
             else:
-                """ Saturation boost turned off for now (helped against colors being fairly light, but also reduced number of different colors)
+                # """ Saturation boost turned off for now (helped against colors being fairly light, but also reduced number of different colors)
                 # Saturation boost in party trick mode
                 if with_mixes:
-
                     bias = self.main_script.debug_parameter_2 / 100.0
-                    v = max(v, bias) # straight bottom cap
-                    s = max(s, bias) # straight bottom cap
-                    # v = v + (1.0 - v) * bias  # bias value upwards for party trick color mix mode
-                    # s = s + (1.0 - s) * bias  # bias saturation upwards for party trick color mix mode
+                    # v = max(v, bias) # straight bottom cap
+                    # s = max(s, bias) # straight bottom cap
+                    v = v + (1.0 - v) * bias  # bias value upwards for party trick color mix mode
+                    s = s + (1.0 - s) * bias  # bias saturation upwards for party trick color mix mode
 
                     # back-convert to RGB so downstream still sees (r,g,b) ints
                     rgb = tuple(int(x*255) for x in colorsys.hsv_to_rgb(h, s, v))
-                    """
+                    # """
 
                 matched = self._map_palette(rgb, palette, with_mixes, metric)
 
@@ -347,22 +357,31 @@ class MainDisplayController(MackieControlComponent):
 
     def _distance(self, rgb, entry, metric="rgb"):
         if metric == "rgb":
-            # fast squared Euclidean in RGB
             er, eg, eb = entry.rgb
-            return ((rgb[0] - er) ** 2 +
-                    (rgb[1] - eg) ** 2 +
-                    (rgb[2] - eb) ** 2)
+            base_dist = ((rgb[0] - er) ** 2 +
+                         (rgb[1] - eg) ** 2 +
+                         (rgb[2] - eb) ** 2)
         elif metric == "hue":
-            # your old hsv_distance (perceptual)
-            r, g, b = [x/255.0 for x in rgb]
+            r, g, b = [c/255.0 for c in rgb]
             h1, s1, v1 = colorsys.rgb_to_hsv(r, g, b)
             h2, s2, v2 = entry.hsv
             h1, h2 = h1 * 360, h2 * 360
             dh = min(abs(h1 - h2), 360 - abs(h1 - h2))
-            return (dh / 180.0) ** 2 + (s1 - s2) ** 2 + (v1 - v2) ** 2
+            base_dist = (dh / 180.0) ** 2 + (s1 - s2) ** 2 + (v1 - v2) ** 2
         else:
             return 0
-
+        """
+        # ---- bias against mixes ----
+        if len(entry.mix) > 2:
+            penalty = 1.15  # +15% distance if it's a 3-way mix
+        elif len(entry.mix) > 1:
+            penalty = 1.10  # +10% distance if it's a 2-way mix
+        else:
+            penalty = 1.00
+        base_dist *= penalty
+        """
+        return base_dist
+        
     def _get_cached_color(self, raw_rgb, mode, white_cutoff, with_mixes):
         """
         Return cached result if input hasn't changed.

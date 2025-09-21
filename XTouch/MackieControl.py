@@ -192,13 +192,12 @@ class MackieControl(object):
                 lambda script: False  # not visible in settings menu
             ),
             "DEBUG_PARAMETER_2": (
-                0,
+                30,
                 lambda v: self._parse_int_in_range(v, 0, 100),
                 "Debugging parameter 2",
                 str,
                 "dbpm2",
                 (0, 100),
-                lambda script: False  # not visible in settings menu
             ),
             "DEBUG_PARAMETER_3": (
                 0.020,
@@ -207,9 +206,8 @@ class MackieControl(object):
                 lambda v: f"{v:.3f}",  # fixed to 3 decimals
                 "dbpm3",
                 (0.005, 0.040),
-                # lambda script: True,
-                lambda script: False,  # not visible in settings menu
-                0.005
+                None, 
+                0.001,
             ),
         }
 

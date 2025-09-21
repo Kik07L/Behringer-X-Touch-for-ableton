@@ -438,6 +438,12 @@ PALETTE_8 = PALETTE_EXTENDED[:8] # X-Touch basics only
 PALETTE_6 = PALETTE_EXTENDED[1:7] # X-Touch basics without black and white
 PALETTE_27 = PALETTE_EXTENDED[:27] # X-Touch basics and 2-way mixes only
 
+# Hex overrides for Live palette colors that should map to basics
+OVERRIDE_MAP = {
+    "FF3636": (1,),  # map to pure red
+    "FF39D4": (5,),  # map to pure magenta
+}
+
 RGB_BLACK   = (0,   0,   0)
 RGB_WHITE   = (255, 255, 255)
 RGB_RED     = (255, 0,   0)
