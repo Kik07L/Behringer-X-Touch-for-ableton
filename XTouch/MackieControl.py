@@ -198,7 +198,7 @@ class MackieControl(object):
                 str,
                 "dbpm2",
                 (0, 100),
-                # lambda script: False  # not visible in settings menu
+                lambda script: False  # not visible in settings menu
             ),
         }
 
