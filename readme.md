@@ -24,6 +24,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - RGB (default) calculates the closest color in RGB space. 
   - Hue attempts to improve color matching by prioritizing hue (light colors will map to their corresponding primary scribble strip color instead of white).
   - Off: no colors (all white).
+  - Experimental: press `OPTION + READ/OFF` to briefly see mixed color approximations of the real track colors on the scribble strips.
 
 ### Faders correctly show 0dB
 - Physical faders recalibrated to be at the zero mark when track volume is 0dB in Live.
