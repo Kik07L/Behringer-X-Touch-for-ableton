@@ -843,10 +843,13 @@ class Transport(MackieControlComponent):
     def _rebuild_menu_items(self):
         """Rebuilds the list of menu items depending on active preferences."""
         self._menu_items = []
+
         for key, spec in self.main_script()._preferences_spec.items():
-            *base, last = spec
-            visible_if = last if callable(last) else None
-            if visible_if and not visible_if(self.main_script()):
+            default, parser, desc, formatter, short_name, *rest = spec
+            choices_or_limits = rest[0] if len(rest) >= 1 else None
+            visibility_func   = rest[1] if len(rest) >= 2 else None
+            step_size         = rest[2] if len(rest) >= 3 else 0.01
+            if visibility_func and not visibility_func(self.main_script()):
                 continue
             self._menu_items.append((key, spec))
 

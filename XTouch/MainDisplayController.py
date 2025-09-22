@@ -64,6 +64,8 @@ class MainDisplayController(MackieControlComponent):
         self.__meters_enabled = False
         self.__show_return_tracks = False
         self._alternator = ColorAlternator()
+        self._last_display_time = None
+        self._display_intervals = []
 #
         super().__init__(main_script)
         self.main_script = main_script  # Save reference
@@ -141,6 +143,23 @@ class MainDisplayController(MackieControlComponent):
         channel_strip_controller = self.main_script.get_channel_strip_controller()
         assignment_mode = channel_strip_controller.assignment_mode()
         strip_index = 0
+
+        if self.main_script.debug_show_display_update_interval:
+            now = time.time()
+            if self._last_display_time is not None:
+                interval = now - self._last_display_time
+                self._display_intervals.append(interval)
+
+                # keep only the last 100 samples
+                if len(self._display_intervals) > 100:
+                    self._display_intervals.pop(0)
+
+                # debug message (ms)
+                avg = sum(self._display_intervals) / len(self._display_intervals)
+                self.main_script.time_display().show_priority_message(
+                    f"{interval*1000:>5.1f} {avg*1000:>5.1f}"
+                )
+            self._last_display_time = now
 
         for display_index, display in enumerate(self.__displays):
             if self.__channel_strip_mode:
@@ -333,7 +352,7 @@ class MainDisplayController(MackieControlComponent):
                 # """ Saturation boost turned off for now (helped against colors being fairly light, but also reduced number of different colors)
                 # Saturation boost in party trick mode
                 if with_mixes:
-                    bias = self.main_script.debug_parameter_2 / 100.0
+                    bias = self.main_script.color_mix_mode_saturation_boost / 100.0
                     # v = max(v, bias) # straight bottom cap
                     # s = max(s, bias) # straight bottom cap
                     v = v + (1.0 - v) * bias  # bias value upwards for party trick color mix mode
@@ -420,4 +439,4 @@ class MainDisplayController(MackieControlComponent):
                 start = display_index * 8
                 end = display_index * 8 + 8
                 display.send_colors(frame[start:end])
-            time.sleep(self.main_script.debug_parameter_3) # delay time to respect MIDI hardware limitations (default: 0.02)
+            time.sleep(self.main_script.color_mix_mode_interval / 1000) # delay time to respect MIDI hardware limitations (default: 0.02)

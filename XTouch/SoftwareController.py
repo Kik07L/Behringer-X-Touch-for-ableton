@@ -239,7 +239,7 @@ class SoftwareController(MackieControlComponent):
             self.send_button_led(note, led_state)
 
     def __flash_leds(self, onOff):
-        leds_to_flash = list(transport_control_switch_ids + function_key_control_switch_ids + marker_control_switch_ids + software_controls_switch_ids + channel_strip_control_switch_ids + tuple(jog_wheel_switch_ids))
+        leds_to_flash = list(channel_strip_assignment_switch_ids + transport_control_switch_ids + function_key_control_switch_ids + marker_control_switch_ids + software_controls_switch_ids + channel_strip_control_switch_ids + tuple(jog_wheel_switch_ids))
         leds_to_flash.sort()
         if onOff == 1 and self.__leds_flashing == False:
             for b in leds_to_flash:

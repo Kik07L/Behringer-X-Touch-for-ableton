@@ -57,10 +57,29 @@ class MackieControl(object):
                 {False: "false", True: " true"},
                 lambda script: script.color_distance_mode == 2  # only visible if color is off
             ),
+            "COLOR_MIX_MODE_SATURATION_BOOST": ( # bias for v and/or s in party trick mode
+                30,
+                lambda v: self._parse_int_in_range(v, 0, 100),
+                "Boost saturation in color mix mode",
+                str,
+                "cmsat",
+                (0, 100),
+                lambda script: False,
+            ),
+            "COLOR_MIX_MODE_INTERVAL": (
+                20,
+                lambda v: self._parse_int_in_range(v, 0, 50),
+                "Color looping interval in color mix mode in milliseconds\n# Try a slightly higher value if color mix mode doesn't work (X-Touch can't keep up with SysEx messages)",
+                str,
+                "cmint",
+                (0, 50),
+                lambda script: True,
+                1
+            ),
             "USE_FUNCTION_BUTTONS": (
                 0,
                 lambda v: self._parse_use_function_buttons(v),
-                "Use Function buttons (0=disabled, 1=set MIDI Record Quantization, 2=set Input Type, 3=set Input Channel, 6=jump to Locators, 7=manage Macro Mapper Variations)",
+                "Function buttons\n# - 0=disabled\n# - 1=set MIDI Record Quantization\n# - 2=set Input Type\n# - 3=set Input Channel\n# - 6=jump to Locators\n# - 7=manage Macro Mapper Variations",
                 str,
                 "funct",
                 {0: "0ff", 1: "quant", 2: "intyp", 3: "incha", 6: "lctr", 7: "macro"}   # raw value → display string
@@ -185,29 +204,20 @@ class MackieControl(object):
             "DEBUG_PARAMETER_1": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "## --- Debugging parameters below, do not change --- ##\n#\n# Debugging parameter 1",
+                "## --- Debugging parameters below, do not change --- ## #\n# ------------------------------------------------------- #\n\n# Debugging parameter 1",
                 lambda v: "true" if v else "false",
                 "dbpm1",
                 {False: "false", True: " true"},
                 lambda script: False  # not visible in settings menu
             ),
-            "DEBUG_PARAMETER_2": (
-                30,
-                lambda v: self._parse_int_in_range(v, 0, 100),
-                "Debugging parameter 2",
-                str,
-                "dbpm2",
-                (0, 100),
-            ),
-            "DEBUG_PARAMETER_3": (
-                0.020,
-                lambda v: float(v) if v else 0.020,
-                "Debugging parameter 3",
-                lambda v: f"{v:.3f}",  # fixed to 3 decimals
-                "dbpm3",
-                (0.005, 0.040),
-                None, 
-                0.001,
+            "DEBUG_SHOW_DISPLAY_UPDATE_INTERVAL": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "Debugging: show display update interval on main display (true/false)",
+                lambda v: "true" if v else "false",
+                "duint",
+                {False: "false", True: " true"},
+                lambda script: False  # not visible in settings menu
             ),
         }
 
@@ -700,7 +710,8 @@ class MackieControl(object):
             return  # don't overwrite user's file
 
         lines = [
-            "# User preferences for Behringer X-Touch"
+            "# ## --- User preferences for Behringer X-Touch --- ## #",
+            "# ---------------------------------------------------- #"
         ]
         for key, spec in self._preferences_spec.items():
             default, parser, comment, formatter, short_name, *rest = spec
@@ -721,7 +732,8 @@ class MackieControl(object):
         prefs_path = os.path.join(os.path.dirname(__file__), "options.txt")
 
         lines = [
-            "# User preferences for Behringer X-Touch",
+            "# ## --- User preferences for Behringer X-Touch --- ## #",
+            "# ---------------------------------------------------- #"
         ]
         for key, spec in self._preferences_spec.items():
             default, parser, comment, formatter, short_name, *rest = spec
