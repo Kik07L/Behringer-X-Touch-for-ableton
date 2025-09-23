@@ -67,9 +67,9 @@ class MackieControl(object):
                 lambda script: False,
             ),
             "COLOR_MIX_MODE_INTERVAL": (
-                20,
+                14,
                 lambda v: self._parse_int_in_range(v, 0, 50),
-                "Color looping interval in color mix mode in milliseconds\n# Try a slightly higher value if color mix mode doesn't work (X-Touch can't keep up with SysEx messages)",
+                "Color looping interval in color mix mode, in milliseconds\n# Try a slightly higher value if colors look unstable (X-Touch can't keep up with SysEx messages)",
                 str,
                 "cmint",
                 (0, 50),

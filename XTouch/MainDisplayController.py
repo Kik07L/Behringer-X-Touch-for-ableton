@@ -25,17 +25,17 @@ class ColorAlternator(object):
 
         frame = []
         now = time.time()
-        if (now - self._last_update_time) > 0.02:
-            for mix in mix_tuple:
-                if not mix:
-                    frame.append(7)  # fallback: white
-                else:
-                    frame.append(mix[self._frame_index % len(mix)])
-            self._frame_index += 1
-            self._last_update_time = now
-            return tuple(frame)
-        else:
-            return None
+        # if (now - self._last_update_time) > 0.001:
+        for mix in mix_tuple:
+            if not mix:
+                frame.append(7)  # fallback: white
+            else:
+                frame.append(mix[self._frame_index % len(mix)])
+        self._frame_index += 1
+        self._last_update_time = now
+        return tuple(frame)
+        # else:
+            # return None
 
 class MainDisplayController(MackieControlComponent):
     u""" Controlling all available main displays (the display above the channel strips),
@@ -431,12 +431,14 @@ class MainDisplayController(MackieControlComponent):
             for rgb in display._last_color_tuple
         )
         matched_tuple = self._match_colors(color_tuple, with_mixes=True)
+        interval = self.main_script.color_mix_mode_interval / 1000 # delay time to respect MIDI hardware limitations (default: 0.02)
+        times = int(2000 // self.main_script.color_mix_mode_interval) # make sure the effect lasts 2 seconds, regardless of the interval
                 
-        for i in range(100):
+        for i in range(times):
             frame = self._alternator.next_frame(matched_tuple)
             for display_index, display in enumerate(self.__displays):
                 now = time.time()
                 start = display_index * 8
                 end = display_index * 8 + 8
                 display.send_colors(frame[start:end])
-            time.sleep(self.main_script.color_mix_mode_interval / 1000) # delay time to respect MIDI hardware limitations (default: 0.02)
+            time.sleep(interval)
