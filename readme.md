@@ -88,6 +88,8 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - **Button layout:** Standard or Overlay (default: Standard).
   - In Standard layout: swap `FLIP` and `GLOBAL VIEW` (select Master channel) buttons (off by default).
 - **Auto banking:** X-Touch fader banks follow selected track (off by default).
+  - Press `FADER BANK LEFT + RIGHT` simultaneously to manually sync bank position from X-Touch to Live.
+  - Press `CHANNEL LEFT + RIGHT` simultaneously to manually sync bank position from Live (selected track) to X-Touch.
 
 ### Night Mode
 - Press all four `MODIFY` buttons (`SHIFT`, `OPTION`, `CONTROL` and `ALT`) simultaneously to toggle Night Mode (or activate in settings menu).
@@ -239,6 +241,12 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - `SHIFT + SOLO`: Reset.
 
 ### **Jog Wheel and Navigation Buttons**
+- `FADER BANK LEFT/RIGHT`: Move faders by bank.
+  - `SHIFT + FADER BANK LEFT/RIGHT`: Jump to first/last bank.
+  - `FADER BANK LEFT + RIGHT` simultaneously: Sync bank position from X-Touch to Live.
+- `CHANNEL LEFT/RIGHT`: Move faders by channel.
+  - `SHIFT + CHANNEL LEFT/RIGHT`: Jump to first/last channel.
+  - `CHANNEL LEFT + RIGHT` simultaneously: Sync bank position from Live (selected track) to X-Touch.
 - `Rotation`, `UP`, `DOWN`, `LEFT`, `RIGHT`: Move playhead/clip slot selection.
 - `SHIFT + Rotation`: Faster movement.
 - `ALT + Rotation`: Slower movement.

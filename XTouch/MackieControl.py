@@ -187,15 +187,15 @@ class MackieControl(object):
             "AUTO_BANKING": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "X-Touch fader banks follow selected track (true/false)",
+                "X-Touch fader banks automatically follow selected track (true/false)",
                 lambda v: "true" if v else "false",
-                "bank",
-                {False: "0ff", True: "0m"},
+                "sync",
+                {False: "man", True: "auto"},
             ),
             "DOUBLE_TAP_THRESHOLD": (
                 0.2,
                 lambda v: float(v) if v else 0.2,
-                "Double tap threshold for some button interactions (0.0...1.0)",
+                "Double tap / simultaneous press threshold for some button interactions (0.0...1.0)",
                 lambda v: f"{v:.1f}",  # fixed to 1 decimal
                 "dt th",
                 (0.0, 1.0),  # min/max tuple

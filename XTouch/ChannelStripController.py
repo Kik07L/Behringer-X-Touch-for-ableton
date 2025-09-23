@@ -137,6 +137,12 @@ class ChannelStripController(MackieControlComponent):
         self.can_restore_solos = False
         self.stored_soloed_track_ids = []
         self.any_track_soloed = False
+        self._bank_prev_pressed = None
+        self._bank_next_pressed = None
+        self._chan_prev_pressed = None
+        self._chan_next_pressed = None
+        self._delayed_bank_action_requested_time = None
+        self._delayed_bank_action_requested = None
 
     def destroy(self):
         self.song().remove_visible_tracks_listener(self.__on_tracks_added_or_deleted)
@@ -217,7 +223,9 @@ class ChannelStripController(MackieControlComponent):
         self.__on_flip_changed()
         self.__update_master_button_led()
         self.__update_view_returns_mode()
-        self._set_session_highlight()
+        # if self.main_script().auto_banking:
+            # self._sync_banks_xtouch_to_live()
+        # self._set_session_highlight()
 
     def request_rebuild_midi_map(self):
         u""" Overridden to call also the extensions request_rebuild_midi_map"""
@@ -232,11 +240,14 @@ class ChannelStripController(MackieControlComponent):
             if self.song().current_song_time >= self.__pending_quantized_solo:
                 self.__do_global_solo_toggle()
                 self.__pending_quantized_solo = None
+        self.__check_for_bank_action()
         if self.__delayed_session_highlight_update_requested is not None:
             now = time.time()
             if (now - self.__delayed_session_highlight_update_requested) > 2:
-                self.__delayed_session_highlight_update_requested = None                
-                self._set_session_highlight()
+                self.__delayed_session_highlight_update_requested = None
+                self._sync_banks_xtouch_to_live()
+                # self._set_session_highlight()
+
 
     def toggle_meter_mode(self):
         u""" called from the main script when the display toggle button was pressed """
@@ -275,36 +286,129 @@ class ChannelStripController(MackieControlComponent):
             if value == BUTTON_PRESSED:
                 self.__switch_to_next_page()
 
+    def _sync_banks_xtouch_to_live(self, override=False):
+        if self.main_script().auto_banking or override:
+            offset = self.__strip_offset()
+            bank_size = len(self.__channel_strips)
+            self.main_script()._set_session_highlight(offset, 0, bank_size, 1, False) 
+            self.main_script()._set_session_highlight(-1, -1, -1, -1, False)
+
+    def _sync_banks_live_to_xtouch(self, override=False):
+        if not (self.main_script().auto_banking or override):
+           return 
+            
+        if self.song().view.selected_chain:
+            sel = self.song().view.selected_chain
+        else:
+            sel = self.song().view.selected_track
+        if not sel:
+            return
+
+        # ---- Normal tracks ----
+        if sel in self.visible_tracks_including_chains():
+            if self.__view_returns:   # we’re in returns view but user clicked a normal track
+                self.__view_returns = False
+                self.__update_view_returns_mode()
+
+            try:
+                index = list(self.visible_tracks_including_chains()).index(sel)
+            except ValueError:
+                return
+            self.__maybe_rebank(index, len(self.visible_tracks_including_chains()))
+
+        # ---- Return tracks ----
+        elif sel in self.song().return_tracks:
+            if not self.__view_returns:   # we’re in normal view but user clicked a return
+                self.__view_returns = True
+                self.__update_view_returns_mode()
+
+            try:
+                index = list(self.song().return_tracks).index(sel)
+            except ValueError:
+                return
+            self.__maybe_rebank(index, len(self.song().return_tracks))
+
+        # ---- Master track ----
+        elif sel == self.song().master_track:
+            pass
+
+    def __maybe_rebank(self, index, num_tracks):
+        offset = self.__strip_offset()
+        bank_size = len(self.__channel_strips)
+
+        if index < offset or index >= offset + bank_size:
+            new_offset = (index // bank_size) * bank_size
+            new_offset = min(new_offset, max(0, num_tracks - bank_size))
+            self.__set_channel_offset(new_offset, sync_banks=False)
+
+    def __check_bank_combinations(self, switch_id, value):
+        simultaneous_press_threshold = self.main_script().get_double_tap_threshold()
+        now = time.time()
+        if value != BUTTON_PRESSED:
+            return  # only handle on press
+            
+        if self._bank_prev_pressed is not None and self._bank_next_pressed is not None and abs(self._bank_prev_pressed - self._bank_next_pressed) <= simultaneous_press_threshold:
+            self._sync_banks_xtouch_to_live(override=True)
+            self._bank_prev_pressed = None
+            self._bank_next_pressed = None
+            self._delayed_bank_action_requested_time = None
+            self._delayed_bank_action_requested = None
+        elif self._chan_prev_pressed is not None and self._chan_next_pressed is not None and abs(self._chan_prev_pressed - self._chan_next_pressed) <= simultaneous_press_threshold:
+            self._sync_banks_live_to_xtouch(override=True)
+            self._delayed_bank_action_requested_time = None
+            self._chan_prev_pressed = None
+            self._chan_next_pressed = None
+            self._delayed_bank_action_requested = None
+        else:
+            self._delayed_bank_action_requested_time = now + simultaneous_press_threshold
+            self._delayed_bank_action_requested = switch_id
+
+    def __check_for_bank_action(self):
+        now = time.time()
+        if self._delayed_bank_action_requested is not None and self._delayed_bank_action_requested_time > now:
+            self.__delayed_bank_action(self._delayed_bank_action_requested)
+
+    def __delayed_bank_action(self, switch_id):
+        if switch_id == SID_FADERBANK_PREV_BANK:
+            if self.shift_is_pressed():
+                self.__set_channel_offset(0)
+            else:
+                self.__set_channel_offset(self.__strip_offset() - len(self.__channel_strips))
+        elif switch_id == SID_FADERBANK_NEXT_BANK:
+            if self.shift_is_pressed():
+                last_possible_offset = (self.__controlled_num_of_tracks() - self.__strip_offset()) // len(self.__channel_strips) * len(self.__channel_strips) + self.__strip_offset()
+                if last_possible_offset == self.__controlled_num_of_tracks():
+                    last_possible_offset -= len(self.__channel_strips)
+                self.__set_channel_offset(last_possible_offset)
+            elif self.__strip_offset() < self.__controlled_num_of_tracks() - len(self.__channel_strips):
+                self.__set_channel_offset(self.__strip_offset() + len(self.__channel_strips))
+        elif switch_id == SID_FADERBANK_PREV_CH:
+            if self.shift_is_pressed():
+                self.__set_channel_offset(0)
+            else:
+                self.__set_channel_offset(self.__strip_offset() - 1)
+        elif switch_id == SID_FADERBANK_NEXT_CH:
+            if self.shift_is_pressed():
+                self.__set_channel_offset(self.__controlled_num_of_tracks() - len(self.__channel_strips))
+            elif self.__strip_offset() < self.__controlled_num_of_tracks() - len(self.__channel_strips):
+                self.__set_channel_offset(self.__strip_offset() + 1)
+
+        self._delayed_bank_action_requested_time = None
+        self._delayed_bank_action_requested = None
+
     def handle_channel_strip_control_switch_ids(self, switch_id, value):
         if switch_id == SID_FADERBANK_PREV_BANK:
-            if value == BUTTON_PRESSED:
-                if self.shift_is_pressed():
-                    self.__set_channel_offset(0)
-                else:
-                    self.__set_channel_offset(self.__strip_offset() - len(self.__channel_strips))
-        elif switch_id == SID_FADERBANK_NEXT_BANK:
-            if value == BUTTON_PRESSED:
-                if self.shift_is_pressed():
-                    last_possible_offset = (self.__controlled_num_of_tracks() - self.__strip_offset()) / len(self.__channel_strips) * len(self.__channel_strips) + self.__strip_offset()
-                    if last_possible_offset == self.__controlled_num_of_tracks():
-                        last_possible_offset -= len(self.__channel_strips)
-                    self.__set_channel_offset(last_possible_offset)
-                elif self.__strip_offset() < self.__controlled_num_of_tracks() - len(self.__channel_strips):
-                    self.__set_channel_offset(self.__strip_offset() + len(self.__channel_strips))
-        elif switch_id == SID_FADERBANK_PREV_CH:
-            if value == BUTTON_PRESSED:
-                if self.shift_is_pressed():
-                    self.__set_channel_offset(0)
-                else:
-                    self.__set_channel_offset(self.__strip_offset() - 1)
-        elif switch_id == SID_FADERBANK_NEXT_CH:
-            if value == BUTTON_PRESSED:
-                if self.shift_is_pressed():
-                    self.__set_channel_offset(self.__controlled_num_of_tracks() - len(self.__channel_strips))
-                elif self.__strip_offset() < self.__controlled_num_of_tracks() - len(self.__channel_strips):
-                    self.__set_channel_offset(self.__strip_offset() + 1)
+            self._bank_prev_pressed = time.time() if value == BUTTON_PRESSED else None
+        if switch_id == SID_FADERBANK_NEXT_BANK:
+            self._bank_next_pressed = time.time() if value == BUTTON_PRESSED else None
+        if switch_id == SID_FADERBANK_PREV_CH:
+            self._chan_prev_pressed = time.time() if value == BUTTON_PRESSED else None
+        if switch_id == SID_FADERBANK_NEXT_CH:
+            self._chan_next_pressed = time.time() if value == BUTTON_PRESSED else None
 
-        elif switch_id == SID_FADERBANK_NAME_VALUE:
+        self.__check_bank_combinations(switch_id, value)
+
+        if switch_id == SID_FADERBANK_NAME_VALUE:
             if value == BUTTON_PRESSED:
                 if self.option_is_pressed():
                     self.toggle_meter_mode() # not sure what this does?
@@ -324,9 +428,6 @@ class ChannelStripController(MackieControlComponent):
                     # single tap -> select track
                     self.__software_controller._select_master_channel()
                 self.__last_press_time = now
-
-
-
 
         elif switch_id == self.__global_solo_button:
             if value == BUTTON_PRESSED:
@@ -770,7 +871,7 @@ class ChannelStripController(MackieControlComponent):
                 return None
 #                assert 0
 
-    def __set_channel_offset(self, new_offset, move_highlight=True):
+    def __set_channel_offset(self, new_offset, sync_banks=True):
         u""" Set and validate a new channel_strip offset, which shifts all available channel
             strips within all the available tracks or reutrn tracks
         """
@@ -787,8 +888,9 @@ class ChannelStripController(MackieControlComponent):
         self.__reassign_channel_strip_parameters(for_display_only=False)
         self.__update_channel_strip_strings()
         self.request_rebuild_midi_map()
-        if move_highlight:
-            self._set_session_highlight()
+        if sync_banks:
+            self._sync_banks_xtouch_to_live()
+            # self._set_session_highlight()
 
     def _set_session_highlight(self):
         offset = self.__strip_offset()
@@ -1272,55 +1374,8 @@ class ChannelStripController(MackieControlComponent):
         self.__update_master_button_led()
         self.__update_flip_led()
 
-        u""" Auto banking system
-        """
-        if not self.main_script().auto_banking:
-            return
-            
-        if self.song().view.selected_chain:
-            sel = self.song().view.selected_chain
-        else:
-            sel = self.song().view.selected_track
-        if not sel:
-            return
-
-        # ---- Normal tracks ----
-        if sel in self.visible_tracks_including_chains():
-            if self.__view_returns:   # we’re in returns view but user clicked a normal track
-                self.__view_returns = False
-                self.__update_view_returns_mode()
-
-            try:
-                index = list(self.visible_tracks_including_chains()).index(sel)
-            except ValueError:
-                return
-            self.__maybe_rebank(index, len(self.visible_tracks_including_chains()))
-
-        # ---- Return tracks ----
-        elif sel in self.song().return_tracks:
-            if not self.__view_returns:   # we’re in normal view but user clicked a return
-                self.__view_returns = True
-                self.__update_view_returns_mode()
-
-            try:
-                index = list(self.song().return_tracks).index(sel)
-            except ValueError:
-                return
-            self.__maybe_rebank(index, len(self.song().return_tracks))
-
-        # ---- Master track ----
-        elif sel == self.song().master_track:
-            pass
-
-    def __maybe_rebank(self, index, num_tracks):
-        offset = self.__strip_offset()
-        bank_size = len(self.__channel_strips)
-
-        if index < offset or index >= offset + bank_size:
-            new_offset = (index // bank_size) * bank_size
-            new_offset = min(new_offset, max(0, num_tracks - bank_size))
-            self.__set_channel_offset(new_offset, move_highlight=False)
-            self.__delayed_session_highlight_update_requested = time.time() # make sure we're not moving the session highlight box (and thus scrollign Live's session tracks window) while user is still clicking on track
+        if self.main_script().auto_banking:
+            self._sync_banks_live_to_xtouch()
 
     def __on_flip_changed(self):
         u""" Update the flip button LED when the flip mode changed
