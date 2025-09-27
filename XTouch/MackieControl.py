@@ -76,6 +76,15 @@ class MackieControl(object):
                 lambda script: True,
                 1
             ),
+            "INTEGRATED_COLOR_MIX_MODE_MAXIMUM_UPDATE_INTERVAL": (
+                20,
+                lambda v: self._parse_int_in_range(v, 0, 100),
+                "Maximum script update interval, in milliseconds, for integrated color mix mode\n# To lower the script's update interval, add this line in Live's own Options.txt:\n# -ControlSurfaceDisplayUpdateRate=10\n# Should be somewhat lower than the maximum set here",
+                str,
+                "cmfr ",
+                (0, 100),
+                lambda script: False,
+            ),
             "USE_FUNCTION_BUTTONS": (
                 0,
                 lambda v: self._parse_use_function_buttons(v),
@@ -201,21 +210,21 @@ class MackieControl(object):
                 (0.0, 1.0),  # min/max tuple
                 lambda script: False  # not visible in settings menu
             ),
+            "KEEP_PARAMETERS_ON_FLIP": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "When faders and rotary encoders are flipped, don't flip parameters in scribble strips (true/false)",
+                lambda v: "true" if v else "false",
+                "flpar",
+                {False: "flip", True: "keep"},
+                lambda script: False  # not visible in settings menu
+            ),
             "DEBUG_PARAMETER_1": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
                 "## --- Debugging parameters below, do not change --- ## #\n# ------------------------------------------------------- #\n\n# Debugging parameter 1",
                 lambda v: "true" if v else "false",
                 "dbpm1",
-                {False: "false", True: " true"},
-                lambda script: False  # not visible in settings menu
-            ),
-            "DEBUG_SHOW_DISPLAY_UPDATE_INTERVAL": (
-                False,
-                lambda v: v.lower() in ("1", "true", "yes", "on"),
-                "Debugging: show display update interval on main display (true/false)",
-                lambda v: "true" if v else "false",
-                "duint",
                 {False: "false", True: " true"},
                 lambda script: False  # not visible in settings menu
             ),
@@ -518,15 +527,20 @@ class MackieControl(object):
         self.save_preferences()
 
     def __handle_display_switch_ids(self, switch_id, value):
-        if switch_id == SID_FADERBANK_NAME_VALUE:
-            if value == BUTTON_PRESSED:
-                self.__channel_strip_controller.toggle_meter_mode()
-        elif switch_id == SID_DISPLAY_SMPTE_BEATS:
+        if switch_id == SID_DISPLAY_SMPTE_BEATS:
             if value == BUTTON_PRESSED:
                 if self.shift_is_pressed():
                     self.__time_display.toggle_show_clock()
+                elif self.option_is_pressed():
+                    self.__main_display_controller.show_frame_rate()
                 else:
                     self.__time_display.toggle_mode()
+        # elif switch_id == SID_FADERBANK_NAME_VALUE:
+            # if value == BUTTON_PRESSED:
+                # if self.shift_is_pressed():
+                    # self.__main_display_controller._party_trick()
+                # elif self.option_is_pressed():
+                    # self.__channel_strip_controller.toggle_meter_mode()
 
     def get_channel_strip_controller(self):
         return self.__channel_strip_controller

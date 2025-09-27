@@ -24,7 +24,7 @@ class ColorAlternator(object):
             # self._last_mix_tuple = mix_tuple
 
         frame = []
-        now = time.time()
+        # now = time.time()
         # if (now - self._last_update_time) > 0.001:
         for mix in mix_tuple:
             if not mix:
@@ -32,7 +32,7 @@ class ColorAlternator(object):
             else:
                 frame.append(mix[self._frame_index % len(mix)])
         self._frame_index += 1
-        self._last_update_time = now
+        # self._last_update_time = now
         return tuple(frame)
         # else:
             # return None
@@ -64,7 +64,9 @@ class MainDisplayController(MackieControlComponent):
         self.__meters_enabled = False
         self.__show_return_tracks = False
         self._alternator = ColorAlternator()
+        self._party_trick_mode_in_loop = False
         self._last_display_time = None
+        self._average_update_interval = None
         self._display_intervals = []
 #
         super().__init__(main_script)
@@ -139,27 +141,28 @@ class MainDisplayController(MackieControlComponent):
         for d in self.__displays:
             d.refresh_state()
 
+    def show_frame_rate(self):
+        self.main_script.time_display().show_priority_message(
+            f"f.rate.{self._average_update_interval*1000:>5.1f}"
+        )
+
     def on_update_display_timer(self):
         channel_strip_controller = self.main_script.get_channel_strip_controller()
         assignment_mode = channel_strip_controller.assignment_mode()
         strip_index = 0
 
-        if self.main_script.debug_show_display_update_interval:
-            now = time.time()
-            if self._last_display_time is not None:
-                interval = now - self._last_display_time
-                self._display_intervals.append(interval)
+        # keep an average of update interval
+        now = time.time()
+        if self._last_display_time is not None:
+            interval = now - self._last_display_time
+            self._display_intervals.append(interval)
 
-                # keep only the last 100 samples
-                if len(self._display_intervals) > 100:
-                    self._display_intervals.pop(0)
+            # keep only the last 100 samples
+            if len(self._display_intervals) > 100:
+                self._display_intervals.pop(0)
+            self._average_update_interval = sum(self._display_intervals) / len(self._display_intervals)
 
-                # debug message (ms)
-                avg = sum(self._display_intervals) / len(self._display_intervals)
-                self.main_script.time_display().show_priority_message(
-                    f"{interval*1000:>5.1f} {avg*1000:>5.1f}"
-                )
-            self._last_display_time = now
+        self._last_display_time = now
 
         for display_index, display in enumerate(self.__displays):
             if self.__channel_strip_mode:
@@ -179,10 +182,21 @@ class MainDisplayController(MackieControlComponent):
 
                 for t in track_index_range:
                     raw_color = None
-
+                    
+                    # first collect strings for scribble strips
                     if self.__parameters and self.__show_parameter_names:
                         if self.__parameters[strip_index][1]:
                             upper_string += self.__generate_6_char_string(self.__parameters[strip_index][1])
+                        else:
+                            upper_string += self.__generate_6_char_string(u'')
+                    elif t < len(tracks):
+                        upper_string += self.__generate_6_char_string(tracks[t].name)
+                    else:
+                        upper_string += self.__generate_6_char_string(u'')
+
+                    # now collect colors for scribble strips
+                    if self.__parameters and self.__show_parameter_names and not channel_strip_controller._any_slider_is_touched():
+                        if self.__parameters[strip_index][1]:
                             if assignment_mode == CSM_SENDS_SINGLE:
                                 if isinstance(tracks[t], Live.Track.Track):
                                     raw_color = self.song().return_tracks[channel_strip_controller.chosen_send].color
@@ -201,20 +215,15 @@ class MainDisplayController(MackieControlComponent):
                             if raw_color is not None:
                                 curr_color = self.int_to_rgb(raw_color)
                         else:
-                            upper_string += self.__generate_6_char_string(u'')
                             curr_color = None
-
                     elif t < len(tracks):
-                        upper_string += self.__generate_6_char_string(tracks[t].name)
-                        # upper_string += self.color_int_to_hex(tracks[t].color)
                         raw_color = tracks[t].color
                         curr_color = self.int_to_rgb(raw_color)
                     else:
                         curr_color = None
-                        upper_string += self.__generate_6_char_string(u'')
 
-                    color_list.append(curr_color)
                     upper_string += u' '
+                    color_list.append(curr_color)
 
                     if self.__parameters and self.__parameters[strip_index]:
                         if self.__parameters[strip_index][0]:
@@ -232,10 +241,7 @@ class MainDisplayController(MackieControlComponent):
                 if not self.__meters_enabled:
                     display.send_display_string(lower_string, 1, 0)
 
-                color_tuple = tuple(color_list)
-                display._last_color_tuple = color_tuple
-                matched_tuple = self._match_colors(color_tuple)
-                display.send_colors(matched_tuple)
+                display._last_color_tuple = tuple(color_list)
 
             else:
                 ascii_message = u'< _1234 guck ma #!?:;_ >'
@@ -245,6 +251,22 @@ class MainDisplayController(MackieControlComponent):
                 if self.__test > NUM_CHARS_PER_DISPLAY_LINE - len(ascii_message):
                     self.__test = 0
                 self.send_display_string(ascii_message, 0, self.__test)
+
+        color_tuple = tuple(
+            rgb for display in self.__displays
+            for rgb in display._last_color_tuple
+        )
+
+        if self._party_trick_mode_in_loop and self._average_update_interval and self._average_update_interval*1000 <= self.main_script.integrated_color_mix_mode_maximum_update_interval:
+            matched_tuple = self._match_colors(color_tuple, with_mixes=True)
+            frame = self._alternator.next_frame(matched_tuple)
+        else:
+            frame = self._match_colors(color_tuple)
+                
+        for display_index, display in enumerate(self.__displays):
+            start = display_index * 8
+            end = display_index * 8 + 8
+            display.send_colors(frame[start:end])
 
     def __generate_6_char_string(self, display_string):
         if not display_string:
@@ -272,6 +294,8 @@ class MainDisplayController(MackieControlComponent):
         return ret
 
     def int_to_rgb(self, color_int):
+        if color_int == None:
+            return None
         """Convert Ableton Live's 0xRRGGBB color int to (r,g,b)."""
         r = (color_int >> 16) & 0xFF
         g = (color_int >> 8) & 0xFF
@@ -426,19 +450,24 @@ class MainDisplayController(MackieControlComponent):
         self._last_color_inputs[key] = matched
 
     def _party_trick(self):
-        color_tuple = tuple(
-            rgb for display in self.__displays
-            for rgb in display._last_color_tuple
-        )
-        matched_tuple = self._match_colors(color_tuple, with_mixes=True)
-        interval = self.main_script.color_mix_mode_interval / 1000 # delay time to respect MIDI hardware limitations (default: 0.02)
-        times = int(2000 // self.main_script.color_mix_mode_interval) # make sure the effect lasts 2 seconds, regardless of the interval
-                
-        for i in range(times):
-            frame = self._alternator.next_frame(matched_tuple)
-            for display_index, display in enumerate(self.__displays):
-                now = time.time()
-                start = display_index * 8
-                end = display_index * 8 + 8
-                display.send_colors(frame[start:end])
-            time.sleep(interval)
+        if self._average_update_interval*1000 <= self.main_script.integrated_color_mix_mode_maximum_update_interval: # display update interval low enough for party trick mode in loop, default: 0.020
+            self._party_trick_mode_in_loop = not self._party_trick_mode_in_loop
+        else: # we'll have to do it outside of the script's update loop (temporarily freezing everything)
+            self._party_trick_mode_in_loop = False
+        
+            color_tuple = tuple(
+                rgb for display in self.__displays
+                for rgb in display._last_color_tuple
+            )
+            matched_tuple = self._match_colors(color_tuple, with_mixes=True)
+            interval = self.main_script.color_mix_mode_interval / 1000 # delay time to respect MIDI hardware limitations (default: 0.02)
+            times = int(2000 // self.main_script.color_mix_mode_interval) # make sure the effect lasts 2 seconds, regardless of the interval
+                    
+            for i in range(times):
+                frame = self._alternator.next_frame(matched_tuple)
+                for display_index, display in enumerate(self.__displays):
+                    now = time.time()
+                    start = display_index * 8
+                    end = display_index * 8 + 8
+                    display.send_colors(frame[start:end])
+                time.sleep(interval)

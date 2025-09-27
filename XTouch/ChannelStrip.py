@@ -376,7 +376,8 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
     def handle_fader_movement(self, value14):
         if (self.__is_touched and self.__touch_to_move) or not self.__touch_to_move:
             remapped = self.fader_to_live(value14, self.__faders_at_zero)
-            self.__assigned_track.mixer_device.volume.value = remapped / 16383
+            if hasattr(self.__assigned_track, 'mixer_device'):
+                self.__assigned_track.mixer_device.volume.value = remapped / 16383
         self.__last_fader_moved_time = time.time()
 
     def _on_volume_changed(self):

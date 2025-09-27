@@ -12,7 +12,7 @@ class TimeDisplay(MackieControlComponent):
         MackieControlComponent.__init__(self, main_script)
         self.__main_script = main_script
         self.__show_beat_time = False
-        self.main_script().show_clock = 0
+        # self.main_script().show_clock = 0
         self.__smpt_format = Live.Song.TimeFormat.smpte_25
         self.__last_send_time = []
         

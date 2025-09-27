@@ -301,7 +301,7 @@ class SoftwareController(MackieControlComponent):
         elif switch_id == SID_AUTOMATION_READ_OFF:
             if value == BUTTON_PRESSED:
                 if self.option_is_pressed():
-                    self.__do_party_trick()
+                    self.__do_party_trick() # leaving this in for now, but shortcut has been replaced by SHIFT + DISPLAY NAME/VALUE
                 else:
                     self.song().re_enable_automation()
         elif switch_id == SID_AUTOMATION_WRITE:
@@ -371,7 +371,7 @@ class SoftwareController(MackieControlComponent):
             #self.__toggle_detail_is_visible(focus=False)
 
     def __do_party_trick(self):
-        self.main_script().time_display().show_priority_message("COLOR. MIX")
+        # self.main_script().time_display().show_priority_message("COLOR. MIX")
         self.__main_display_controller._party_trick()
 
     def __save_current_view(self, verbose=True):

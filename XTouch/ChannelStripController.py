@@ -108,7 +108,6 @@ class ChannelStripController(MackieControlComponent):
         self.__bank_cha_offset_returns = 0
         self.__within_track_added_or_deleted = False
         self.__pending_quantized_solo = None
-        self.__delayed_session_highlight_update_requested = None
         self.song().add_visible_tracks_listener(self.__on_tracks_added_or_deleted)
         self.song().view.add_selected_track_listener(self.__on_selected_track_changed)
         self.song().view.add_selected_chain_listener(self.__on_selected_track_changed)
@@ -241,13 +240,6 @@ class ChannelStripController(MackieControlComponent):
                 self.__do_global_solo_toggle()
                 self.__pending_quantized_solo = None
         self.__check_for_bank_action()
-        if self.__delayed_session_highlight_update_requested is not None:
-            now = time.time()
-            if (now - self.__delayed_session_highlight_update_requested) > 2:
-                self.__delayed_session_highlight_update_requested = None
-                self._sync_banks_xtouch_to_live()
-                # self._set_session_highlight()
-
 
     def toggle_meter_mode(self):
         u""" called from the main script when the display toggle button was pressed """
@@ -412,6 +404,8 @@ class ChannelStripController(MackieControlComponent):
             if value == BUTTON_PRESSED:
                 if self.option_is_pressed():
                     self.toggle_meter_mode() # not sure what this does?
+                elif self.shift_is_pressed():
+                    self.__main_display_controller._party_trick()
                 else:
                     self.__toggle_view_returns()
 
@@ -743,7 +737,7 @@ class ChannelStripController(MackieControlComponent):
         else:
             assert 0
 
-    def __any_slider_is_touched(self):
+    def _any_slider_is_touched(self):
         for s in self.__channel_strips:
             if s.is_touched():
                 return True
@@ -1079,7 +1073,7 @@ class ChannelStripController(MackieControlComponent):
                     if mixer.volume.is_enabled: #making sure chain volume is not disabled (mapped to macro)
                         slider_param = (mixer.volume, u'Volume')
             if self.__flip and self.__can_flip():
-                if self.__any_slider_is_touched():
+                if self._any_slider_is_touched() or self.main_script().keep_parameters_on_flip:
                     display_parameters.append(vpot_param)
                 else:
                     display_parameters.append(slider_param)
@@ -1087,7 +1081,7 @@ class ChannelStripController(MackieControlComponent):
                     s.set_v_pot_parameter(slider_param[0], slider_display_mode)
                     s.set_fader_parameter(vpot_param[0])
             else:
-                if self.__any_slider_is_touched():
+                if self._any_slider_is_touched():
                     display_parameters.append(slider_param)
                 else:
                     display_parameters.append(vpot_param)
@@ -1286,7 +1280,7 @@ class ChannelStripController(MackieControlComponent):
     def __update_channel_strip_strings(self):
         u""" In IO mode, collect all strings that will be visible in the main display manually
         """
-        if not self.__any_slider_is_touched():
+        if not self._any_slider_is_touched():
             if self.__assignment_mode == CSM_IO:
                 targets = []
                 for s in self.__channel_strips:

@@ -24,8 +24,11 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - RGB (default) calculates the closest color in RGB space. 
   - Hue attempts to improve color matching by prioritizing hue (light colors will map to their corresponding primary scribble strip color instead of white).
   - Off: no colors (all white).
-  - Experimental: press `OPTION + READ/OFF` to briefly see mixed color approximations of the real track colors on the scribble strips.
-    ⚠️ Disclaimer: this feature requires rapid alternating between color LEDs, which may or may not cause increased wear – use at your own risk. Avoid if you are sensitive to flickering light.
+- **Color mix mode:** Rapidly cycles scribble strip colors to achieve mixed colors beyond the basic 8.
+  - Press `SHIFT + DISPLAY NAME/VALUE` to briefly see mixed color approximations of Live's real track colors.
+  - ⚠️ Disclaimer: this feature requires rapid alternating between the color LEDs, which may or may not cause increased wear – use at your own risk. Avoid if you are sensitive to flickering light.
+  - To achieve the required update frequency, color mix mode freezes every other interface element. Hence, the effect is limited to a 2-second burst by default (can be prolonged by pressing the shortcut multiple times).
+  - This limitation can be lifted by adding the line "-ControlSurfaceDisplayUpdateRate=10" to Live's own [Options.txt](https://help.ableton.com/hc/en-us/articles/6003224107292-Options-txt-file) file. Shortcut then toggles the effect on/off.
 
 ### Faders correctly show 0dB
 - Physical faders recalibrated to be at the zero mark when track volume is 0dB in Live.
@@ -158,8 +161,11 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - `INST`: Bank right in device control or Single Send mode.
 
 ### **Display Section**
-- `DISPLAY`: Switch between audio/instrument and return tracks.
-- `SHIFT + SMPTE/BEATS`: Show clock instead of song time/beats. Press again to show clock without seconds.
+- `DISPLAY NAME/VALUE`: Switch between audio/instrument and return tracks.
+  - `SHIFT + DISPLAY NAME/VALUE`: Color mix mode (2-second burst or toggle, see **Color mix mode** above).
+- `SMPTE/BEATS`: Toggle between song time and song beats.
+  - `SHIFT + SMPTE/BEATS`: Show clock instead of song time/beats. Press again to show clock without seconds.
+  - `OPTION + SMPTE/BEATS`: Briefly show average script update interval (in ms).
 
 ### **Channel Strip**
 - `REC`: Arm track for recording.
