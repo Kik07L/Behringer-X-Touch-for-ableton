@@ -315,6 +315,7 @@ class MainDisplayController(MackieControlComponent):
         results = []
         mode = self.main_script.get_color_distance_mode()
         black_strips = self.main_script.color_off_mode_hide_inactive_channel_strips
+        bias = self.main_script.color_mix_mode_saturation_boost / 100.0
 
         # Palette & metric by mode
         if with_mixes:
@@ -352,7 +353,7 @@ class MainDisplayController(MackieControlComponent):
                 matched = (inactive_color,) if with_mixes else inactive_color
                 results.append(matched)
                 continue
-            cached = self._get_cached_color(rgb, mode, white_cutoff, with_mixes)
+            cached = self._get_cached_color(rgb, mode, white_cutoff, with_mixes, bias)
             if cached is not None:
                 results.append(cached)
                 continue
@@ -376,7 +377,6 @@ class MainDisplayController(MackieControlComponent):
                 # """ Saturation boost turned off for now (helped against colors being fairly light, but also reduced number of different colors)
                 # Saturation boost in party trick mode
                 if with_mixes:
-                    bias = self.main_script.color_mix_mode_saturation_boost / 100.0
                     # v = max(v, bias) # straight bottom cap
                     # s = max(s, bias) # straight bottom cap
                     v = v + (1.0 - v) * bias  # bias value upwards for party trick color mix mode
@@ -389,7 +389,7 @@ class MainDisplayController(MackieControlComponent):
                 matched = self._map_palette(rgb, palette, with_mixes, metric)
 
             # Store in cache
-            self._set_cached_color(rgb, mode, white_cutoff, with_mixes, matched)
+            self._set_cached_color(rgb, mode, white_cutoff, with_mixes, bias, matched)
             results.append(matched)
 
         return tuple(results)
@@ -425,7 +425,7 @@ class MainDisplayController(MackieControlComponent):
         """
         return base_dist
         
-    def _get_cached_color(self, raw_rgb, mode, white_cutoff, with_mixes):
+    def _get_cached_color(self, raw_rgb, mode, white_cutoff, with_mixes, bias):
         """
         Return cached result if input hasn't changed.
         Cache key includes mode, white cutoff, and with_mixes flag.
@@ -439,7 +439,7 @@ class MainDisplayController(MackieControlComponent):
         return self._last_color_inputs.get(key)
 
 
-    def _set_cached_color(self, raw_rgb, mode, white_cutoff, with_mixes, matched):
+    def _set_cached_color(self, raw_rgb, mode, white_cutoff, with_mixes, bias, matched):
         """
         Store match result in cache.
         """

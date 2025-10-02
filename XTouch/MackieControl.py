@@ -73,7 +73,7 @@ class MackieControl(object):
                 str,
                 "cmint",
                 (0, 50),
-                lambda script: True,
+                lambda script: False,
                 1
             ),
             "INTEGRATED_COLOR_MIX_MODE_MAXIMUM_UPDATE_INTERVAL": (

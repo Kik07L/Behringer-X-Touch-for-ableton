@@ -411,7 +411,12 @@ class ChannelStripController(MackieControlComponent):
 
         elif switch_id == self.__flip_button:
             if value == BUTTON_PRESSED:
-                self.__toggle_flip()
+                if self.shift_is_pressed():
+                    self.main_script().keep_parameters_on_flip = not self.main_script().keep_parameters_on_flip
+                    self.main_script().save_preferences()
+                    self.main_script().refresh_state()
+                else:
+                    self.__toggle_flip()
         elif switch_id == self.__master_button:
             if value == BUTTON_PRESSED:
                 now = time.time()
