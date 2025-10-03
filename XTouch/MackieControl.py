@@ -215,9 +215,9 @@ class MackieControl(object):
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
                 "When faders and rotary encoders are flipped, don't flip parameters in scribble strips (true/false)",
                 lambda v: "true" if v else "false",
-                "flpar",
+                "param",
                 {False: "flip", True: "keep"},
-                lambda script: False  # not visible in settings menu
+                # lambda script: False  # not visible in settings menu
             ),
             "DEBUG_PARAMETER_1": (
                 False,
