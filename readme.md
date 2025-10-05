@@ -93,6 +93,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 - **Auto banking:** X-Touch fader banks follow selected track (off by default).
   - Press `FADER BANK LEFT + RIGHT` simultaneously to manually sync bank position from X-Touch to Live.
   - Press `CHANNEL LEFT + RIGHT` simultaneously to manually sync bank position from Live (selected track) to X-Touch.
+- **Parameter flip:** When set to 'Keep', parameters displayed in scribble strips stay the same when faders and encoders are flipped.
 
 ### Night Mode
 - Press all four `MODIFY` buttons (`SHIFT`, `OPTION`, `CONTROL` and `ALT`) simultaneously to toggle Night Mode (or activate in settings menu).
@@ -183,6 +184,7 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
 
 ### **Gray Section**
 - `FLIP`: Swap faders and rotary encoders.
+  - `SHIFT + FLIP`: Toggle whether displayed parameters are flipped along with faders and rotary encoders.
 - `GLOBAL VIEW`: Select the Master Track.
   - Enable Flip Reverse in the global settings menu to swap `FLIP` and `GLOBAL VIEW`, so `FLIP` selects the Master Track (consistent with channel strip `SELECT` buttons) and `GLOBAL VIEW` swaps faders and encoders.
 - `MIDI TRACKS`: Switch between Session and Arrangement views.
