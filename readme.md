@@ -1,6 +1,6 @@
 # X-Touch Custom Script for Ableton Live 12
 
-This repository contains a modified version of the MackieControl script, adapted specifically for Behringer X-Touch controllers. Originally developed by Arthur Montvidas and further enhanced by Robrecht & posted on github with the contribution of Kik07L, this version adds support for Ableton Live 12 with numerous improvements, including Extender functionality and colored scribble strips.
+This repository contains a modified version of the MackieControl script, adapted specifically for Behringer X-Touch controllers. Developed by Robrecht (based on initial adaptations by Arthur Montvidas) & posted on github with the contribution of Kik07L, this version adds support for Ableton Live 12 with numerous improvements, including colored scribble strips, correct faders zero point and many more.
 
 # We highly recommend downloading the Release version [here](https://github.com/Kik07L/Behringer-X-Touch-for-ableton/releases). The source code [here](https://github.com/Kik07L/Behringer-X-Touch-for-ableton/archive/refs/heads/main.zip) may include untested or beta features that are potentially unstable.
 For a stable experience, please use the latest Release. 😄  
@@ -78,22 +78,25 @@ link of the Ableton forum page to disscuss and get updated about what's happenin
   - In Hue mode: **white cut-off** (higher = more white scribble strips, default: 0.19).
   - When color matching is off: **turn inactive channels black** (off by default).
 - **Function Buttons mode** (see Function Buttons).
-- **Metronome blinks in time** (on by default).
+- **Metronome blinks in time:** "Tempo" (default) or "Free" (don't blink in time).
 - **Indicate tracks muted via solo** by flashing `MUTE` button (off by default).
 - **Faders at zero** (on by default)
   - When enabled: **calibrate zero point** (-40...+40)
-  - When enabled: **fader control requires finger touch** (on by default)
+  - When enabled: **fader control requires finger touch** (on by default, prevents accidental changes by touching faders with object)
 - **Select track by touching fader** (off by default).
 - **Master fader controls Cue/headphones volume** when faders are flipped (off by default).
 - **Clock** (Off, On or Short, off by default).
 - **Night mode** (off by default).
 - **Snappy meters** (on by default).
-- **Button layout:** Standard or Overlay (default: Standard).
-  - In Standard layout: swap `FLIP` and `GLOBAL VIEW` (select Master channel) buttons (off by default).
-- **Auto banking:** X-Touch fader banks follow selected track (off by default).
+- **Button layout:** Standard (default) or Alternative. See **Overlays**.
+  - In Standard layout: **Flip:** Standard (default) or Reversed to swap `FLIP` and `GLOBAL VIEW` (select Master channel) buttons.
+- **Sync banks:** Manual (default) or Auto to automatically sync X-Touch and Live fader banks.
   - Press `FADER BANK LEFT + RIGHT` simultaneously to manually sync bank position from X-Touch to Live.
   - Press `CHANNEL LEFT + RIGHT` simultaneously to manually sync bank position from Live (selected track) to X-Touch.
-- **Parameter flip:** When set to 'Keep', parameters displayed in scribble strips stay the same when faders and encoders are flipped.
+- **Parameters:** "Flip" (default) or "Keep" to make parameters displayed in scribble strips stay the same when faders and encoders are flipped.
+
+### Overlays
+- User **gregjar** has provided layout reference graphics for both Standard and Alternative layouts. Find them in the "XTouch/Layouts/" folder.
 
 ### Night Mode
 - Press all four `MODIFY` buttons (`SHIFT`, `OPTION`, `CONTROL` and `ALT`) simultaneously to toggle Night Mode (or activate in settings menu).

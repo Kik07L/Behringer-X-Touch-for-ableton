@@ -54,7 +54,7 @@ class MackieControl(object):
                 "If color mode is off, still turn inactive channel strips black (true) or show all channel strips as white (false)",
                 lambda v: "true" if v else "false",
                 "black ",
-                {False: "false", True: " true"},
+                {False: "M0", True: "yes"},
                 lambda script: script.color_distance_mode == 2  # only visible if color is off
             ),
             "COLOR_MIX_MODE_SATURATION_BOOST": ( # bias for v and/or s in party trick mode
@@ -77,7 +77,7 @@ class MackieControl(object):
                 1
             ),
             "INTEGRATED_COLOR_MIX_MODE_MAXIMUM_UPDATE_INTERVAL": (
-                20,
+                21,
                 lambda v: self._parse_int_in_range(v, 0, 100),
                 "Maximum script update interval, in milliseconds, for integrated color mix mode\n# To lower the script's update interval, add this line in Live's own Options.txt:\n# -ControlSurfaceDisplayUpdateRate=10\n# Should be somewhat lower than the maximum set here",
                 str,
@@ -181,7 +181,7 @@ class MackieControl(object):
                 "Button layout for use with overlay (true/false)\n# - Some buttons are swapped to more logical positions\n# - Perfect for use with an overlay to hide original button labels",
                 lambda v: "true" if v else "false",
                 "lyout",
-                {False: "stdrd", True: "ovrly"},
+                {False: "stdrd", True: "alter"},
                 lambda script: script.debug_parameter_1 == False  # overridden by debug_parameter_1
             ),
             "FLIP_MASTER": (
