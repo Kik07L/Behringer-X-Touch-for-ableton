@@ -343,7 +343,7 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
                     self.__assigned_track.mixer_device.volume.add_value_listener(self._on_volume_changed)
                 self._on_volume_changed()
             else: # let Live handle the faders both ways
-                if self.__assigned_track.mixer_device.volume.value_has_listener(self._on_volume_changed):
+                if hasattr(self.__assigned_track, "mixer_device") and self.__assigned_track.mixer_device.volume.value_has_listener(self._on_volume_changed):
                     self.__assigned_track.mixer_device.volume.remove_value_listener(self._on_volume_changed)
                 feedback_rule = Live.MidiMap.PitchBendFeedbackRule()
                 feedback_rule.channel = self.__strip_index
@@ -356,6 +356,7 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
         else:
             channel = self.__strip_index
             Live.MidiMap.forward_midi_pitchbend(self.script_handle(), midi_map_handle, channel)
+
         if self.__v_pot_parameter:
             if self.__v_pot_display_mode == VPOT_DISPLAY_SPREAD:
                 range_end = 7
@@ -374,7 +375,7 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
             Live.MidiMap.forward_midi_cc(self.script_handle(), midi_map_handle, channel, cc_no)
 
     def handle_fader_movement(self, value14):
-        if (self.__is_touched and self.__touch_to_move) or not self.__touch_to_move:
+        if (self.__is_touched and self.__touch_to_move and self.__fader_parameter) or not self.__touch_to_move:
             remapped = self.fader_to_live(value14, self.__faders_at_zero)
             if hasattr(self.__assigned_track, 'mixer_device'):
                 self.__assigned_track.mixer_device.volume.value = remapped / 16383

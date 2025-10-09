@@ -195,7 +195,12 @@ class MainDisplayController(MackieControlComponent):
                         upper_string += self.__generate_6_char_string(u'')
 
                     # now collect colors for scribble strips
-                    if self.__parameters and self.__show_parameter_names and not channel_strip_controller._any_slider_is_touched():
+                    if (
+                        self.__parameters
+                        and self.__show_parameter_names
+                        and (channel_strip_controller.flip() or not channel_strip_controller._any_slider_is_touched())
+                    ):
+                    # if self.__parameters and self.__show_parameter_names and not channel_strip_controller._any_slider_is_touched():
                         if self.__parameters[strip_index][1]:
                             if assignment_mode == CSM_SENDS_SINGLE:
                                 if isinstance(tracks[t], Live.Track.Track):
