@@ -54,3 +54,6 @@ class MackieControlComponent:
         
     def chainable_device(self, track):
         return self.__main_script.chainable_device(track)
+
+    def generate_x_char_string(self, display_string, length):
+        return self.__main_script.generate_x_char_string(display_string, length)

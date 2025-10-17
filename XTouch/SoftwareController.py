@@ -114,7 +114,7 @@ class SoftwareController(MackieControlComponent):
                     cuename = cp.name
                     if cuename.isdigit():
                         cuename = f"Ltr{int(cuename):>2}".rjust(5)
-                    shortname = self.__generate_5_char_string(cuename)
+                    shortname = self.generate_x_char_string(cuename, 5)
 
                     # Only allow delete if playhead is near the cue and song is stopped
                     if abs(current_time - cp.time) < 1e-3 and not self.song().is_playing:
@@ -698,7 +698,7 @@ class SoftwareController(MackieControlComponent):
                     cuename = f"Locator {int(name):>2}".rjust(10)
                 else:
                     cuename = name
-                shortname = self.__generate_10_char_string(cuename) or "Locator"
+                shortname = self.generate_x_char_string(cuename, 10) or "Locator"
                 self.main_script().time_display().show_priority_message(f"{shortname:>10}", 1000)
             self.__last_active_cue = active_cue
 
@@ -716,58 +716,6 @@ class SoftwareController(MackieControlComponent):
         else:
             for key in function_key_control_switch_ids:
                 self.send_button_led(key, BUTTON_STATE_OFF)
-
-    def __generate_10_char_string(self, display_string):
-        if not display_string:
-            return u'          '
-        if len(display_string.strip()) > 10 and display_string.endswith(u'dB') and display_string.find(u'.') != -1:
-            display_string = display_string[:-2]
-        if len(display_string) > 10:
-            for um in [u'-',
-             u' ',
-             u'i',
-             u'o',
-             u'u',
-             u'e',
-             u'a']:
-                while len(display_string) > 10 and display_string.rfind(um, 1) != -1:
-                    um_pos = display_string.rfind(um, 1)
-                    display_string = display_string[:um_pos] + display_string[um_pos + 1:]
-
-        else:
-            display_string = display_string.center(10)
-        ret = u''
-        for i in range(10):
-            ret += display_string[i]
-
-        assert len(ret) == 10
-        return ret
-
-    def __generate_5_char_string(self, display_string):
-        if not display_string:
-            return u'     '
-        if len(display_string.strip()) > 5 and display_string.endswith(u'dB') and display_string.find(u'.') != -1:
-            display_string = display_string[:-2]
-        if len(display_string) > 5:
-            for um in [u'-',
-             u' ',
-             u'i',
-             u'o',
-             u'u',
-             u'e',
-             u'a']:
-                while len(display_string) > 5 and display_string.rfind(um, 1) != -1:
-                    um_pos = display_string.rfind(um, 1)
-                    display_string = display_string[:um_pos] + display_string[um_pos + 1:]
-
-        else:
-            display_string = display_string.center(5)
-        ret = u''
-        for i in range(5):
-            ret += display_string[i]
-
-        assert len(ret) == 5
-        return ret
 
     def get_input_type_index(self, track):
         selected = track.input_routing_type

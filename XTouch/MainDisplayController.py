@@ -149,6 +149,7 @@ class MainDisplayController(MackieControlComponent):
     def on_update_display_timer(self):
         channel_strip_controller = self.main_script.get_channel_strip_controller()
         assignment_mode = channel_strip_controller.assignment_mode()
+        plugin_mode = channel_strip_controller.plugin_mode()
         strip_index = 0
 
         # keep an average of update interval
@@ -182,6 +183,7 @@ class MainDisplayController(MackieControlComponent):
 
                 for t in track_index_range:
                     raw_color = None
+                    curr_color = None
                     
                     # first collect strings for scribble strips
                     if self.__parameters and self.__show_parameter_names:
@@ -193,6 +195,18 @@ class MainDisplayController(MackieControlComponent):
                         upper_string += self.__generate_6_char_string(tracks[t].name)
                     else:
                         upper_string += self.__generate_6_char_string(u'')
+                    upper_string += u' '
+
+                    if self.__parameters and self.__parameters[strip_index]:
+                        if self.__parameters[strip_index][0]:
+                            lower_string += self.__generate_6_char_string(str(self.__parameters[strip_index][0]))
+                        else:
+                            lower_string += self.__generate_6_char_string(u'')
+                    elif self.__channel_strip_strings and self.__channel_strip_strings[strip_index]:
+                        lower_string += self.__generate_6_char_string(self.__channel_strip_strings[strip_index])
+                    else:
+                        lower_string += self.__generate_6_char_string(u'')
+                    lower_string += u' '
 
                     # now collect colors for scribble strips
                     if (
@@ -200,7 +214,6 @@ class MainDisplayController(MackieControlComponent):
                         and self.__show_parameter_names
                         and (channel_strip_controller.flip() or not channel_strip_controller._any_slider_is_touched())
                     ):
-                    # if self.__parameters and self.__show_parameter_names and not channel_strip_controller._any_slider_is_touched():
                         if self.__parameters[strip_index][1]:
                             if assignment_mode == CSM_SENDS_SINGLE:
                                 if isinstance(tracks[t], Live.Track.Track):
@@ -217,29 +230,18 @@ class MainDisplayController(MackieControlComponent):
                                     raw_color = self.song().return_tracks[t].color
                             else:
                                 curr_color = assignment_mode_colors[assignment_mode]
-                            if raw_color is not None:
-                                curr_color = self.int_to_rgb(raw_color)
-                        else:
-                            curr_color = None
+                    elif assignment_mode == CSM_PLUGINS and self.__channel_strip_strings and self.__channel_strip_strings[strip_index]:
+                        if plugin_mode == PCM_DEVICES:
+                            curr_color = RGB_YELLOW
+                        elif plugin_mode == PCM_PARAMETERS:
+                            curr_color = RGB_CYAN
                     elif t < len(tracks):
                         raw_color = tracks[t].color
-                        curr_color = self.int_to_rgb(raw_color)
-                    else:
-                        curr_color = None
 
-                    upper_string += u' '
+                    if raw_color is not None and curr_color is None:
+                        curr_color = self.int_to_rgb(raw_color)
                     color_list.append(curr_color)
 
-                    if self.__parameters and self.__parameters[strip_index]:
-                        if self.__parameters[strip_index][0]:
-                            lower_string += self.__generate_6_char_string(str(self.__parameters[strip_index][0]))
-                        else:
-                            lower_string += self.__generate_6_char_string(u'')
-                    elif self.__channel_strip_strings and self.__channel_strip_strings[strip_index]:
-                        lower_string += self.__generate_6_char_string(self.__channel_strip_strings[strip_index])
-                    else:
-                        lower_string += self.__generate_6_char_string(u'')
-                    lower_string += u' '
                     strip_index += 1
 
                 display.send_display_string(upper_string, 0, 0)

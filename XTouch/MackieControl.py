@@ -585,6 +585,32 @@ class MackieControl(object):
             pass
         self.__c_instance.set_session_highlight(track_offset, scene_offset, width, height, include_return_tracks)
 
+    def generate_x_char_string(self, display_string, length):
+        if not display_string:
+            return u' ' * length
+        if len(display_string.strip()) > length and display_string.endswith(u'dB') and display_string.find(u'.') != -1:
+            display_string = display_string[:-2]
+        if len(display_string) > length:
+            for um in [u'-',
+             u' ',
+             u'i',
+             u'o',
+             u'u',
+             u'e',
+             u'a']:
+                while len(display_string) > length and display_string.rfind(um, 1) != -1:
+                    um_pos = display_string.rfind(um, 1)
+                    display_string = display_string[:um_pos] + display_string[um_pos + 1:]
+
+        else:
+            display_string = display_string.center(length)
+        ret = u''
+        for i in range(length):
+            ret += display_string[i]
+
+        assert len(ret) == length
+        return ret
+
     def visible_tracks_including_chains(self):
         """
         Returns a flattened list of all visible tracks, including any chains
