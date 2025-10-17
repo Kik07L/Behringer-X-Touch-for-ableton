@@ -210,6 +210,15 @@ class MackieControl(object):
                 (0.0, 1.0),  # min/max tuple
                 lambda script: False  # not visible in settings menu
             ),
+            "SELECT_PLUGIN_DIRECTLY": (
+                False,
+                lambda v: v.lower() in ("1", "true", "yes", "on"),
+                "When PLUG-IN button is pressed, select last controlled device directly (true/false)",
+                lambda v: "true" if v else "false",
+                "plugn",
+                {False: "selct", True: "dirct"},
+                # lambda script: False  # not visible in settings menu
+            ),
             "KEEP_PARAMETERS_ON_FLIP": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),

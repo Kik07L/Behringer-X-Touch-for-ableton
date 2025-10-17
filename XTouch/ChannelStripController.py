@@ -942,7 +942,7 @@ class ChannelStripController(MackieControlComponent):
         if mode == CSM_PLUGINS:
             # self.__assignment_mode = mode
             self.__main_display_controller.set_show_parameter_names(True)
-            if self.__assignment_mode != CSM_PLUGINS or (self.__assignment_mode == CSM_PLUGINS and self.__plugin_mode == PCM_PARAMETERS):
+            if (self.__assignment_mode != CSM_PLUGINS and not self.main_script().select_plugin_directly) or (self.__assignment_mode == CSM_PLUGINS and self.__plugin_mode == PCM_PARAMETERS):
                 self.__assignment_mode = mode
                 self.__set_plugin_mode(PCM_DEVICES)
             elif len(self.song().view.selected_track.devices) > 0:
@@ -1440,7 +1440,9 @@ class ChannelStripController(MackieControlComponent):
             self.__chosen_plugin = None
             self.__ordered_plugin_parameters = []
             self.__update_assignment_display()
-            if self.__plugin_mode == PCM_DEVICES:
+            if self.main_script().select_plugin_directly and len(self.song().view.selected_track.devices) > 0:
+                self.__select_plugin(self.song().view.selected_track.view.selected_device, force=True)
+            elif self.__plugin_mode == PCM_DEVICES:
                 self.__update_vpot_leds_in_plugins_device_choose_mode()
             else:
                 self.__set_plugin_mode(PCM_DEVICES)
