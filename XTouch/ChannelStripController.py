@@ -304,6 +304,7 @@ class ChannelStripController(MackieControlComponent):
                 else:
                     self.__switch_to_next_device()
                     self.__assignment_next_pressed_time = None
+        self.__update_function_keys_leds()
 
     def _sync_banks_xtouch_to_live(self, override=False):
         if self.main_script().auto_banking or override:
@@ -510,7 +511,7 @@ class ChannelStripController(MackieControlComponent):
                 self.__previous_assignment_mode = self.__assignment_mode
             self.send_button_led(SID_SOFTWARE_USER, BUTTON_STATE_ON)
             self.__set_assignment_mode(CSM_PLUGINS)
-            self.__select_plugin(self.song().master_track.devices[0])
+            self._select_plugin(self.song().master_track.devices[0])
         else:
             self.send_button_led(SID_SOFTWARE_USER, BUTTON_STATE_BLINKING)
             self.main_script().time_display().show_priority_message("no mapper", 1000)
@@ -697,13 +698,16 @@ class ChannelStripController(MackieControlComponent):
         elif self.__assignment_mode == CSM_PLUGINS and self.__plugin_mode == PCM_DEVICES:
             device_index = strip_index + stack_offset + self.__plugin_mode_offsets[PCM_DEVICES]
             if device_index >= 0 and device_index < len(self.song().view.selected_track.devices):
-                self.__select_plugin(self.song().view.selected_track.devices[device_index])
+                self._select_plugin(self.song().view.selected_track.devices[device_index])
 
     def assignment_mode(self):
         return self.__assignment_mode
 
     def plugin_mode(self):
         return self.__plugin_mode
+
+    def chosen_plugin(self):
+        return self.__chosen_plugin
 
     def __strip_offset(self):
         u""" return the bank_channel offset depending if we are in return mode or not
@@ -933,7 +937,7 @@ class ChannelStripController(MackieControlComponent):
         else:
             self.main_script()._set_session_highlight(-1, -1, -1, -1, False)
 
-    def __set_assignment_mode(self, mode):
+    def __set_assignment_mode(self, mode, implicit=False):
         for plugin in self.__displayed_plugins:
             if plugin != None:
                 plugin.remove_name_listener(self.__update_plugin_names)
@@ -942,12 +946,14 @@ class ChannelStripController(MackieControlComponent):
         if mode == CSM_PLUGINS:
             # self.__assignment_mode = mode
             self.__main_display_controller.set_show_parameter_names(True)
-            if (self.__assignment_mode != CSM_PLUGINS and not self.main_script().select_plugin_directly) or (self.__assignment_mode == CSM_PLUGINS and self.__plugin_mode == PCM_PARAMETERS):
+            if implicit:
+                self.__assignment_mode = mode
+            elif (self.__assignment_mode != CSM_PLUGINS and not self.main_script().select_plugin_directly) or (self.__assignment_mode == CSM_PLUGINS and self.__plugin_mode == PCM_PARAMETERS):
                 self.__assignment_mode = mode
                 self.__set_plugin_mode(PCM_DEVICES)
             elif len(self.song().view.selected_track.devices) > 0:
                 self.__assignment_mode = mode
-                self.__select_plugin(self.song().view.selected_track.view.selected_device)
+                self._select_plugin(self.song().view.selected_track.view.selected_device)
         elif mode == CSM_SENDS:
             self.__main_display_controller.set_show_parameter_names(True)
             self.__assignment_mode = mode
@@ -1001,7 +1007,7 @@ class ChannelStripController(MackieControlComponent):
             self.__update_flip_led()
             self.__update_page_switch_leds()
 
-    def __select_plugin(self, device, force=False):
+    def _select_plugin(self, device, force=False):
         if self.__chosen_plugin != None:
             self.__chosen_plugin.remove_parameters_listener(self.__on_parameter_list_of_chosen_plugin_changed)
         self.__chosen_plugin = device
@@ -1010,7 +1016,10 @@ class ChannelStripController(MackieControlComponent):
         self.song().view.select_device(device)
         self.__reorder_parameters()
         self.__plugin_mode_offsets[PCM_PARAMETERS] = 0
+        self.__main_display_controller.set_show_parameter_names(True)
+        self.__set_assignment_mode(CSM_PLUGINS, implicit=True)
         self.__set_plugin_mode(PCM_PARAMETERS, force)
+        self.__update_function_keys_leds()
 
     def __switch_to_prev_page(self):
         u""" Switch to the previous page in the non track strip modes (choosing plugs, or
@@ -1063,7 +1072,7 @@ class ChannelStripController(MackieControlComponent):
         try:
             index = devices.index(self.__chosen_plugin)
             if index > 0:
-                self.__select_plugin(devices[index - 1], force=True)
+                self._select_plugin(devices[index - 1], force=True)
         except ValueError:
             pass
 
@@ -1076,7 +1085,7 @@ class ChannelStripController(MackieControlComponent):
         try:
             index = devices.index(self.__chosen_plugin)
             if index < len(devices) - 1:
-                self.__select_plugin(devices[index + 1], force=True)
+                self._select_plugin(devices[index + 1], force=True)
         except ValueError:
             pass  # Device not found (removed?)
 
@@ -1220,6 +1229,8 @@ class ChannelStripController(MackieControlComponent):
             sid_on_switch = SID_ASSIGNMENT_PAN
         elif self.__assignment_mode == CSM_PLUGINS:
             sid_on_switch = SID_ASSIGNMENT_PLUG_IN
+            if self.__lock_to_plugin:
+                activestate = BUTTON_STATE_BLINKING
         else:
             assert 0
             sid_on_switch = None
@@ -1421,6 +1432,8 @@ class ChannelStripController(MackieControlComponent):
         if st:
             if st.devices_has_listener(self.__on_selected_device_chain_changed):
                 st.remove_devices_listener(self.__on_selected_device_chain_changed)
+            if st.view.selected_device_has_listener(self.__on_selected_device_changed):
+                st.view.remove_selected_device_listener(self.__on_selected_device_changed)
             if hasattr(st, 'input_routing_channel') and st.input_routing_channel_has_listener(self.__update_function_keys_leds):
                 st.remove_input_routing_channel_listener(self.__update_function_keys_leds)
             if hasattr(st, 'input_routing_type') and st.input_routing_type_has_listener(self.__update_function_keys_leds):
@@ -1429,6 +1442,7 @@ class ChannelStripController(MackieControlComponent):
         st = self.__last_attached_selected_track
         if st:
             st.add_devices_listener(self.__on_selected_device_chain_changed)
+            st.view.add_selected_device_listener(self.__on_selected_device_changed)
             if hasattr(st, 'input_routing_channel') and not st.input_routing_channel_has_listener(self.__update_function_keys_leds):
                 st.add_input_routing_channel_listener(self.__update_function_keys_leds)
             if hasattr(st, 'input_routing_type') and not st.input_routing_type_has_listener(self.__update_function_keys_leds):
@@ -1440,8 +1454,8 @@ class ChannelStripController(MackieControlComponent):
             self.__chosen_plugin = None
             self.__ordered_plugin_parameters = []
             self.__update_assignment_display()
-            if self.main_script().select_plugin_directly and len(self.song().view.selected_track.devices) > 0:
-                self.__select_plugin(self.song().view.selected_track.view.selected_device, force=True)
+            if self.main_script().select_plugin_directly and len(st.devices) > 0:
+                self._select_plugin(st.view.selected_device, force=True)
             elif self.__plugin_mode == PCM_DEVICES:
                 self.__update_vpot_leds_in_plugins_device_choose_mode()
             else:
@@ -1466,6 +1480,12 @@ class ChannelStripController(MackieControlComponent):
             self.__reassign_channel_strip_parameters(for_display_only=False)
             self.request_rebuild_midi_map()
 
+    def __on_selected_device_changed(self):
+        selected_device = self.song().view.selected_track.view.selected_device
+        if self.__assignment_mode == CSM_PLUGINS and self.__lock_to_plugin == False and selected_device != self.__chosen_plugin: #self.main_script().select_plugin_directly:            
+            self._select_plugin(selected_device, force=True)
+        # self.__update_function_keys_leds()
+
     def __on_selected_device_chain_changed(self):
         if self.__assignment_mode == CSM_PLUGINS:
             if self.__plugin_mode == PCM_DEVICES:
@@ -1480,6 +1500,7 @@ class ChannelStripController(MackieControlComponent):
                     self.__chosen_plugin = None
                     self.__set_plugin_mode(PCM_DEVICES)
         self.__on_any_tracks_output_type_changed()
+        self.__update_function_keys_leds()
 
     def __on_tracks_added_or_deleted(self):
         u""" Notifier, called as soon as tracks where added, removed or moved

@@ -76,6 +76,8 @@ class SoftwareController(MackieControlComponent):
     def set_main_display_controller(self, csc):
         self.__main_display_controller = csc
 
+    def __select_plugin(self, device):
+        self.__channel_strip_controller._select_plugin(device, force=True)
 
     def handle_function_key_switch_ids(self, switch_id, value):
         if value == BUTTON_PRESSED:
@@ -83,8 +85,15 @@ class SoftwareController(MackieControlComponent):
                 spec = self.main_script()._preferences_spec["USE_FUNCTION_BUTTONS"]
                 default, parser, comment, formatter, short_name, choices_or_limits = spec
                 selector = (switch_id - SID_SOFTWARE_F1)
+                if selector == self.main_script().use_function_buttons:
+                    self.main_script().use_function_buttons = -1
+                    self.main_script().save_preferences()
+                    label = choices_or_limits[-1]
+                    self.main_script().time_display().show_priority_message(
+                        f"{short_name[:5]}.{label:>5}", 2000
+                    )
                 # Only allow values defined in choices_or_limits
-                if selector in choices_or_limits:
+                elif selector in choices_or_limits:
                     self.main_script().use_function_buttons = selector
                     self.main_script().save_preferences()
                     label = choices_or_limits[selector]
@@ -92,6 +101,14 @@ class SoftwareController(MackieControlComponent):
                         f"{short_name[:5]}.{label:>5}", 2000
                     )
                 self._update_function_keys_leds(False)
+                return
+
+            if self.main_script().use_function_buttons == 0 and not  self.control_is_pressed() and not self.alt_is_pressed(): # device select mode, lets unused modifiers through for quick (modeless) input selection
+                selected_track = self.song().view.selected_track
+                if hasattr(selected_track, 'devices'):
+                    number_of_devices = SID_SOFTWARE_F1 + len(selected_track.devices) - 1
+                    if switch_id <= number_of_devices:
+                        self.__select_plugin(selected_track.devices[switch_id - SID_SOFTWARE_F1])
                 return
 
             if self.main_script().use_function_buttons == 1 and not self.option_is_pressed() and not  self.control_is_pressed() and not self.alt_is_pressed(): # quantization mode, lets unused modifiers through for quick (modeless) input selection
@@ -181,6 +198,7 @@ class SoftwareController(MackieControlComponent):
                     self._update_function_keys_leds()
                     return
                     
+            # modeless quick select of input type/channel
             if (self.option_is_pressed() or self.main_script().use_function_buttons == 2) and self.song().view.selected_track and hasattr(self.song().view.selected_track, 'input_routing_type'):
 #            if self.main_script().use_function_buttons == 2 and self.song().view.selected_track != self.song().master_track and hasattr(self.song().view.selected_track, 'input_routing_type'):
 #                selector = (switch_id - SID_SOFTWARE_F1)
@@ -592,7 +610,27 @@ class SoftwareController(MackieControlComponent):
             self._update_function_keys_leds()
 
     def _update_function_keys_leds(self, verbose=True):
-        if self.main_script().use_function_buttons == 1:
+        if self.main_script().use_function_buttons == 0: # device select mode
+            selected_track = self.song().view.selected_track
+            plugin_mode = self.__channel_strip_controller.plugin_mode()
+            assignment_mode = self.__channel_strip_controller.assignment_mode()
+            selected_device = self.__channel_strip_controller.chosen_plugin()
+            if hasattr(selected_track, 'devices'):
+                index = list(selected_track.devices).index(selected_device) if selected_device in selected_track.devices else -1
+                number_of_devices = SID_SOFTWARE_F1 + len(selected_track.devices) - 1
+                selected_device_led = SID_SOFTWARE_F1 + index
+                for key in function_key_control_switch_ids:
+                    if key == selected_device_led and assignment_mode == CSM_PLUGINS and plugin_mode == PCM_PARAMETERS:
+                        self.send_button_led(key, BUTTON_STATE_BLINKING)
+                    elif key <= number_of_devices:
+                        self.send_button_led(key, BUTTON_STATE_ON)
+                    else:
+                        self.send_button_led(key, BUTTON_STATE_OFF)
+                return
+            for key in function_key_control_switch_ids:
+                self.send_button_led(key, BUTTON_STATE_OFF)
+
+        elif self.main_script().use_function_buttons == 1: # quantize mode
             current_quantization = SID_SOFTWARE_F1 + self.song().midi_recording_quantization - 1
             for key in function_key_control_switch_ids:
                 if key == current_quantization:
@@ -602,7 +640,7 @@ class SoftwareController(MackieControlComponent):
             if verbose:
                 self.main_script().time_display().show_priority_message(self.__quantization_strings[self.song().midi_recording_quantization], 1000)
 
-        elif self.main_script().use_function_buttons == 2 and self.song().view.selected_track != self.song().master_track:
+        elif self.main_script().use_function_buttons == 2 and self.song().view.selected_track != self.song().master_track: # input type mode
             led_index = SID_SOFTWARE_F1 + self.get_input_type_index(self.song().view.selected_track)
             if self.song().view.selected_track.has_midi_input:
                 led_index -= 1
@@ -616,7 +654,7 @@ class SoftwareController(MackieControlComponent):
             if verbose:
                 self.main_script().time_display().show_priority_message(self.song().view.selected_track.input_routing_type.display_name, 1000)
 
-        elif self.main_script().use_function_buttons == 3 and self.song().view.selected_track != self.song().master_track:
+        elif self.main_script().use_function_buttons == 3 and self.song().view.selected_track != self.song().master_track: # input channel mode
             led_index = SID_SOFTWARE_F1 + self.get_input_channel_index(self.song().view.selected_track)
             if self.song().view.selected_track.has_midi_input:
                 led_index -= 1

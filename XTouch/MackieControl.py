@@ -86,12 +86,12 @@ class MackieControl(object):
                 lambda script: False,
             ),
             "USE_FUNCTION_BUTTONS": (
-                0,
+                -1,
                 lambda v: self._parse_use_function_buttons(v),
-                "Function buttons\n# - 0=disabled\n# - 1=set MIDI Record Quantization\n# - 2=set Input Type\n# - 3=set Input Channel\n# - 6=jump to Locators\n# - 7=manage Macro Mapper Variations",
+                "Function buttons\n#  -1=disabled\n#   0=device select\n#   1=set MIDI Record Quantization\n#   2=set Input Type\n#   3=set Input Channel\n#   6=jump to Locators\n#   7=manage Macro Mapper Variations",
                 str,
                 "funct",
-                {0: "0ff", 1: "quant", 2: "intyp", 3: "incha", 6: "lctr", 7: "macro"}   # raw value → display string
+                {-1: "0ff", 0: "devcs", 1: "quant", 2: "intyp", 3: "incha", 6: "lctr", 7: "macro"}   # raw value → display string
             ),
             "METRONOME_BLINKS_IN_TIME": (
                 True,
@@ -817,7 +817,7 @@ class MackieControl(object):
 
     def _parse_use_function_buttons(self, v):
         v = v.strip().lower()
-        if v in ("0", "off", "false", "no"):
+        if v in ("0", "devices"):
             return 0
         if v in ("1", "on", "quantization", "quantization mode"):
             return 1
@@ -829,6 +829,8 @@ class MackieControl(object):
             return 6
         if v in ("7", "macro", "macro mapper"):
             return 7
+        if v in ("-1", "off", "false", "no"):
+            return -1
         return 0
         
     def _parse_color_distance_mode(self, v):
