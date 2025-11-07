@@ -79,16 +79,27 @@ class SoftwareController(MackieControlComponent):
     def __select_plugin(self, device):
         self.__channel_strip_controller._select_plugin(device, force=True)
 
+    def  __toggle_device_on_off(self, device):
+        on_off_param = device.parameters[0]
+        if on_off_param is not None and on_off_param.name == "Device On":
+            on_off_param.value = 0.0 if self.__device_is_on(device) else 1.0
+
+    def  __device_is_on(self, device):
+        on_off_param = device.parameters[0]
+        if on_off_param is not None and on_off_param.name == "Device On" and on_off_param.value == 1.0:
+            return True
+        return False
+
     def handle_function_key_switch_ids(self, switch_id, value):
         if value == BUTTON_PRESSED:
-            if self.shift_is_pressed(): # select function keys mode
+            if self.shift_is_pressed(): # select function keys mode by re-selecting already selecting mode
                 spec = self.main_script()._preferences_spec["USE_FUNCTION_BUTTONS"]
                 default, parser, comment, formatter, short_name, choices_or_limits = spec
                 selector = (switch_id - SID_SOFTWARE_F1)
                 if selector == self.main_script().use_function_buttons:
-                    self.main_script().use_function_buttons = -1
+                    self.main_script().use_function_buttons = 0
                     self.main_script().save_preferences()
-                    label = choices_or_limits[-1]
+                    label = choices_or_limits[0]
                     self.main_script().time_display().show_priority_message(
                         f"{short_name[:5]}.{label:>5}", 2000
                     )
@@ -103,12 +114,17 @@ class SoftwareController(MackieControlComponent):
                 self._update_function_keys_leds(False)
                 return
 
-            if self.main_script().use_function_buttons == 0 and not  self.control_is_pressed() and not self.alt_is_pressed(): # device select mode, lets unused modifiers through for quick (modeless) input selection
+            if self.main_script().use_function_buttons == 4 and not  self.control_is_pressed() and not self.alt_is_pressed(): # device select mode, lets unused modifiers through for quick (modeless) input selection
                 selected_track = self.song().view.selected_track
                 if hasattr(selected_track, 'devices'):
                     number_of_devices = SID_SOFTWARE_F1 + len(selected_track.devices) - 1
                     if switch_id <= number_of_devices:
-                        self.__select_plugin(selected_track.devices[switch_id - SID_SOFTWARE_F1])
+                        target_device = selected_track.devices[switch_id - SID_SOFTWARE_F1]
+                        if self.option_is_pressed():
+                            self.__toggle_device_on_off(target_device)
+                            self._update_function_keys_leds()
+                        else:
+                            self.__select_plugin(target_device)
                 return
 
             if self.main_script().use_function_buttons == 1 and not self.option_is_pressed() and not  self.control_is_pressed() and not self.alt_is_pressed(): # quantization mode, lets unused modifiers through for quick (modeless) input selection
@@ -610,7 +626,7 @@ class SoftwareController(MackieControlComponent):
             self._update_function_keys_leds()
 
     def _update_function_keys_leds(self, verbose=True):
-        if self.main_script().use_function_buttons == 0: # device select mode
+        if self.main_script().use_function_buttons == 4: # device select mode
             selected_track = self.song().view.selected_track
             plugin_mode = self.__channel_strip_controller.plugin_mode()
             assignment_mode = self.__channel_strip_controller.assignment_mode()
@@ -622,7 +638,7 @@ class SoftwareController(MackieControlComponent):
                 for key in function_key_control_switch_ids:
                     if key == selected_device_led and assignment_mode == CSM_PLUGINS and plugin_mode == PCM_PARAMETERS:
                         self.send_button_led(key, BUTTON_STATE_BLINKING)
-                    elif key <= number_of_devices:
+                    elif key <= number_of_devices and self.__device_is_on(selected_track.devices[key - SID_SOFTWARE_F1]):
                         self.send_button_led(key, BUTTON_STATE_ON)
                     else:
                         self.send_button_led(key, BUTTON_STATE_OFF)

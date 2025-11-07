@@ -1008,6 +1008,9 @@ class ChannelStripController(MackieControlComponent):
             self.__update_page_switch_leds()
 
     def _select_plugin(self, device, force=False):
+        if self.__chosen_plugin == device and self.__assignment_mode == CSM_PLUGINS and self.__plugin_mode == PCM_PARAMETERS: # plugin is already being controlled so we return to default vol/pan mode (to allow toggling in and out of device control via function buttons)
+            self.__set_assignment_mode(CSM_VOLPAN)
+            return
         if self.__chosen_plugin != None:
             self.__chosen_plugin.remove_parameters_listener(self.__on_parameter_list_of_chosen_plugin_changed)
         self.__chosen_plugin = device
@@ -1425,6 +1428,27 @@ class ChannelStripController(MackieControlComponent):
         self.__reassign_channel_strip_parameters(for_display_only=False)
         self.request_rebuild_midi_map()
 
+    def __attach_device_listeners(self, track):
+        """Attach LED update listeners to all devices of a given track."""
+
+        for device in list(track.devices):
+            try:
+                # Only attach if not already attached
+                if not device.is_active_has_listener(self.__update_function_keys_leds):
+                    device.add_is_active_listener(self.__update_function_keys_leds)
+            except RuntimeError:
+                # Device may have been deleted mid-loop
+                continue
+
+    def __detach_device_listeners(self, track):
+        """Remove previously attached listeners to avoid leaks."""
+        for device in list(track.devices):
+            try:
+                if device.is_active_has_listener(self.__update_function_keys_leds):
+                    device.remove_is_active_listener(self.__update_function_keys_leds)
+            except RuntimeError:
+                pass
+
     def __on_selected_track_changed(self):
         u""" Notifier, called as soon as the selected track has changed
         """
@@ -1438,6 +1462,7 @@ class ChannelStripController(MackieControlComponent):
                 st.remove_input_routing_channel_listener(self.__update_function_keys_leds)
             if hasattr(st, 'input_routing_type') and st.input_routing_type_has_listener(self.__update_function_keys_leds):
                 st.remove_input_routing_type_listener(self.__update_function_keys_leds)
+            self.__detach_device_listeners(st)
         self.__last_attached_selected_track = self.song().view.selected_track
         st = self.__last_attached_selected_track
         if st:
@@ -1447,6 +1472,7 @@ class ChannelStripController(MackieControlComponent):
                 st.add_input_routing_channel_listener(self.__update_function_keys_leds)
             if hasattr(st, 'input_routing_type') and not st.input_routing_type_has_listener(self.__update_function_keys_leds):
                 st.add_input_routing_type_listener(self.__update_function_keys_leds)
+            self.__attach_device_listeners(st)
         if self.__assignment_mode == CSM_PLUGINS and not self.__lock_to_plugin:
             self.__plugin_mode_offsets = [ 0 for x in range(PCM_NUMMODES) ]
             if self.__chosen_plugin != None:
@@ -1487,6 +1513,7 @@ class ChannelStripController(MackieControlComponent):
         # self.__update_function_keys_leds()
 
     def __on_selected_device_chain_changed(self):
+        self.__attach_device_listeners(self.song().view.selected_track)
         if self.__assignment_mode == CSM_PLUGINS:
             if self.__plugin_mode == PCM_DEVICES:
                 self.__update_vpot_leds_in_plugins_device_choose_mode()
