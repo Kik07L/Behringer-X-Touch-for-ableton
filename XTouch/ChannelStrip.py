@@ -482,14 +482,14 @@ class ChannelStrip(FaderZeroMappingMixin, MackieControlComponent):
             self.__assigned_track.mute = not self.__assigned_track.mute
 
     def __toggle_solo_track(self, exclusive):
-        sel_track = self.song().view.selected_track
+        # sel_track = self.song().view.selected_track
         if self.__assigned_track:
             self.__assigned_track.solo = not self.__assigned_track.solo
             if exclusive:
                 for t in chain(self.visible_tracks_including_chains(), self.song().return_tracks):
                     if t != self.__assigned_track:
                         t.solo = False
-        self.song().view.selected_track = sel_track
+        # self.song().view.selected_track = sel_track
 
     def __select_track_without_folding(self):
         if self.__assigned_track:

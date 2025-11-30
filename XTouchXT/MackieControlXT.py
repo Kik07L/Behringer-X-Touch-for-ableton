@@ -179,7 +179,8 @@ class MackieControlXT(object):
         self.__c_instance.send_midi(midi_event_bytes)
 
     def send_button_led(self, buttonID, buttonState):
-        self.send_midi((NOTE_ON_STATUS, buttonID, buttonState))
+        if buttonState != BUTTON_STATE_HEARTBEAT:
+            self.send_midi((NOTE_ON_STATUS, buttonID, buttonState))
         BUTTON_STATES[buttonID] = buttonState
 
     def receive_midi(self, midi_bytes):

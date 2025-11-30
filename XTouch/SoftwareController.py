@@ -40,6 +40,7 @@ class SoftwareController(MackieControlComponent):
         self.__save_current_view(False)
         #self.__toggle_user_button_mapping()
         self._update_function_keys_leds(False)
+        self._init_timestamp = time.time()
         
     def destroy(self):
         av = self.application().view
@@ -125,6 +126,7 @@ class SoftwareController(MackieControlComponent):
                             self._update_function_keys_leds()
                         else:
                             self.__select_plugin(target_device)
+                            self._update_function_keys_leds()
                 return
 
             if self.main_script().use_function_buttons == 1 and not self.option_is_pressed() and not  self.control_is_pressed() and not self.alt_is_pressed(): # quantization mode, lets unused modifiers through for quick (modeless) input selection
@@ -239,6 +241,24 @@ class SoftwareController(MackieControlComponent):
                 self.__pending_delete = {"cue_index": None, "cue_time": None, "expire_time": None}
         return
 
+    def __update_button_led_heartbeat(self):
+        if self.__leds_flashing == True:
+            return
+        time_elapsed_since_init = time.time() - self._init_timestamp
+        cycle = self.main_script().heartbeat_cycle      # e.g. 4.1
+        pulse = 0.1                                     # duration of the "flash"
+        phase = time_elapsed_since_init % cycle         # where we are in the cycle
+        flash_on = (phase >= cycle - pulse)
+
+        # Iterate over all buttons
+        for btn_id, logical_state in enumerate(BUTTON_STATES):
+            if logical_state == BUTTON_STATE_HEARTBEAT:
+                desired_value = BUTTON_STATE_ON if flash_on else BUTTON_STATE_OFF
+
+                if LAST_SENT_LED[btn_id] != desired_value:
+                    self.send_midi((NOTE_ON_STATUS, btn_id, desired_value))
+                    LAST_SENT_LED[btn_id] = desired_value
+
     def handle_modify_key_switch_ids(self, switch_id, value):
         if switch_id == SID_MOD_SHIFT:
             self.main_script().set_shift_is_pressed(value == BUTTON_PRESSED)
@@ -277,12 +297,13 @@ class SoftwareController(MackieControlComponent):
         leds_to_flash.sort()
         if onOff == 1 and self.__leds_flashing == False:
             for b in leds_to_flash:
-                if BUTTON_STATES[b] == BUTTON_STATE_OFF:
+                if BUTTON_STATES[b] == BUTTON_STATE_OFF or BUTTON_STATES[b] == BUTTON_STATE_HEARTBEAT:
                     self.send_midi((NOTE_ON_STATUS, b, BUTTON_STATE_BLINKING))
             self.__leds_flashing = True
         elif onOff == 0 and self.__leds_flashing == True:
             for b in leds_to_flash:
-                self.send_midi((NOTE_ON_STATUS, b, BUTTON_STATES[b]))
+                state = BUTTON_STATE_OFF if BUTTON_STATES[b] == BUTTON_STATE_HEARTBEAT else BUTTON_STATES[b]
+                self.send_midi((NOTE_ON_STATUS, b, state))
             self.__leds_flashing = False
 
     def handle_software_controls_switch_ids(self, switch_id, value):
@@ -396,6 +417,7 @@ class SoftwareController(MackieControlComponent):
         if self.__last_can_redo_state != self.song().can_redo:
             self.__last_can_redo_state = self.song().can_redo
             self.__update_redo_button_led()
+        self.__update_button_led_heartbeat()
 
     def _select_master_channel(self, collapse=True):
         if self.song().view.selected_track != self.song().master_track:
@@ -640,6 +662,8 @@ class SoftwareController(MackieControlComponent):
                         self.send_button_led(key, BUTTON_STATE_BLINKING)
                     elif key <= number_of_devices and self.__device_is_on(selected_track.devices[key - SID_SOFTWARE_F1]):
                         self.send_button_led(key, BUTTON_STATE_ON)
+                    elif key <= number_of_devices:
+                        self.send_button_led(key, BUTTON_STATE_HEARTBEAT)
                     else:
                         self.send_button_led(key, BUTTON_STATE_OFF)
                 return

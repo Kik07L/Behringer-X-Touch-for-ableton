@@ -144,6 +144,7 @@ class ChannelStripController(MackieControlComponent):
         self._delayed_bank_action_requested = None
         self.__assignment_prev_pressed_time = None
         self.__assignment_next_pressed_time = None
+        self.__suppress_auto_banking = False
 
     def destroy(self):
         self.song().remove_visible_tracks_listener(self.__on_tracks_added_or_deleted)
@@ -548,7 +549,9 @@ class ChannelStripController(MackieControlComponent):
                 self.can_restore_solos = True
                 track.solo = True
                 track.solo = False
-        self.song().view.selected_track = sel_track
+        if self.song().view.selected_track != sel_track:
+            self.__suppress_auto_banking = True
+            self.song().view.selected_track = sel_track
 
     def __quantization_to_beats(self, q):
         num = self.song().signature_numerator
@@ -589,7 +592,9 @@ class ChannelStripController(MackieControlComponent):
                 t.solo = True
         self.can_restore_solos = False
         self.stored_soloed_track_ids = []
-        self.song().view.selected_track = sel_track
+        if self.song().view.selected_track != sel_track:
+            self.__suppress_auto_banking = True
+            self.song().view.selected_track = sel_track
 
     def store_solos(self):
         sel_track = self.song().view.selected_track
@@ -600,13 +605,17 @@ class ChannelStripController(MackieControlComponent):
                 t.solo = False
         self.can_restore_solos = True
         self.send_button_led(self.__global_solo_button, BUTTON_STATE_BLINKING)
-        self.song().view.selected_track = sel_track
+        if self.song().view.selected_track != sel_track:
+            self.__suppress_auto_banking = True
+            self.song().view.selected_track = sel_track
 
     def remove_solos(self):
         sel_track = self.song().view.selected_track
         for t in chain(self.tracks_including_chains(), self.song().return_tracks):
             t.solo = False
-        self.song().view.selected_track = sel_track
+        if self.song().view.selected_track != sel_track:
+            self.__suppress_auto_banking = True
+            self.song().view.selected_track = sel_track
 
     def reset_solos(self):
         sel_track = self.song().view.selected_track
@@ -617,7 +626,9 @@ class ChannelStripController(MackieControlComponent):
         self.stored_soloed_track_ids = []
         self.can_restore_solos = False
 #        self.__update_rude_solo_led()
-        self.song().view.selected_track = sel_track
+        if self.song().view.selected_track != sel_track:
+            self.__suppress_auto_banking = True
+            self.song().view.selected_track = sel_track
         
     def check_if_stored_solo(self, track_to_check):
         if hasattr(self, 'stored_soloed_track_ids'):
@@ -1495,7 +1506,10 @@ class ChannelStripController(MackieControlComponent):
         self.__update_flip_led()
 
         if self.main_script().auto_banking:
-            self._sync_banks_live_to_xtouch()
+            if self.__suppress_auto_banking: #skip this one to avoid jumping around
+                self.__suppress_auto_banking = False
+            else:
+                self._sync_banks_live_to_xtouch()
 
     def __on_flip_changed(self):
         u""" Update the flip button LED when the flip mode changed

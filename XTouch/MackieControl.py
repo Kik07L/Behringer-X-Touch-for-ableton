@@ -210,6 +210,15 @@ class MackieControl(object):
                 (0.0, 1.0),  # min/max tuple
                 lambda script: False  # not visible in settings menu
             ),
+            "HEARTBEAT_CYCLE": (
+                2.0,
+                lambda v: float(v) if v else 2.0,
+                "Cycle duration for heartbeat blinking (1.0...6.0)",
+                lambda v: f"{v:.1f}",  # fixed to 1 decimal
+                "hb cy",
+                (1.0, 6.0),  # min/max tuple
+                lambda script: False  # not visible in settings menu
+            ),
             "SELECT_PLUGIN_DIRECTLY": (
                 False,
                 lambda v: v.lower() in ("1", "true", "yes", "on"),
@@ -394,7 +403,9 @@ class MackieControl(object):
         self.__c_instance.send_midi(midi_event_bytes)
 
     def send_button_led(self, buttonID, buttonState):
-        self.send_midi((NOTE_ON_STATUS, buttonID, buttonState))
+        if buttonState != BUTTON_STATE_HEARTBEAT:
+            self.send_midi((NOTE_ON_STATUS, buttonID, buttonState))
+            LAST_SENT_LED[buttonID] = None
         BUTTON_STATES[buttonID] = buttonState
 
     def receive_midi(self, midi_bytes):
